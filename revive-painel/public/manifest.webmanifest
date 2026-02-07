@@ -1,0 +1,38 @@
+{
+  "name": "Revive",
+  "short_name": "Revive",
+  "description": "Painel de progresso para autocuidado e superação.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A111D",
+  "theme_color": "#0F1726",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icons/revive-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/revive-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Novo hábito",
+      "short_name": "Novo hábito",
+      "url": "/?view=novo-vicio",
+      "icons": [{ "src": "/icons/revive-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Insights",
+      "short_name": "Insights",
+      "url": "/?view=analytics",
+      "icons": [{ "src": "/icons/revive-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    }
+  ]
+}
