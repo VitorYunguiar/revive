@@ -2,151 +2,277 @@
 // REVIVE API - Node.js + Express + Supabase
 // ====================================
 
-// Instalação de dependências necessárias:
-// npm install express @supabase/supabase-js bcrypt jsonwebtoken dotenv cors
-
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Configuração do Supabase
+// Configuracao do Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
+// ====================================
+// MIDDLEWARES
+// ====================================
 
-// Middleware de autenticação
+// CORS configurado
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true
+}));
+
+app.use(express.json());
+app.use(morgan('combined'));
+
+const swaggerSpec = swaggerJsdoc({
+    definition: {
+        openapi: '3.0.3',
+        info: {
+            title: 'REVIVE API',
+            version: '1.0.0',
+            description: 'API RESTful da plataforma REVIVE.'
+        },
+        servers: [{ url: `http://localhost:${PORT}` }],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT'
+                }
+            }
+        }
+    },
+    apis: [
+        path.join(__dirname, 'docs', 'openapi.js')
+    ]
+});
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+
+// Rate limiting
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    message: { erro: 'Muitas tentativas de autenticacao. Tente novamente em 15 minutos.' }
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 100,
+    message: { erro: 'Limite de requisicoes excedido. Tente novamente em 1 minuto.' }
+});
+
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
+
+// Middleware de autenticacao
 const authMiddleware = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-        return res.status(401).json({ erro: 'Token não fornecido' });
+        return res.status(401).json({ erro: 'Token nao fornecido' });
     }
-    
+
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.usuarioId = decoded.id;
         next();
     } catch (error) {
-        return res.status(401).json({ erro: 'Token inválido' });
+        return res.status(401).json({ erro: 'Token invalido' });
     }
 };
 
+// Input sanitization helper
+function sanitize(str) {
+    if (!str) return str;
+    return String(str).trim();
+}
+
+// Backward-compatible alias while migrating code naming to English.
+const sanitizeInput = sanitize;
+
+function logInternalError(context, error) {
+    console.error(`[${new Date().toISOString()}] ${context}`, {
+        message: error?.message,
+        stack: error?.stack
+    });
+}
+
+function sendInternalError(res, userMessage, error) {
+    logInternalError(userMessage, error);
+
+    const payload = { erro: userMessage };
+    if (!isProduction) {
+        payload.detalhes = error?.message;
+    }
+
+    return res.status(500).json(payload);
+}
+
 // ====================================
-// ROTAS DE AUTENTICAÇÃO
+// ROTAS DE AUTENTICACAO
 // ====================================
 
-// Cadastro de usuário
+// Cadastro de usuario
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
-        const { nome, email, senha } = req.body;
-        
-        // Validações
+        const nome = sanitize(req.body.nome);
+        const email = sanitize(req.body.email);
+        const { senha } = req.body;
+
         if (!nome || !email || !senha) {
-            return res.status(400).json({ erro: 'Todos os campos são obrigatórios' });
+            return res.status(400).json({ erro: 'Todos os campos sao obrigatorios' });
         }
-        
+
         if (senha.length < 6) {
-            return res.status(400).json({ erro: 'Senha deve ter no mínimo 6 caracteres' });
+            return res.status(400).json({ erro: 'Senha deve ter no minimo 6 caracteres' });
         }
-        
+
         if (!/[A-Z]/.test(senha)) {
-            return res.status(400).json({ erro: 'Senha deve conter pelo menos uma letra maiúscula' });
+            return res.status(400).json({ erro: 'Senha deve conter pelo menos uma letra maiuscula' });
         }
-        
+
         if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
             return res.status(400).json({ erro: 'Senha deve conter pelo menos um caractere especial' });
         }
-        
-        // Verificar se email já existe
+
+        // Verificar se email ja existe
         const { data: usuarioExistente } = await supabase
             .from('usuarios')
             .select('id')
             .eq('email', email)
             .single();
-        
+
         if (usuarioExistente) {
-            return res.status(400).json({ erro: 'Email já cadastrado' });
+            return res.status(400).json({ erro: 'Email ja cadastrado' });
         }
-        
-        // Hash da senha
+
         const senhaHash = await bcrypt.hash(senha, 10);
-        
-        // Inserir usuário
+
         const { data, error } = await supabase
             .from('usuarios')
             .insert([{ nome, email, senha_hash: senhaHash }])
             .select()
             .single();
-        
+
         if (error) throw error;
-        
-        res.status(201).json({ 
-            mensagem: 'Usuário cadastrado com sucesso',
+
+        res.status(201).json({
+            mensagem: 'Usuario cadastrado com sucesso',
             usuario: { id: data.id, nome: data.nome, email: data.email }
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao cadastrar usuário', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao cadastrar usuario', error);
     }
 });
 
 // Login
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, senha } = req.body;
-        
+        const email = sanitize(req.body.email);
+        const { senha } = req.body;
+
         if (!email || !senha) {
-            return res.status(400).json({ erro: 'Email e senha são obrigatórios' });
+            return res.status(400).json({ erro: 'Email e senha sao obrigatorios' });
         }
-        
-        // Buscar usuário
+
         const { data: usuario, error } = await supabase
             .from('usuarios')
             .select('*')
             .eq('email', email)
             .single();
-        
+
         if (error || !usuario) {
-            return res.status(401).json({ erro: 'Credenciais inválidas' });
+            return res.status(401).json({ erro: 'Credenciais invalidas' });
         }
-        
-        // Verificar senha
+
         const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
-        
+
         if (!senhaValida) {
-            return res.status(401).json({ erro: 'Credenciais inválidas' });
+            return res.status(401).json({ erro: 'Credenciais invalidas' });
         }
-        
-        // Gerar token JWT
+
         const token = jwt.sign(
             { id: usuario.id, email: usuario.email },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
-        
+
         res.json({
             mensagem: 'Login realizado com sucesso',
             token,
             usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email }
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao fazer login', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao fazer login', error);
     }
 });
 
 // ====================================
-// ROTAS DE VÍCIOS/ABSTINÊNCIAS
+// ROTA DE PERFIL DO USUARIO
 // ====================================
 
-// Listar vícios do usuário
+// Obter perfil
+app.get('/api/me', authMiddleware, async (req, res) => {
+    try {
+        const { data: usuario, error } = await supabase
+            .from('usuarios')
+            .select('id, nome, email')
+            .eq('id', req.usuarioId)
+            .single();
+
+        if (error || !usuario) {
+            return res.status(404).json({ erro: 'Usuario nao encontrado' });
+        }
+
+        res.json({ usuario });
+    } catch (error) {
+        return sendInternalError(res, 'Erro ao buscar perfil', error);
+    }
+});
+
+// Atualizar perfil
+app.patch('/api/me', authMiddleware, async (req, res) => {
+    try {
+        const nome = sanitize(req.body.nome);
+
+        if (!nome) {
+            return res.status(400).json({ erro: 'Nome e obrigatorio' });
+        }
+
+        const { data, error } = await supabase
+            .from('usuarios')
+            .update({ nome })
+            .eq('id', req.usuarioId)
+            .select('id, nome, email')
+            .single();
+
+        if (error) throw error;
+
+        res.json({ mensagem: 'Perfil atualizado', usuario: data });
+    } catch (error) {
+        return sendInternalError(res, 'Erro ao atualizar perfil', error);
+    }
+});
+
+// ====================================
+// ROTAS DE VICIOS/ABSTINENCIAS
+// ====================================
+
+// Listar vicios do usuario
 app.get('/api/vicios', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -155,37 +281,36 @@ app.get('/api/vicios', authMiddleware, async (req, res) => {
             .eq('usuario_id', req.usuarioId)
             .eq('ativo', true)
             .order('data_criacao', { ascending: false });
-        
+
         if (error) throw error;
-        
-        // Calcular estatísticas para cada vício
+
         const viciosComEstatisticas = data.map(vicio => {
-            const dataBase = vicio.data_ultima_recaida || vicio.data_inicio;
-            const diasAbstinencia = Math.floor((new Date() - new Date(dataBase)) / (1000 * 60 * 60 * 24));
-            const valorEconomizado = diasAbstinencia * parseFloat(vicio.valor_economizado_por_dia);
-            
+            const stats = calculateAddictionStats(vicio);
+
             return {
                 ...vicio,
-                dias_abstinencia: diasAbstinencia,
-                valor_economizado: valorEconomizado.toFixed(2)
+                dias_abstinencia: stats.abstinenceDays,
+                valor_economizado: stats.savedAmount.toFixed(2),
+                tempo_formatado: stats.formattedDuration
             };
         });
-        
+
         res.json({ vicios: viciosComEstatisticas });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar vícios', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao buscar vicios', error);
     }
 });
 
-// Criar novo vício
+// Criar novo vicio
 app.post('/api/vicios', authMiddleware, async (req, res) => {
     try {
-        const { nome_vicio, data_inicio, valor_economizado_por_dia } = req.body;
-        
+        const nome_vicio = sanitize(req.body.nome_vicio);
+        const { data_inicio, valor_economizado_por_dia } = req.body;
+
         if (!nome_vicio || !data_inicio) {
-            return res.status(400).json({ erro: 'Nome do vício e data de início são obrigatórios' });
+            return res.status(400).json({ erro: 'Nome do vicio e data de inicio sao obrigatorios' });
         }
-        
+
         const { data, error } = await supabase
             .from('vicios')
             .insert([{
@@ -196,19 +321,19 @@ app.post('/api/vicios', authMiddleware, async (req, res) => {
             }])
             .select()
             .single();
-        
+
         if (error) throw error;
-        
-        res.status(201).json({ 
-            mensagem: 'Vício registrado com sucesso',
+
+        res.status(201).json({
+            mensagem: 'Vicio registrado com sucesso',
             vicio: data
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao registrar vício', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao registrar vicio', error);
     }
 });
 
-// Buscar vício específico com estatísticas
+// Buscar vicio especifico com estatisticas
 app.get('/api/vicios/:id', authMiddleware, async (req, res) => {
     try {
         const { data: vicio, error } = await supabase
@@ -217,59 +342,55 @@ app.get('/api/vicios/:id', authMiddleware, async (req, res) => {
             .eq('id', req.params.id)
             .eq('usuario_id', req.usuarioId)
             .single();
-        
+
         if (error || !vicio) {
-            return res.status(404).json({ erro: 'Vício não encontrado' });
+            return res.status(404).json({ erro: 'Vicio nao encontrado' });
         }
-        
-        const dataBase = vicio.data_ultima_recaida || vicio.data_inicio;
-        const diasAbstinencia = Math.floor((new Date() - new Date(dataBase)) / (1000 * 60 * 60 * 24));
-        const valorEconomizado = diasAbstinencia * parseFloat(vicio.valor_economizado_por_dia);
-        
+
+        const stats = calculateAddictionStats(vicio);
+
         res.json({
             vicio: {
                 ...vicio,
-                dias_abstinencia: diasAbstinencia,
-                valor_economizado: valorEconomizado.toFixed(2),
-                tempo_formatado: formatarTempo(diasAbstinencia)
+                dias_abstinencia: stats.abstinenceDays,
+                valor_economizado: stats.savedAmount.toFixed(2),
+                tempo_formatado: stats.formattedDuration
             }
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar vício', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao buscar vicio', error);
     }
 });
 
-// Registrar recaída
+// Registrar recaida
 app.post('/api/vicios/:id/recaida', authMiddleware, async (req, res) => {
     try {
-        const { motivo, resetarContador } = req.body;
-        
-        // Buscar vício
+        const motivo = sanitize(req.body.motivo);
+        const { resetarContador } = req.body;
+
         const { data: vicio, error: vicioError } = await supabase
             .from('vicios')
             .select('*')
             .eq('id', req.params.id)
             .eq('usuario_id', req.usuarioId)
             .single();
-        
+
         if (vicioError || !vicio) {
-            return res.status(404).json({ erro: 'Vício não encontrado' });
+            return res.status(404).json({ erro: 'Vicio nao encontrado' });
         }
-        
+
         const dataBase = vicio.data_ultima_recaida || vicio.data_inicio;
         const diasAbstinencia = Math.floor((new Date() - new Date(dataBase)) / (1000 * 60 * 60 * 24));
-        
-        // Registrar no histórico
+
         const { data: recaidaRegistrada, error: recaidaError } = await supabase.from('historico_recaidas').insert([{
             vicio_id: req.params.id,
             data_recaida: new Date().toISOString(),
             motivo,
             dias_abstinencia_perdidos: diasAbstinencia
         }]).select().single();
-        
+
         if (recaidaError) throw recaidaError;
-        
-        // Opcionalmente resetar o contador (apenas se explicitamente solicitado)
+
         let vicioAtualizado = vicio;
         if (resetarContador) {
             const { data: updated, error: updateError } = await supabase
@@ -278,23 +399,23 @@ app.post('/api/vicios/:id/recaida', authMiddleware, async (req, res) => {
                 .eq('id', req.params.id)
                 .select()
                 .single();
-            
+
             if (updateError) throw updateError;
             vicioAtualizado = updated;
         }
-        
-        res.json({ 
-            mensagem: 'Recaída registrada. Você pode criar um registro para refletir sobre o que aconteceu.',
+
+        res.json({
+            mensagem: 'Recaida registrada.',
             dias_abstinencia_anteriores: diasAbstinencia,
             recaida: recaidaRegistrada,
             vicio: vicioAtualizado
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao excluir vício', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao registrar recaida', error);
     }
 });
 
-// Deletar vício com limpeza de dependências
+// Deletar vicio com limpeza de dependencias
 app.delete('/api/vicios/:id', authMiddleware, async (req, res) => {
     try {
         const vicioId = req.params.id;
@@ -307,7 +428,7 @@ app.delete('/api/vicios/:id', authMiddleware, async (req, res) => {
             .single();
 
         if (vicioError || !vicio) {
-            return res.status(404).json({ erro: 'Vício não encontrado' });
+            return res.status(404).json({ erro: 'Vicio nao encontrado' });
         }
 
         const dependentTables = ['registros_diarios', 'historico_recaidas', 'metas'];
@@ -327,20 +448,18 @@ app.delete('/api/vicios/:id', authMiddleware, async (req, res) => {
 
         if (deleteError) throw deleteError;
 
-        res.json({ mensagem: 'Vício excluído definitivamente com sucesso' });
+        res.json({ mensagem: 'Vicio excluido definitivamente com sucesso' });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao excluir vício', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao excluir vicio', error);
     }
 });
 
 // ====================================
-// ROTAS DE HISTÓRICO DE RECAÍDAS (NOVO)
+// ROTAS DE HISTORICO DE RECAIDAS
 // ====================================
 
 app.get('/api/recaidas', authMiddleware, async (req, res) => {
     try {
-        // Esta query busca todas as recaídas onde o vicio_id corresponde
-        // a um vício que pertence ao usuário autenticado.
         const { data, error } = await supabase
             .from('historico_recaidas')
             .select('*, vicios!inner(usuario_id)')
@@ -350,36 +469,38 @@ app.get('/api/recaidas', authMiddleware, async (req, res) => {
 
         res.json({ recaidas: data });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar histórico de recaídas', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao buscar historico de recaidas', error);
     }
 });
 
-
 // ====================================
-// ROTAS DE REGISTROS DIÁRIOS
+// ROTAS DE REGISTROS DIARIOS
 // ====================================
 
-// Criar registro diário
+// Criar registro diario
 app.post('/api/registros', authMiddleware, async (req, res) => {
     try {
-        const { vicio_id, humor, gatilhos, conquistas, observacoes } = req.body;
-        
+        const { vicio_id } = req.body;
+        const humor = sanitize(req.body.humor);
+        const gatilhos = sanitize(req.body.gatilhos);
+        const conquistas = sanitize(req.body.conquistas);
+        const observacoes = sanitize(req.body.observacoes);
+
         if (!vicio_id) {
-            return res.status(400).json({ erro: 'ID do vício é obrigatório' });
+            return res.status(400).json({ erro: 'ID do vicio e obrigatorio' });
         }
-        
-        // Verificar se o vício pertence ao usuário
+
         const { data: vicio } = await supabase
             .from('vicios')
             .select('id')
             .eq('id', vicio_id)
             .eq('usuario_id', req.usuarioId)
             .single();
-        
+
         if (!vicio) {
-            return res.status(403).json({ erro: 'Vício não encontrado ou não pertence ao usuário' });
+            return res.status(403).json({ erro: 'Vicio nao encontrado ou nao pertence ao usuario' });
         }
-        
+
         const { data, error } = await supabase
             .from('registros_diarios')
             .insert([{
@@ -392,19 +513,19 @@ app.post('/api/registros', authMiddleware, async (req, res) => {
             }])
             .select()
             .single();
-        
+
         if (error) throw error;
-        
-        res.status(201).json({ 
+
+        res.status(201).json({
             mensagem: 'Registro criado com sucesso',
             registro: data
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao criar registro', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao criar registro', error);
     }
 });
 
-// Listar registros de um vício
+// Listar registros de um vicio
 app.get('/api/vicios/:id/registros', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -413,12 +534,12 @@ app.get('/api/vicios/:id/registros', authMiddleware, async (req, res) => {
             .eq('vicio_id', req.params.id)
             .eq('vicios.usuario_id', req.usuarioId)
             .order('data_registro', { ascending: false });
-        
+
         if (error) throw error;
-        
+
         res.json({ registros: data });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar registros', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao buscar registros', error);
     }
 });
 
@@ -426,30 +547,28 @@ app.get('/api/vicios/:id/registros', authMiddleware, async (req, res) => {
 // ROTAS DE MENSAGENS MOTIVACIONAIS
 // ====================================
 
-// Obter mensagem motivacional do dia
 app.get('/api/mensagens/diaria', authMiddleware, async (req, res) => {
     try {
         const { tipo_vicio } = req.query;
-        
+
         let query = supabase
             .from('mensagens_motivacionais')
             .select('*')
             .eq('ativa', true);
-        
+
         if (tipo_vicio) {
             query = query.or(`tipo_vicio.eq.${tipo_vicio},tipo_vicio.eq.geral`);
         }
-        
+
         const { data, error } = await query;
-        
+
         if (error) throw error;
-        
-        // Selecionar mensagem aleatória
+
         const mensagemAleatoria = data[Math.floor(Math.random() * data.length)];
-        
+
         res.json({ mensagem: mensagemAleatoria });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar mensagem', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao buscar mensagem', error);
     }
 });
 
@@ -460,12 +579,13 @@ app.get('/api/mensagens/diaria', authMiddleware, async (req, res) => {
 // Criar meta
 app.post('/api/metas', authMiddleware, async (req, res) => {
     try {
-        const { vicio_id, descricao_meta, dias_objetivo, valor_objetivo } = req.body;
-        
+        const descricao_meta = sanitize(req.body.descricao_meta);
+        const { vicio_id, dias_objetivo, valor_objetivo } = req.body;
+
         if (!descricao_meta) {
-            return res.status(400).json({ erro: 'Descrição da meta é obrigatória' });
+            return res.status(400).json({ erro: 'Descricao da meta e obrigatoria' });
         }
-        
+
         const { data, error } = await supabase
             .from('metas')
             .insert([{
@@ -477,19 +597,19 @@ app.post('/api/metas', authMiddleware, async (req, res) => {
             }])
             .select()
             .single();
-        
+
         if (error) throw error;
-        
-        res.status(201).json({ 
+
+        res.status(201).json({
             mensagem: 'Meta criada com sucesso',
             meta: data
         });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao criar meta', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao criar meta', error);
     }
 });
 
-// Listar metas do usuário
+// Listar metas do usuario
 app.get('/api/metas', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -497,42 +617,133 @@ app.get('/api/metas', authMiddleware, async (req, res) => {
             .select('*, vicios(nome_vicio)')
             .eq('usuario_id', req.usuarioId)
             .order('data_criacao', { ascending: false });
-        
+
         if (error) throw error;
-        
+
         res.json({ metas: data });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar metas', detalhes: error.message });
+        return sendInternalError(res, 'Erro ao buscar metas', error);
+    }
+});
+
+// Atualizar meta (marcar como concluida)
+app.patch('/api/metas/:id', authMiddleware, async (req, res) => {
+    try {
+        const { concluida } = req.body;
+
+        const { data: meta, error: metaError } = await supabase
+            .from('metas')
+            .select('id')
+            .eq('id', req.params.id)
+            .eq('usuario_id', req.usuarioId)
+            .single();
+
+        if (metaError || !meta) {
+            return res.status(404).json({ erro: 'Meta nao encontrada' });
+        }
+
+        const { data, error } = await supabase
+            .from('metas')
+            .update({ concluida })
+            .eq('id', req.params.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({ mensagem: 'Meta atualizada com sucesso', meta: data });
+    } catch (error) {
+        return sendInternalError(res, 'Erro ao atualizar meta', error);
+    }
+});
+
+// Excluir meta
+app.delete('/api/metas/:id', authMiddleware, async (req, res) => {
+    try {
+        const { data: meta, error: metaError } = await supabase
+            .from('metas')
+            .select('id')
+            .eq('id', req.params.id)
+            .eq('usuario_id', req.usuarioId)
+            .single();
+
+        if (metaError || !meta) {
+            return res.status(404).json({ erro: 'Meta nao encontrada' });
+        }
+
+        const { error } = await supabase
+            .from('metas')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+
+        res.json({ mensagem: 'Meta excluida com sucesso' });
+    } catch (error) {
+        return sendInternalError(res, 'Erro ao excluir meta', error);
     }
 });
 
 // ====================================
-// FUNÇÕES AUXILIARES
+// FUNCOES AUXILIARES
 // ====================================
 
-function formatarTempo(dias) {
-    const anos = Math.floor(dias / 365);
-    const meses = Math.floor((dias % 365) / 30);
-    const diasRestantes = dias % 30;
-    
-    let resultado = [];
-    if (anos > 0) resultado.push(`${anos} ano${anos > 1 ? 's' : ''}`);
-    if (meses > 0) resultado.push(`${meses} mes${meses > 1 ? 'es' : ''}`);
-    if (diasRestantes > 0) resultado.push(`${diasRestantes} dia${diasRestantes > 1 ? 's' : ''}`);
-    
-    return resultado.join(', ') || '0 dias';
+function formatDuration(days) {
+    const years = Math.floor(days / 365);
+    const months = Math.floor((days % 365) / 30);
+    const remainingDays = days % 30;
+
+    const result = [];
+    if (years > 0) result.push(`${years} ano${years > 1 ? 's' : ''}`);
+    if (months > 0) result.push(`${months} mes${months > 1 ? 'es' : ''}`);
+    if (remainingDays > 0) result.push(`${remainingDays} dia${remainingDays > 1 ? 's' : ''}`);
+
+    return result.join(', ') || '0 dias';
 }
+
+function calculateAddictionStats(addiction) {
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const baseDate = addiction.data_ultima_recaida || addiction.data_inicio;
+    const abstinenceDays = Math.max(
+        0,
+        Math.floor((new Date() - new Date(baseDate)) / millisecondsPerDay)
+    );
+    const savedAmount = abstinenceDays * parseFloat(addiction.valor_economizado_por_dia || 0);
+
+    return {
+        abstinenceDays,
+        savedAmount,
+        formattedDuration: formatDuration(abstinenceDays)
+    };
+}
+
+// Backward-compatible aliases while migrating code naming to English.
+const formatarTempo = formatDuration;
+const calcularEstatisticasVicio = calculateAddictionStats;
 
 // ====================================
 // ROTA DE TESTE
 // ====================================
 
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'API REVIVE está funcionando!', timestamp: new Date().toISOString() });
+    res.json({ status: 'API REVIVE esta funcionando!', timestamp: new Date().toISOString() });
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 API REVIVE rodando na porta ${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-});
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+        console.log(`API REVIVE rodando na porta ${PORT}`);
+        console.log(`Health check: http://localhost:${PORT}/api/health`);
+        console.log(`API docs: http://localhost:${PORT}/api/docs`);
+    });
+}
+
+module.exports = {
+    app,
+    sanitize,
+    sanitizeInput,
+    formatDuration,
+    formatarTempo,
+    calculateAddictionStats,
+    calcularEstatisticasVicio
+};

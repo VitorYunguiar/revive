@@ -15,12 +15,31 @@
     --muted: #b7c4db;
   }
 
+  /* Light theme support */
+  [data-theme="light"] {
+    color-scheme: light;
+    --bg-01: #f5f7fb;
+    --bg-02: #e8ecf4;
+    --glass: rgba(0, 0, 0, 0.03);
+    --stroke: rgba(0, 0, 0, 0.08);
+    --accent: #059669;
+    --accent-strong: #0891b2;
+    --muted: #64748b;
+  }
+
   html {
     background:
       radial-gradient(circle at 15% 15%, rgba(92, 120, 175, 0.18) 0, transparent 40%),
       linear-gradient(135deg, #0a111d 0%, #101a2a 55%, #0f1726 100%);
     background-attachment: fixed;
     min-height: 100vh;
+  }
+
+  [data-theme="light"] html,
+  html[data-theme="light"] {
+    background:
+      radial-gradient(circle at 15% 15%, rgba(92, 120, 175, 0.08) 0, transparent 40%),
+      linear-gradient(135deg, #f5f7fb 0%, #e8ecf4 55%, #f0f2f7 100%);
   }
 
   html::before {
@@ -44,6 +63,10 @@
     font-family: "Space Grotesk", "Manrope", system-ui, sans-serif;
   }
 
+  [data-theme="light"] body {
+    color: #1e293b;
+  }
+
   #root {
     position: relative;
     z-index: 2;
@@ -52,7 +75,7 @@
   }
 }
 
-/* Animações suaves e consistentes */
+/* Animacoes suaves e consistentes */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -76,4 +99,73 @@
 
 .animate-float {
   animation: floatUp 6s ease-in-out infinite;
+}
+
+/* Pulse animation for skeletons */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Print styles for Reports page */
+@media print {
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+
+  html::before {
+    display: none !important;
+  }
+
+  header, nav, .fixed {
+    display: none !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  * {
+    border-color: #e5e7eb !important;
+    color: #1f2937 !important;
+    background: transparent !important;
+  }
+}
+
+/* Line clamp utility */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
