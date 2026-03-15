@@ -23,8 +23,7 @@ export default function DashboardPage() {
     goals,
     createAddiction,
     deleteAddiction,
-    registerRelapseReflect,
-    registerRelapseReset,
+    registerRelapse,
     loadAddictionDetails
   } = useData();
 
@@ -115,12 +114,12 @@ export default function DashboardPage() {
   }, [allRecords]);
 
   const handleRefletir = async (vicio) => {
-    await registerRelapseReflect(vicio);
+    await registerRelapse(vicio);
     setRecaidaVicio(null);
   };
 
   const handleResetar = async (vicio) => {
-    await registerRelapseReset(vicio);
+    await registerRelapse(vicio, { resetCounter: true });
     setRecaidaVicio(null);
   };
 

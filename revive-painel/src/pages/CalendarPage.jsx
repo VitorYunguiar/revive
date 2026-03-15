@@ -6,7 +6,7 @@ import Card from '../components/ui/Card';
 import { glassSurface, screenTransition, moodColors } from '../utils/constants';
 
 export default function CalendarPage() {
-  const { allRegistros, recaidas, metas } = useData();
+  const { allRecords, relapses, goals } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -25,9 +25,9 @@ export default function CalendarPage() {
     }
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayRegistros = allRegistros.filter(r => r.data_registro === dateStr);
-      const dayRecaidas = recaidas.filter(r => r.data_recaida?.split('T')[0] === dateStr);
-      const dayMetas = metas.filter(m => m.concluida && m.data_criacao?.split('T')[0] === dateStr);
+      const dayRegistros = allRecords.filter(r => r.data_registro === dateStr);
+      const dayRecaidas = relapses.filter(r => r.data_recaida?.split('T')[0] === dateStr);
+      const dayMetas = goals.filter(m => m.concluida && m.data_criacao?.split('T')[0] === dateStr);
       const mood = dayRegistros.length > 0 ? dayRegistros[dayRegistros.length - 1].humor : null;
 
       days.push({
@@ -41,7 +41,7 @@ export default function CalendarPage() {
       });
     }
     return days;
-  }, [year, month, allRegistros, recaidas, metas]);
+  }, [year, month, allRecords, relapses, goals]);
 
   const selectedDayData = selectedDay ? calendarDays.find(d => d && d.dateStr === selectedDay) : null;
 

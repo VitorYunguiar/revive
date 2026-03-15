@@ -1,7 +1,3 @@
-// ====================================
-// DESIGN TOKENS & CONSTANTS
-// ====================================
-
 // Glass Surface Classes
 export const glassSurface = 'bg-slate-900/80 border border-slate-700/60 shadow-[0_20px_40px_rgba(2,6,23,0.4)]';
 export const glassMutedSurface = 'bg-slate-900/60 border border-slate-700/40';
@@ -49,9 +45,6 @@ export const screenTransition = {
   exit: { opacity: 0, y: -12 },
   transition: { duration: 0.3, ease: 'easeOut' }
 };
-
-// Backward-compatible alias while migrating naming conventions.
-export const pageTransition = screenTransition;
 
 // KPI Border Map
 export const kpiBorderMap = {

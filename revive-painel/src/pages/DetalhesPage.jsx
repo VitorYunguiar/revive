@@ -14,10 +14,10 @@ export default function DetalhesPage() {
   const navigate = useNavigate();
   const { loading } = useUI();
   const {
-    vicioSelecionado, registros, metas,
-    carregarDetalhesVicio, handleExcluirVicio,
-    handleRegistrarRecaidaRefletir, handleRegistrarRecaidaResetar,
-    handleCriarRegistro, handleCriarMeta
+    selectedAddiction, selectedAddictionRecords, goals,
+    loadAddictionDetails, deleteAddiction,
+    registerRelapse,
+    createRecord, createGoal
   } = useData();
 
   const [recaidaVicio, setRecaidaVicio] = useState(null);
@@ -25,10 +25,10 @@ export default function DetalhesPage() {
   const [formMeta, setFormMeta] = useState({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
 
   useEffect(() => {
-    if (id) carregarDetalhesVicio(id);
+    if (id) loadAddictionDetails(id);
   }, [id]);
 
-  if (!vicioSelecionado) {
+  if (!selectedAddiction) {
     return (
       <div className="text-center py-12">
         <p className="text-white/60">Carregando detalhes...</p>
@@ -38,18 +38,18 @@ export default function DetalhesPage() {
 
   const handleSubmitRegistro = async (e) => {
     e.preventDefault();
-    const success = await handleCriarRegistro(formRegistro);
+    const success = await createRecord(formRegistro);
     if (success) setFormRegistro({ humor: '', gatilhos: '', conquistas: '', observacoes: '' });
   };
 
   const handleSubmitMeta = async (e) => {
     e.preventDefault();
-    await handleCriarMeta({ ...formMeta, vicio_id: vicioSelecionado.id });
+    await createGoal({ ...formMeta, vicio_id: selectedAddiction.id });
     setFormMeta({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
   };
 
   const handleRefletir = async (vicio) => {
-    await handleRegistrarRecaidaRefletir(vicio);
+    await registerRelapse(vicio);
     setRecaidaVicio(null);
     setTimeout(() => {
       document.getElementById('form-registro')?.scrollIntoView({ behavior: 'smooth' });
@@ -57,11 +57,11 @@ export default function DetalhesPage() {
   };
 
   const handleResetar = async (vicio) => {
-    await handleRegistrarRecaidaResetar(vicio);
+    await registerRelapse(vicio, { resetCounter: true });
     setRecaidaVicio(null);
   };
 
-  const metasVicio = metas.filter(m => m.vicio_id === vicioSelecionado.id);
+  const addictionGoals = goals.filter(m => m.vicio_id === selectedAddiction.id);
 
   return (
     <motion.div {...screenTransition} className="space-y-6">
@@ -79,10 +79,10 @@ export default function DetalhesPage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/60">Foco e consistencia</p>
-            <h2 className="text-3xl font-bold text-white">{vicioSelecionado.nome_vicio}</h2>
-            <p className="text-lg text-white/70 mt-1">{vicioSelecionado.tempo_formatado}</p>
+            <h2 className="text-3xl font-bold text-white">{selectedAddiction.nome_vicio}</h2>
+            <p className="text-lg text-white/70 mt-1">{selectedAddiction.tempo_formatado}</p>
           </div>
-          <button onClick={() => { handleExcluirVicio(vicioSelecionado); navigate('/'); }} className="p-3 text-rose-200 hover:bg-rose-500/15 rounded-lg transition border border-rose-300/30">
+          <button onClick={() => { deleteAddiction(selectedAddiction); navigate('/'); }} className="p-3 text-rose-200 hover:bg-rose-500/15 rounded-lg transition border border-rose-300/30">
             <Trash2 className="w-6 h-6" />
           </button>
         </div>
@@ -92,24 +92,24 @@ export default function DetalhesPage() {
               <Calendar className="w-6 h-6 text-[#7CF6C4]" />
               <h3 className="font-semibold text-white/80">Dias limpo</h3>
             </div>
-            <p className="text-4xl font-bold text-white">{vicioSelecionado.dias_abstinencia}</p>
+            <p className="text-4xl font-bold text-white">{selectedAddiction.dias_abstinencia}</p>
           </div>
           <div className="p-5 rounded-2xl border border-white/10 bg-white/5">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign className="w-6 h-6 text-[#35D3FF]" />
               <h3 className="font-semibold text-white/80">Economizado</h3>
             </div>
-            <p className="text-4xl font-bold text-white">R$ {Number(vicioSelecionado.valor_economizado).toFixed(2)}</p>
+            <p className="text-4xl font-bold text-white">R$ {Number(selectedAddiction.valor_economizado).toFixed(2)}</p>
           </div>
           <div className="p-5 rounded-2xl border border-white/10 bg-white/5">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="w-6 h-6 text-amber-300" />
               <h3 className="font-semibold text-white/80">Economia diaria</h3>
             </div>
-            <p className="text-4xl font-bold text-white">R$ {Number(vicioSelecionado.valor_economizado_por_dia).toFixed(2)}</p>
+            <p className="text-4xl font-bold text-white">R$ {Number(selectedAddiction.valor_economizado_por_dia).toFixed(2)}</p>
           </div>
         </div>
-        <button onClick={() => setRecaidaVicio(vicioSelecionado)} className="w-full mt-6 px-6 py-3 bg-rose-500/15 text-rose-100 rounded-xl hover:bg-rose-500/25 transition font-semibold border border-rose-300/30">
+        <button onClick={() => setRecaidaVicio(selectedAddiction)} className="w-full mt-6 px-6 py-3 bg-rose-500/15 text-rose-100 rounded-xl hover:bg-rose-500/25 transition font-semibold border border-rose-300/30">
           Registrar Recaida
         </button>
       </div>
@@ -118,7 +118,7 @@ export default function DetalhesPage() {
         {/* Meta + Metas ativas */}
         <div className="space-y-6">
           <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Target className="w-6 h-6 text-[#7CF6C4]" />Nova meta para "{vicioSelecionado.nome_vicio}"</h3>
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Target className="w-6 h-6 text-[#7CF6C4]" />Nova meta para "{selectedAddiction.nome_vicio}"</h3>
             <form onSubmit={handleSubmitMeta} className="space-y-4">
               <InputField type="text" value={formMeta.descricao_meta} onChange={(e) => setFormMeta({ ...formMeta, descricao_meta: e.target.value })} required label="Descricao da meta" placeholder="Algo que motive voce" />
               <div className="grid grid-cols-2 gap-3">
@@ -129,11 +129,11 @@ export default function DetalhesPage() {
             </form>
           </div>
 
-          {metasVicio.length > 0 && (
+          {addictionGoals.length > 0 && (
             <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
               <h3 className="text-xl font-bold text-white mb-4">Metas Ativas</h3>
               <div className="space-y-3">
-                {metasVicio.map((meta) => (
+                {addictionGoals.map((meta) => (
                   <div key={meta.id} className="p-4 bg-white/5 backdrop-blur rounded-lg border border-white/20">
                     <div className="flex items-start justify-between mb-2">
                       <p className="font-semibold text-white">{meta.descricao_meta}</p>
@@ -170,11 +170,11 @@ export default function DetalhesPage() {
       </div>
 
       {/* Record History */}
-      {registros.length > 0 && (
+      {selectedAddictionRecords.length > 0 && (
         <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
           <h3 className="text-xl font-bold text-white mb-4">Historico de Registros</h3>
           <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-            {registros.map((registro) => (
+            {selectedAddictionRecords.map((registro) => (
               <div key={registro.id} className="p-4 bg-white/5 backdrop-blur rounded-lg border-l-4 border-[#7CF6C4]">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-white/70">{new Date(registro.data_registro).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>

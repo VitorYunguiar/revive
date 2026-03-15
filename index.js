@@ -1,7 +1,3 @@
-// ====================================
-// REVIVE API - Node.js + Express + Supabase
-// ====================================
-
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -17,17 +13,12 @@ const swaggerUi = require('swagger-ui-express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
+const MS_PER_DAY = 86_400_000;
 
-// Configuracao do Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ====================================
-// MIDDLEWARES
-// ====================================
-
-// CORS configurado
 app.use(cors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -63,7 +54,6 @@ const swaggerSpec = swaggerJsdoc({
 
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
-// Rate limiting
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 15,
@@ -79,7 +69,6 @@ const apiLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 
-// Middleware de autenticacao
 const authMiddleware = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -95,14 +84,10 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-// Input sanitization helper
 function sanitize(str) {
     if (!str) return str;
     return String(str).trim();
 }
-
-// Backward-compatible alias while migrating code naming to English.
-const sanitizeInput = sanitize;
 
 function logInternalError(context, error) {
     console.error(`[${new Date().toISOString()}] ${context}`, {
@@ -122,11 +107,6 @@ function sendInternalError(res, userMessage, error) {
     return res.status(500).json(payload);
 }
 
-// ====================================
-// ROTAS DE AUTENTICACAO
-// ====================================
-
-// Cadastro de usuario
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
         const nome = sanitize(req.body.nome);
@@ -149,7 +129,6 @@ app.post('/api/auth/cadastro', async (req, res) => {
             return res.status(400).json({ erro: 'Senha deve conter pelo menos um caractere especial' });
         }
 
-        // Verificar se email ja existe
         const { data: usuarioExistente } = await supabase
             .from('usuarios')
             .select('id')
@@ -179,7 +158,6 @@ app.post('/api/auth/cadastro', async (req, res) => {
     }
 });
 
-// Login
 app.post('/api/auth/login', async (req, res) => {
     try {
         const email = sanitize(req.body.email);
@@ -221,11 +199,6 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// ====================================
-// ROTA DE PERFIL DO USUARIO
-// ====================================
-
-// Obter perfil
 app.get('/api/me', authMiddleware, async (req, res) => {
     try {
         const { data: usuario, error } = await supabase
@@ -244,7 +217,6 @@ app.get('/api/me', authMiddleware, async (req, res) => {
     }
 });
 
-// Atualizar perfil
 app.patch('/api/me', authMiddleware, async (req, res) => {
     try {
         const nome = sanitize(req.body.nome);
@@ -268,11 +240,6 @@ app.patch('/api/me', authMiddleware, async (req, res) => {
     }
 });
 
-// ====================================
-// ROTAS DE VICIOS/ABSTINENCIAS
-// ====================================
-
-// Listar vicios do usuario
 app.get('/api/vicios', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -301,7 +268,6 @@ app.get('/api/vicios', authMiddleware, async (req, res) => {
     }
 });
 
-// Criar novo vicio
 app.post('/api/vicios', authMiddleware, async (req, res) => {
     try {
         const nome_vicio = sanitize(req.body.nome_vicio);
@@ -333,7 +299,6 @@ app.post('/api/vicios', authMiddleware, async (req, res) => {
     }
 });
 
-// Buscar vicio especifico com estatisticas
 app.get('/api/vicios/:id', authMiddleware, async (req, res) => {
     try {
         const { data: vicio, error } = await supabase
@@ -362,7 +327,6 @@ app.get('/api/vicios/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Registrar recaida
 app.post('/api/vicios/:id/recaida', authMiddleware, async (req, res) => {
     try {
         const motivo = sanitize(req.body.motivo);
@@ -380,7 +344,7 @@ app.post('/api/vicios/:id/recaida', authMiddleware, async (req, res) => {
         }
 
         const dataBase = vicio.data_ultima_recaida || vicio.data_inicio;
-        const diasAbstinencia = Math.floor((new Date() - new Date(dataBase)) / (1000 * 60 * 60 * 24));
+        const diasAbstinencia = Math.floor((new Date() - new Date(dataBase)) / MS_PER_DAY);
 
         const { data: recaidaRegistrada, error: recaidaError } = await supabase.from('historico_recaidas').insert([{
             vicio_id: req.params.id,
@@ -415,7 +379,7 @@ app.post('/api/vicios/:id/recaida', authMiddleware, async (req, res) => {
     }
 });
 
-// Deletar vicio com limpeza de dependencias
+// Cascade-deletes dependent records before removing the addiction
 app.delete('/api/vicios/:id', authMiddleware, async (req, res) => {
     try {
         const vicioId = req.params.id;
@@ -454,10 +418,6 @@ app.delete('/api/vicios/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// ====================================
-// ROTAS DE HISTORICO DE RECAIDAS
-// ====================================
-
 app.get('/api/recaidas', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -473,11 +433,6 @@ app.get('/api/recaidas', authMiddleware, async (req, res) => {
     }
 });
 
-// ====================================
-// ROTAS DE REGISTROS DIARIOS
-// ====================================
-
-// Criar registro diario
 app.post('/api/registros', authMiddleware, async (req, res) => {
     try {
         const { vicio_id } = req.body;
@@ -525,7 +480,6 @@ app.post('/api/registros', authMiddleware, async (req, res) => {
     }
 });
 
-// Listar registros de um vicio
 app.get('/api/vicios/:id/registros', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -542,10 +496,6 @@ app.get('/api/vicios/:id/registros', authMiddleware, async (req, res) => {
         return sendInternalError(res, 'Erro ao buscar registros', error);
     }
 });
-
-// ====================================
-// ROTAS DE MENSAGENS MOTIVACIONAIS
-// ====================================
 
 app.get('/api/mensagens/diaria', authMiddleware, async (req, res) => {
     try {
@@ -572,11 +522,6 @@ app.get('/api/mensagens/diaria', authMiddleware, async (req, res) => {
     }
 });
 
-// ====================================
-// ROTAS DE METAS
-// ====================================
-
-// Criar meta
 app.post('/api/metas', authMiddleware, async (req, res) => {
     try {
         const descricao_meta = sanitize(req.body.descricao_meta);
@@ -609,7 +554,6 @@ app.post('/api/metas', authMiddleware, async (req, res) => {
     }
 });
 
-// Listar metas do usuario
 app.get('/api/metas', authMiddleware, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -626,7 +570,7 @@ app.get('/api/metas', authMiddleware, async (req, res) => {
     }
 });
 
-// Atualizar meta (marcar como concluida)
+// PATCH only toggles the `concluida` flag
 app.patch('/api/metas/:id', authMiddleware, async (req, res) => {
     try {
         const { concluida } = req.body;
@@ -657,7 +601,6 @@ app.patch('/api/metas/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Excluir meta
 app.delete('/api/metas/:id', authMiddleware, async (req, res) => {
     try {
         const { data: meta, error: metaError } = await supabase
@@ -684,10 +627,6 @@ app.delete('/api/metas/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// ====================================
-// FUNCOES AUXILIARES
-// ====================================
-
 function formatDuration(days) {
     const years = Math.floor(days / 365);
     const months = Math.floor((days % 365) / 30);
@@ -702,11 +641,10 @@ function formatDuration(days) {
 }
 
 function calculateAddictionStats(addiction) {
-    const millisecondsPerDay = 1000 * 60 * 60 * 24;
     const baseDate = addiction.data_ultima_recaida || addiction.data_inicio;
     const abstinenceDays = Math.max(
         0,
-        Math.floor((new Date() - new Date(baseDate)) / millisecondsPerDay)
+        Math.floor((new Date() - new Date(baseDate)) / MS_PER_DAY)
     );
     const savedAmount = abstinenceDays * parseFloat(addiction.valor_economizado_por_dia || 0);
 
@@ -717,19 +655,10 @@ function calculateAddictionStats(addiction) {
     };
 }
 
-// Backward-compatible aliases while migrating code naming to English.
-const formatarTempo = formatDuration;
-const calcularEstatisticasVicio = calculateAddictionStats;
-
-// ====================================
-// ROTA DE TESTE
-// ====================================
-
 app.get('/api/health', (req, res) => {
     res.json({ status: 'API REVIVE esta funcionando!', timestamp: new Date().toISOString() });
 });
 
-// Iniciar servidor
 if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => {
         console.log(`API REVIVE rodando na porta ${PORT}`);
@@ -741,9 +670,6 @@ if (process.env.NODE_ENV !== 'test') {
 module.exports = {
     app,
     sanitize,
-    sanitizeInput,
     formatDuration,
-    formatarTempo,
-    calculateAddictionStats,
-    calcularEstatisticasVicio
+    calculateAddictionStats
 };

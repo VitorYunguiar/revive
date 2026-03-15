@@ -1,3 +1,5 @@
+export const MS_PER_DAY = 86_400_000;
+
 /**
  * Calcula o tempo decorrido desde uma data e retorna string formatada.
  */
@@ -6,7 +8,7 @@ export function calcularTempoDecorrido(dataInicio) {
   const inicio = new Date(dataInicio);
   const agora = new Date();
   const diffTime = Math.abs(agora - inicio);
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(diffTime / MS_PER_DAY);
 
   if (diffDays === 0) return 'Iniciado hoje';
   if (diffDays === 1) return 'Iniciado ha 1 dia';
@@ -17,33 +19,4 @@ export function calcularTempoDecorrido(dataInicio) {
   }
   const anos = Math.floor(diffDays / 365);
   return `Iniciado ha ${anos} ${anos === 1 ? 'ano' : 'anos'}`;
-}
-
-/**
- * Formata valor monetario em BRL.
- */
-export function formatarMoeda(valor) {
-  return `R$ ${Number(valor).toFixed(2)}`;
-}
-
-/**
- * Formata data em pt-BR.
- */
-export function formatarData(data, options = {}) {
-  const defaultOptions = { day: '2-digit', month: 'long', year: 'numeric' };
-  return new Date(data).toLocaleDateString('pt-BR', { ...defaultOptions, ...options });
-}
-
-/**
- * Formata data curta (dd/mm/yyyy).
- */
-export function formatarDataCurta(data) {
-  return new Date(data).toLocaleDateString('pt-BR');
-}
-
-/**
- * Calcula dias de diferenca entre duas datas.
- */
-export function calcularDiasDiferenca(data1, data2 = new Date()) {
-  return Math.floor(Math.abs(new Date(data2) - new Date(data1)) / (1000 * 60 * 60 * 24));
 }

@@ -6,7 +6,7 @@ import Card from '../components/ui/Card';
 import { glassSurface, screenTransition, moodColors } from '../utils/constants';
 
 export default function ReportsPage() {
-  const { vicios, metas, allRegistros, recaidas } = useData();
+  const { addictions, goals, allRecords, relapses } = useData();
   const [periodo, setPeriodo] = useState(30);
 
   const dataLimite = useMemo(() => {
@@ -16,10 +16,10 @@ export default function ReportsPage() {
   }, [periodo]);
 
   const stats = useMemo(() => {
-    const regsPerido = allRegistros.filter(r => new Date(r.data_registro) >= dataLimite);
-    const recaidasPeriodo = recaidas.filter(r => new Date(r.data_recaida) >= dataLimite);
-    const totalEconomizado = vicios.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);
-    const metasConcluidas = metas.filter(m => m.concluida).length;
+    const regsPerido = allRecords.filter(r => new Date(r.data_registro) >= dataLimite);
+    const recaidasPeriodo = relapses.filter(r => new Date(r.data_recaida) >= dataLimite);
+    const totalEconomizado = addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);
+    const metasConcluidas = goals.filter(m => m.concluida).length;
 
     const humorCount = {};
     regsPerido.forEach(r => {
@@ -32,13 +32,13 @@ export default function ReportsPage() {
       totalEconomizado,
       metasConcluidas,
       humorDistribuicao: Object.entries(humorCount).sort((a, b) => b[1] - a[1]),
-      viciosAtivos: vicios.length
+      viciosAtivos: addictions.length
     };
-  }, [dataLimite, allRegistros, recaidas, vicios, metas]);
+  }, [dataLimite, allRecords, relapses, addictions, goals]);
 
   const exportCSV = () => {
     const headers = ['Data', 'Vicio ID', 'Humor', 'Gatilhos', 'Conquistas', 'Observacoes'];
-    const rows = allRegistros
+    const rows = allRecords
       .filter(r => new Date(r.data_registro) >= dataLimite)
       .map(r => [r.data_registro, r.vicio_id, r.humor || '', r.gatilhos || '', r.conquistas || '', r.observacoes || '']);
 
@@ -123,7 +123,7 @@ export default function ReportsPage() {
       {/* Vicios Summary */}
       <Card title="Resumo por Vicio">
         <div className="space-y-3">
-          {vicios.map(v => (
+          {addictions.map(v => (
             <div key={v.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
               <div>
                 <p className="font-semibold text-white">{v.nome_vicio}</p>

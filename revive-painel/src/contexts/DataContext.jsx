@@ -27,27 +27,31 @@ export function DataProvider({ children }) {
     showToast('error', userMessage);
   }, [showToast]);
 
-  const loadAddictions = useCallback(async () => {
+  const withLoading = useCallback(async (operation, errorMessage) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await viciosService.listarVicios(token);
-      const processed = (data.vicios || []).map(addiction => ({
-        ...addiction,
-        dias_abstinencia: Math.max(0, addiction.dias_abstinencia || 0),
-        valor_economizado: Math.max(0, addiction.valor_economizado || 0),
-        tempo_formatado: addiction.tempo_formatado || calcularTempoDecorrido(addiction.data_inicio)
-      }));
-      setAddictions(processed);
+      return await operation();
     } catch (error) {
-      handleDataError(error, 'Nao foi possivel carregar seus vicios.');
+      handleDataError(error, errorMessage);
+      return null;
     } finally {
       setLoading(false);
     }
-  }, [token, setLoading, handleDataError]);
+  }, [setLoading, handleDataError]);
+
+  const loadAddictions = useCallback(() => withLoading(async () => {
+    const data = await viciosService.listarVicios(token);
+    const processed = (data.vicios || []).map(addiction => ({
+      ...addiction,
+      dias_abstinencia: Math.max(0, addiction.dias_abstinencia || 0),
+      valor_economizado: Math.max(0, addiction.valor_economizado || 0),
+      tempo_formatado: addiction.tempo_formatado || calcularTempoDecorrido(addiction.data_inicio)
+    }));
+    setAddictions(processed);
+  }, 'Nao foi possivel carregar seus vicios.'), [token, withLoading]);
 
   const loadAddictionDetails = useCallback(async (id) => {
-    try {
-      setLoading(true);
+    return await withLoading(async () => {
       const data = await viciosService.buscarVicio(id, token);
       const processedAddiction = {
         ...data.vicio,
@@ -55,20 +59,12 @@ export function DataProvider({ children }) {
         valor_economizado: Math.max(0, data.vicio.valor_economizado || 0),
         tempo_formatado: data.vicio.tempo_formatado || calcularTempoDecorrido(data.vicio.data_inicio)
       };
-
       setSelectedAddiction(processedAddiction);
-
       const regData = await registrosService.listarRegistros(id, token);
       setSelectedAddictionRecords(regData.registros || []);
-
       return processedAddiction;
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel carregar os detalhes do vicio.');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [token, setLoading, handleDataError]);
+    }, 'Nao foi possivel carregar os detalhes do vicio.');
+  }, [token, withLoading]);
 
   const loadGoals = useCallback(async () => {
     try {
@@ -103,8 +99,7 @@ export function DataProvider({ children }) {
     try {
       const requests = addictions.map(addiction => registrosService.listarRegistros(addiction.id, token));
       const responses = await Promise.all(requests);
-      const mergedRecords = responses.flatMap(response => response.registros || []);
-      setAllRecords(mergedRecords);
+      setAllRecords(responses.flatMap(response => response.registros || []));
     } catch (error) {
       handleDataError(error, 'Nao foi possivel carregar o historico de registros.');
       setAllRecords([]);
@@ -112,73 +107,39 @@ export function DataProvider({ children }) {
   }, [addictions, token, handleDataError]);
 
   const createAddiction = useCallback(async (payload) => {
-    setLoading(true);
-    try {
+    await withLoading(async () => {
       await viciosService.criarVicio(payload, token);
       showToast('success', 'Vicio criado com sucesso!');
       await loadAddictions();
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel criar o vicio.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token, showToast, loadAddictions, setLoading, handleDataError]);
+    }, 'Nao foi possivel criar o vicio.');
+  }, [token, showToast, loadAddictions, withLoading]);
 
   const deleteAddiction = useCallback((addiction) => {
     showConfirm(
       'Confirmar Exclusao',
       `Tem certeza que deseja excluir "${addiction.nome_vicio}"? Esta acao nao pode ser desfeita.`,
-      async () => {
-        setLoading(true);
-        try {
-          await viciosService.excluirVicio(addiction.id, token);
-          showToast('success', 'Vicio excluido com sucesso!');
-          await loadAddictions();
-          if (selectedAddiction?.id === addiction.id) {
-            setSelectedAddiction(null);
-          }
-        } catch (error) {
-          handleDataError(error, 'Nao foi possivel excluir o vicio.');
-        } finally {
-          setLoading(false);
-        }
-      }
+      () => withLoading(async () => {
+        await viciosService.excluirVicio(addiction.id, token);
+        showToast('success', 'Vicio excluido com sucesso!');
+        await loadAddictions();
+        if (selectedAddiction?.id === addiction.id) setSelectedAddiction(null);
+      }, 'Nao foi possivel excluir o vicio.')
     );
-  }, [token, showToast, showConfirm, loadAddictions, selectedAddiction, setLoading, handleDataError]);
+  }, [token, showToast, showConfirm, loadAddictions, selectedAddiction, withLoading]);
 
-  const registerRelapseReflect = useCallback(async (addiction) => {
-    setLoading(true);
-    try {
-      await viciosService.registrarRecaida(addiction.id, '', false, token);
-      showToast('success', 'Recaida registrada! Vamos refletir sobre o ocorrido.');
+  const registerRelapse = useCallback(async (addiction, { resetCounter = false } = {}) => {
+    await withLoading(async () => {
+      await viciosService.registrarRecaida(addiction.id, '', resetCounter, token);
+      showToast('success', resetCounter
+        ? 'Contador resetado! Um novo capitulo comeca.'
+        : 'Recaida registrada! Vamos refletir sobre o ocorrido.');
       await loadAddictions();
       await loadRelapses();
       if (selectedAddiction?.id === addiction.id) {
         await loadAddictionDetails(addiction.id);
       }
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel registrar a recaida.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token, showToast, loadAddictions, loadRelapses, loadAddictionDetails, selectedAddiction, setLoading, handleDataError]);
-
-  const registerRelapseReset = useCallback(async (addiction) => {
-    setLoading(true);
-    try {
-      await viciosService.registrarRecaida(addiction.id, '', true, token);
-      showToast('success', 'Contador resetado! Um novo capitulo comeca.');
-      await loadAddictions();
-      await loadRelapses();
-      if (selectedAddiction?.id === addiction.id) {
-        await loadAddictionDetails(addiction.id);
-      }
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel registrar a recaida.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token, showToast, loadAddictions, loadRelapses, loadAddictionDetails, selectedAddiction, setLoading, handleDataError]);
+    }, 'Nao foi possivel registrar a recaida.');
+  }, [token, showToast, loadAddictions, loadRelapses, loadAddictionDetails, selectedAddiction, withLoading]);
 
   const createRecord = useCallback(async (recordForm) => {
     if (!recordForm.humor) {
@@ -189,69 +150,45 @@ export function DataProvider({ children }) {
       showToast('error', 'Selecione um vicio antes de salvar o registro.');
       return false;
     }
-
-    setLoading(true);
-    try {
+    const result = await withLoading(async () => {
       await registrosService.criarRegistro({ ...recordForm, vicio_id: selectedAddiction.id }, token);
       showToast('success', 'Registro diario criado!');
       await loadAddictionDetails(selectedAddiction.id);
       return true;
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel criar o registro diario.');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [token, selectedAddiction, showToast, loadAddictionDetails, setLoading, handleDataError]);
+    }, 'Nao foi possivel criar o registro diario.');
+    return result ?? false;
+  }, [token, selectedAddiction, showToast, loadAddictionDetails, withLoading]);
 
   const createGoal = useCallback(async (goalForm) => {
-    setLoading(true);
-    try {
+    await withLoading(async () => {
       await metasService.criarMeta(goalForm, token);
       showToast('success', 'Meta criada com sucesso!');
       await loadGoals();
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel criar a meta.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token, showToast, loadGoals, setLoading, handleDataError]);
+    }, 'Nao foi possivel criar a meta.');
+  }, [token, showToast, loadGoals, withLoading]);
 
   const completeGoal = useCallback(async (goalId) => {
-    setLoading(true);
-    try {
+    await withLoading(async () => {
       await metasService.completarMeta(goalId, token);
       showToast('success', 'Parabens! Meta concluida!');
       await loadGoals();
-    } catch (error) {
-      handleDataError(error, 'Nao foi possivel concluir a meta.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token, showToast, loadGoals, setLoading, handleDataError]);
+    }, 'Nao foi possivel concluir a meta.');
+  }, [token, showToast, loadGoals, withLoading]);
 
   const deleteGoal = useCallback((goalId) => {
     showConfirm(
       'Excluir Meta',
       'Tem certeza que deseja excluir esta meta?',
-      async () => {
-        setLoading(true);
-        try {
-          await metasService.excluirMeta(goalId, token);
-          showToast('success', 'Meta excluida');
-          await loadGoals();
-        } catch (error) {
-          handleDataError(error, 'Nao foi possivel excluir a meta.');
-        } finally {
-          setLoading(false);
-        }
-      }
+      () => withLoading(async () => {
+        await metasService.excluirMeta(goalId, token);
+        showToast('success', 'Meta excluida');
+        await loadGoals();
+      }, 'Nao foi possivel excluir a meta.')
     );
-  }, [token, showToast, showConfirm, loadGoals, setLoading, handleDataError]);
+  }, [token, showToast, showConfirm, loadGoals, withLoading]);
 
   useEffect(() => {
     if (!user || !token) return;
-
     loadAddictions();
     loadMotivationalMessage();
     loadGoals();
@@ -269,7 +206,6 @@ export function DataProvider({ children }) {
   return (
     <DataContext.Provider
       value={{
-        // English naming (code convention)
         addictions,
         selectedAddiction,
         setSelectedAddiction,
@@ -284,34 +220,11 @@ export function DataProvider({ children }) {
         loadRelapses,
         createAddiction,
         deleteAddiction,
-        registerRelapseReflect,
-        registerRelapseReset,
+        registerRelapse,
         createRecord,
         createGoal,
         completeGoal,
         deleteGoal,
-
-        // Backward-compatible Portuguese aliases
-        vicios: addictions,
-        vicioSelecionado: selectedAddiction,
-        setVicioSelecionado: setSelectedAddiction,
-        registros: selectedAddictionRecords,
-        allRegistros: allRecords,
-        metas: goals,
-        recaidas: relapses,
-        mensagemMotivacional: motivationalMessage,
-        carregarVicios: loadAddictions,
-        carregarDetalhesVicio: loadAddictionDetails,
-        carregarMetas: loadGoals,
-        carregarRecaidas: loadRelapses,
-        handleCriarVicio: createAddiction,
-        handleExcluirVicio: deleteAddiction,
-        handleRegistrarRecaidaRefletir: registerRelapseReflect,
-        handleRegistrarRecaidaResetar: registerRelapseReset,
-        handleCriarRegistro: createRecord,
-        handleCriarMeta: createGoal,
-        handleCompletarMeta: completeGoal,
-        handleExcluirMeta: deleteGoal
       }}
     >
       {children}

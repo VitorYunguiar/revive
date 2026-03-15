@@ -9,10 +9,10 @@ import { glassSurface, screenTransition } from '../utils/constants';
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useUI();
-  const { vicios, metas, allRegistros, recaidas } = useData();
+  const { addictions, goals, allRecords, relapses } = useData();
 
   const exportData = () => {
-    const data = { vicios, metas, registros: allRegistros, recaidas, exportedAt: new Date().toISOString() };
+    const data = { addictions, goals, registros: allRecords, relapses, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -41,15 +41,15 @@ export default function ProfilePage() {
         {/* Stats summary */}
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-white/5 rounded-xl border border-white/10">
-            <p className="text-2xl font-bold text-[#7CF6C4]">{vicios.length}</p>
+            <p className="text-2xl font-bold text-[#7CF6C4]">{addictions.length}</p>
             <p className="text-xs text-white/50">Vicios Ativos</p>
           </div>
           <div className="text-center p-3 bg-white/5 rounded-xl border border-white/10">
-            <p className="text-2xl font-bold text-[#35D3FF]">{metas.filter(m => m.concluida).length}</p>
+            <p className="text-2xl font-bold text-[#35D3FF]">{goals.filter(m => m.concluida).length}</p>
             <p className="text-xs text-white/50">Metas Concluidas</p>
           </div>
           <div className="text-center p-3 bg-white/5 rounded-xl border border-white/10">
-            <p className="text-2xl font-bold text-amber-400">{allRegistros.length}</p>
+            <p className="text-2xl font-bold text-amber-400">{allRecords.length}</p>
             <p className="text-xs text-white/50">Registros</p>
           </div>
         </div>

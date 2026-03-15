@@ -7,14 +7,14 @@ import { glassSurface, screenTransition, badgeDefinitions, staggerContainer, sta
 const iconMap = { Flame, DollarSign, Target, BookOpen };
 
 export default function AchievementsPage() {
-  const { vicios, metas, allRegistros } = useData();
+  const { addictions, goals, allRecords } = useData();
 
   const earnedBadges = useMemo(() => {
     const earned = new Set();
-    const maxStreak = vicios.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0);
-    const totalSavings = vicios.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);
-    const completedGoals = metas.filter(m => m.concluida).length;
-    const totalLogs = allRegistros.length;
+    const maxStreak = addictions.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0);
+    const totalSavings = addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);
+    const completedGoals = goals.filter(m => m.concluida).length;
+    const totalLogs = allRecords.length;
 
     badgeDefinitions.forEach(badge => {
       let value = 0;
@@ -27,13 +27,13 @@ export default function AchievementsPage() {
     });
 
     return earned;
-  }, [vicios, metas, allRegistros]);
+  }, [addictions, goals, allRecords]);
 
   const progress = useMemo(() => {
-    const maxStreak = vicios.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0);
-    const totalSavings = vicios.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);
-    const completedGoals = metas.filter(m => m.concluida).length;
-    const totalLogs = allRegistros.length;
+    const maxStreak = addictions.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0);
+    const totalSavings = addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);
+    const completedGoals = goals.filter(m => m.concluida).length;
+    const totalLogs = allRecords.length;
 
     return badgeDefinitions.map(badge => {
       let value = 0;
@@ -49,7 +49,7 @@ export default function AchievementsPage() {
         current: value
       };
     });
-  }, [earnedBadges, vicios, metas, allRegistros]);
+  }, [earnedBadges, addictions, goals, allRecords]);
 
   const categories = [
     { id: 'streak', label: 'Streak', icon: Flame },

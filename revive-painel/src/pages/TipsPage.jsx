@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Lightbulb, Heart, Dumbbell, Brain, Apple, ChevronDown } from 'lucide-react';
 import { glassSurface, screenTransition, staggerContainer, staggerItem } from '../utils/constants';
+import { MS_PER_DAY } from '../utils/formatters';
 
 const tips = [
   { category: 'coping', icon: Brain, title: 'Tecnica de respiracao 4-7-8', text: 'Inspire por 4 segundos, segure por 7, expire por 8. Repita 3 vezes. Isso ativa o sistema nervoso parassimpatico e reduz a ansiedade.', color: '#8b5cf6' },
@@ -38,7 +39,7 @@ export default function TipsPage() {
 
   // Tip of the day (based on day of year)
   const tipOfDay = useMemo(() => {
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / MS_PER_DAY);
     return tips[dayOfYear % tips.length];
   }, []);
 

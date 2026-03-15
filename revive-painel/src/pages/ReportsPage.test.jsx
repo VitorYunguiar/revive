@@ -5,16 +5,16 @@ import ReportsPage from './ReportsPage';
 
 vi.mock('../contexts/DataContext', () => ({
   useData: () => ({
-    vicios: [
+    addictions: [
       { id: '1', nome_vicio: 'Cigarro', dias_abstinencia: 10, valor_economizado: 120 },
       { id: '2', nome_vicio: 'Alcool', dias_abstinencia: 5, valor_economizado: 40 }
     ],
-    metas: [{ id: 'm1', concluida: true }, { id: 'm2', concluida: false }],
-    allRegistros: [
+    goals: [{ id: 'm1', concluida: true }, { id: 'm2', concluida: false }],
+    allRecords: [
       { id: 'r1', data_registro: new Date().toISOString(), humor: 'bom' },
       { id: 'r2', data_registro: new Date().toISOString(), humor: 'excelente' }
     ],
-    recaidas: [{ id: 're1', data_recaida: new Date().toISOString() }]
+    relapses: [{ id: 're1', data_recaida: new Date().toISOString() }]
   })
 }));
 

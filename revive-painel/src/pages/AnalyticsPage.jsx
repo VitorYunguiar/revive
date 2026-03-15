@@ -6,56 +6,57 @@ import Card from '../components/ui/Card';
 import KpiCard from '../components/ui/KpiCard';
 import DonutChart from '../components/ui/DonutChart';
 import { moodColors, screenTransition } from '../utils/constants';
+import { MS_PER_DAY } from '../utils/formatters';
 
 export default function AnalyticsPage() {
-  const { vicios, metas, allRegistros: registros, recaidas } = useData();
+  const { addictions, goals, allRecords, relapses } = useData();
 
   const totalEconomizado = useMemo(() =>
-    vicios.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0),
-    [vicios]
+    addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0),
+    [addictions]
   );
 
-  const viciosAtivos = useMemo(() => vicios.length, [vicios]);
+  const viciosAtivos = useMemo(() => addictions.length, [addictions]);
 
   const metasConcluidas = useMemo(() =>
-    metas.filter(meta => meta.concluida).length,
-    [metas]
+    goals.filter(meta => meta.concluida).length,
+    [goals]
   );
 
   const diasUltimoRegistro = useMemo(() => {
-    if (registros.length === 0) return '-';
-    const ultimaData = new Date(registros[registros.length - 1].data_registro);
+    if (allRecords.length === 0) return '-';
+    const ultimaData = new Date(allRecords[allRecords.length - 1].data_registro);
     const hoje = new Date();
-    const diff = Math.floor((hoje - ultimaData) / (1000 * 60 * 60 * 24));
+    const diff = Math.floor((hoje - ultimaData) / MS_PER_DAY);
     return diff === 0 ? 'Hoje' : `${diff}d atras`;
-  }, [registros]);
+  }, [allRecords]);
 
   const taxaRecaida = useMemo(() => {
-    if (recaidas.length === 0) return '0%';
-    if (vicios.length === 0) return '0%';
-    const diasMedia = vicios.reduce((acc, v) => {
+    if (relapses.length === 0) return '0%';
+    if (addictions.length === 0) return '0%';
+    const diasMedia = addictions.reduce((acc, v) => {
       const inicio = new Date(v.data_inicio);
-      const dias = Math.ceil((new Date() - inicio) / (1000 * 60 * 60 * 24)) || 1;
+      const dias = Math.ceil((new Date() - inicio) / MS_PER_DAY) || 1;
       return acc + dias;
-    }, 0) / vicios.length;
-    const taxa = (recaidas.length / diasMedia) * 100;
+    }, 0) / addictions.length;
+    const taxa = (relapses.length / diasMedia) * 100;
     return `${taxa.toFixed(1)}%`;
-  }, [recaidas, vicios]);
+  }, [relapses, addictions]);
 
   const tendenciaRecaidas = useMemo(() => {
     const agora = new Date();
     const _30dias = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000);
     const _60dias = new Date(agora.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    const recaidas30 = recaidas.filter(r => new Date(r.data_recaida) >= _30dias).length;
-    const recaidas60 = recaidas.filter(r => new Date(r.data_recaida) >= _60dias && new Date(r.data_recaida) < _30dias).length;
+    const recaidas30 = relapses.filter(r => new Date(r.data_recaida) >= _30dias).length;
+    const recaidas60 = relapses.filter(r => new Date(r.data_recaida) >= _60dias && new Date(r.data_recaida) < _30dias).length;
 
     if (recaidas60 === 0) return 0;
     return ((recaidas30 - recaidas60) / recaidas60) * 100;
-  }, [recaidas]);
+  }, [relapses]);
 
   const conquistasRecentes = useMemo(() => {
-    return registros
+    return allRecords
       .filter(r => r.conquistas && r.conquistas.trim() !== '')
       .sort((a, b) => new Date(b.data_registro) - new Date(a.data_registro))
       .slice(0, 5)
@@ -64,13 +65,13 @@ export default function AnalyticsPage() {
         data: new Date(r.data_registro),
         descricao: r.conquistas
       }));
-  }, [registros]);
+  }, [allRecords]);
 
   const dadosHumor = useMemo(() => {
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() - 30);
 
-    const contagem = registros
+    const contagem = allRecords
       .filter(r => new Date(r.data_registro) >= dataLimite)
       .reduce((acc, reg) => {
         if (reg.humor) acc[reg.humor] = (acc[reg.humor] || 0) + 1;
@@ -80,12 +81,12 @@ export default function AnalyticsPage() {
     return Object.entries(contagem).map(([label, value]) => ({
       label, value, cor: moodColors[label] || '#6b7280'
     }));
-  }, [registros]);
+  }, [allRecords]);
 
   const tempoMedioRecaidas = useMemo(() => {
-    if (recaidas.length < 2) return 'N/A';
+    if (relapses.length < 2) return 'N/A';
 
-    const porVicio = recaidas.reduce((acc, r) => {
+    const porVicio = relapses.reduce((acc, r) => {
       if (!acc[r.vicio_id]) acc[r.vicio_id] = [];
       acc[r.vicio_id].push(new Date(r.data_recaida));
       return acc;
@@ -96,7 +97,7 @@ export default function AnalyticsPage() {
       const datas = porVicio[vicioId].sort((a, b) => a - b);
       if (datas.length < 2) continue;
       for (let i = 1; i < datas.length; i++) {
-        const diffDias = (datas[i] - datas[i - 1]) / (1000 * 60 * 60 * 24);
+        const diffDias = (datas[i] - datas[i - 1]) / MS_PER_DAY;
         mediasGerais.push(diffDias);
       }
     }
@@ -104,18 +105,18 @@ export default function AnalyticsPage() {
     if (mediasGerais.length === 0) return 'N/A';
     const mediaFinal = mediasGerais.reduce((a, b) => a + b, 0) / mediasGerais.length;
     return `${mediaFinal.toFixed(1)} dias`;
-  }, [recaidas]);
+  }, [relapses]);
 
   const topGatilhosRecaidas = useMemo(() => {
-    if (!recaidas.length || !registros.length) return [];
+    if (!relapses.length || !allRecords.length) return [];
 
     const contagemGatilhos = {};
-    recaidas.forEach(recaida => {
+    relapses.forEach(recaida => {
       const dataRecaida = new Date(recaida.data_recaida);
       const dataLimite = new Date(dataRecaida);
       dataLimite.setDate(dataRecaida.getDate() - 2);
 
-      registros
+      allRecords
         .filter(r => r.vicio_id === recaida.vicio_id && new Date(r.data_registro) >= dataLimite && new Date(r.data_registro) < dataRecaida)
         .forEach(r => {
           if (!r.gatilhos) return;
@@ -125,7 +126,7 @@ export default function AnalyticsPage() {
         });
     });
     return Object.entries(contagemGatilhos).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }, [registros, recaidas]);
+  }, [allRecords, relapses]);
 
   return (
     <motion.div {...screenTransition} className="space-y-6">
@@ -212,7 +213,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             )}
-            {tendenciaRecaidas < 0 && recaidas.length > 0 && (
+            {tendenciaRecaidas < 0 && relapses.length > 0 && (
               <div className="flex items-start gap-3 p-4 bg-emerald-500/20 border border-emerald-400/30 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -230,7 +231,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             )}
-            {vicios.length > 0 && (
+            {addictions.length > 0 && (
               <div className="flex items-start gap-3 p-4 bg-purple-500/20 border border-purple-400/30 rounded-lg">
                 <Heart className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div>
