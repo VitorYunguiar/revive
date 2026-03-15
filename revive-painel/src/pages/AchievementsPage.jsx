@@ -1,14 +1,47 @@
+/**
+ * @file AchievementsPage.jsx
+ * @description Pagina de conquistas (achievements/badges) da aplicacao REVIVE.
+ *
+ * Exibe sistema de gamificacao com badges organizados por categoria
+ * (streak, economia, metas, consistencia). Cada badge possui um requisito
+ * numerico e mostra progresso visual (barra de progresso) ate ser desbloqueado.
+ *
+ * Utiliza useMemo para calcular quais badges foram conquistados e o progresso
+ * de cada um. Animacoes escalonadas (stagger) com Framer Motion.
+ *
+ * @component
+ * @see {@link badgeDefinitions} Definicoes estaticas dos badges no constants.js
+ * @see {@link useData} Hook para acessar dados de vicios, metas e registros
+ */
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Flame, DollarSign, Target, BookOpen, Lock } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { glassSurface, screenTransition, badgeDefinitions, staggerContainer, staggerItem } from '../utils/constants';
 
+/** @type {Object.<string, React.Component>} Mapa de nomes de icone para componentes Lucide */
 const iconMap = { Flame, DollarSign, Target, BookOpen };
 
+/**
+ * Componente da pagina de Conquistas.
+ *
+ * Calcula dois conjuntos memorizados:
+ * 1. earnedBadges: Set com IDs dos badges ja conquistados
+ * 2. progress: Array com dados completos de cada badge incluindo % de progresso
+ *
+ * Renderiza badges agrupados por categoria com animacao stagger.
+ *
+ * @returns {JSX.Element} Pagina de conquistas com barra de progresso total e grid de badges
+ */
 export default function AchievementsPage() {
   const { addictions, goals, allRecords } = useData();
 
+  /**
+   * Determina quais badges foram conquistados comparando valores atuais
+   * (maxStreak, totalSavings, completedGoals, totalLogs) com requisitos de cada badge.
+   * Complexidade: O(n + b) onde n = vicios/metas/registros, b = numero de badges definidos.
+   * @type {Set<string>} Conjunto de IDs dos badges conquistados
+   */
   const earnedBadges = useMemo(() => {
     const earned = new Set();
     const maxStreak = addictions.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0);
@@ -29,6 +62,12 @@ export default function AchievementsPage() {
     return earned;
   }, [addictions, goals, allRecords]);
 
+  /**
+   * Calcula o progresso percentual de cada badge (0-100%).
+   * Reutiliza os mesmos calculos de earnedBadges para determinar o valor atual.
+   * Complexidade: O(n + b) onde n = dados e b = badges.
+   * @type {Array<Object>} Array de badges com campos adicionais: earned, progress, current
+   */
   const progress = useMemo(() => {
     const maxStreak = addictions.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0);
     const totalSavings = addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0);

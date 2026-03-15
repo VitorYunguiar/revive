@@ -1,3 +1,19 @@
+/**
+ * @file DetalhesPage.jsx
+ * @description Pagina de detalhes de um vicio especifico na aplicacao REVIVE.
+ *
+ * Exibe informacoes detalhadas de um vicio selecionado: dias de abstinencia,
+ * valor economizado, economia diaria, formulario de registro diario,
+ * formulario de criacao de metas e historico de registros.
+ *
+ * Utiliza o hook useParams do React Router para obter o ID do vicio via URL.
+ * Carrega detalhes do vicio no useEffect quando o ID muda.
+ * Aplica animacao de transicao com Framer Motion (screenTransition).
+ *
+ * @component
+ * @see {@link useData} Hook para acessar e manipular dados do vicio selecionado
+ * @see {@link useUI} Hook para estado de carregamento (loading)
+ */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -9,6 +25,15 @@ import SelectHumor from '../components/ui/SelectHumor';
 import { InputField } from '../components/ui/Field';
 import { glassSurface, fieldBase, screenTransition } from '../utils/constants';
 
+/**
+ * Componente da pagina de detalhes de um vicio.
+ *
+ * Gerencia tres estados locais: modal de recaida, formulario de registro
+ * diario (humor, gatilhos, conquistas, observacoes) e formulario de nova meta.
+ * Filtra metas associadas ao vicio atual para exibicao.
+ *
+ * @returns {JSX.Element} Pagina com header de KPIs, formularios e historico
+ */
 export default function DetalhesPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -20,10 +45,14 @@ export default function DetalhesPage() {
     createRecord, createGoal
   } = useData();
 
+  /** @type {Object|null} Vicio selecionado para abrir o modal de recaida */
   const [recaidaVicio, setRecaidaVicio] = useState(null);
+  /** @type {Object} Estado controlado do formulario de registro diario */
   const [formRegistro, setFormRegistro] = useState({ humor: '', gatilhos: '', conquistas: '', observacoes: '' });
+  /** @type {Object} Estado controlado do formulario de nova meta */
   const [formMeta, setFormMeta] = useState({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
 
+  // Carrega detalhes do vicio quando o parametro de rota (id) muda
   useEffect(() => {
     if (id) loadAddictionDetails(id);
   }, [id]);
@@ -36,18 +65,33 @@ export default function DetalhesPage() {
     );
   }
 
+  /**
+   * Envia o formulario de registro diario.
+   * Limpa o formulario apos sucesso.
+   * @param {Event} e - Evento de submit do formulario
+   */
   const handleSubmitRegistro = async (e) => {
     e.preventDefault();
     const success = await createRecord(formRegistro);
     if (success) setFormRegistro({ humor: '', gatilhos: '', conquistas: '', observacoes: '' });
   };
 
+  /**
+   * Envia o formulario de nova meta vinculada ao vicio atual.
+   * Limpa o formulario apos envio.
+   * @param {Event} e - Evento de submit do formulario
+   */
   const handleSubmitMeta = async (e) => {
     e.preventDefault();
     await createGoal({ ...formMeta, vicio_id: selectedAddiction.id });
     setFormMeta({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
   };
 
+  /**
+   * Registra recaida no modo "Refletir" (sem resetar contador).
+   * Apos registro, faz scroll suave ate o formulario de registro diario.
+   * @param {Object} vicio - Objeto do vicio
+   */
   const handleRefletir = async (vicio) => {
     await registerRelapse(vicio);
     setRecaidaVicio(null);
@@ -56,11 +100,16 @@ export default function DetalhesPage() {
     }, 300);
   };
 
+  /**
+   * Registra recaida no modo "Resetar" (zera o contador de abstinencia).
+   * @param {Object} vicio - Objeto do vicio
+   */
   const handleResetar = async (vicio) => {
     await registerRelapse(vicio, { resetCounter: true });
     setRecaidaVicio(null);
   };
 
+  // Filtra metas vinculadas ao vicio atualmente selecionado - O(n) onde n = total de metas
   const addictionGoals = goals.filter(m => m.vicio_id === selectedAddiction.id);
 
   return (

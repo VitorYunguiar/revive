@@ -1,7 +1,42 @@
+/**
+ * @file SelectHumor.jsx
+ * @description Componente de selecao de humor customizado (dropdown).
+ *
+ * Substitui o <select> nativo por um dropdown estilizado com emojis e
+ * indicador de selecao (CheckCircle). As opcoes de humor sao importadas
+ * de {@link moodOptions} (constants.js).
+ *
+ * Gerencia estado local 'isOpen' para controlar visibilidade do dropdown.
+ * Padrao de UI: componente controlado (value/onChange vem do pai).
+ *
+ * @component
+ * @param {Object} props
+ * @param {string} props.value - Valor do humor selecionado (ex: 'bom', 'ruim')
+ * @param {Function} props.onChange - Callback chamado com o novo valor ao selecionar
+ * @param {string} props.label - Texto placeholder exibido quando nenhum humor esta selecionado
+ * @returns {JSX.Element} Dropdown customizado de selecao de humor com emojis
+ *
+ * @example
+ * <SelectHumor value={humor} onChange={setHumor} label="Selecione seu humor..." />
+ */
 import React, { useState } from 'react';
 import { ChevronDown, CheckCircle } from 'lucide-react';
 import { moodOptions } from '../../utils/constants';
 
+/**
+ * Componente de selecao de humor customizado (dropdown estilizado).
+ *
+ * Renderiza um botao que ao ser clicado exibe uma lista de opcoes de humor
+ * com emojis. Substitui o <select> nativo por um dropdown com visual
+ * consistente ao design system da aplicacao.
+ * Padrao de UI: componente controlado (value/onChange vem do componente pai).
+ *
+ * @param {Object} props - Props do componente
+ * @param {string} props.value - Valor do humor selecionado (ex: 'bom', 'ruim', 'neutro')
+ * @param {Function} props.onChange - Callback chamado com o novo valor ao selecionar uma opcao
+ * @param {string} props.label - Texto placeholder exibido quando nenhum humor esta selecionado
+ * @returns {JSX.Element} Dropdown customizado de selecao de humor com emojis
+ */
 const SelectHumor = ({ value, onChange, label }) => {
   const [isOpen, setIsOpen] = useState(false);
 

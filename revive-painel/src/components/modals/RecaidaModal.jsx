@@ -1,13 +1,44 @@
+/**
+ * @file RecaidaModal.jsx - Modal de tratamento de recaidas da aplicacao Revive.
+ *
+ * @description
+ * Modal especial que oferece duas opcoes psicologicamente supportivas ao usuario
+ * quando ele registra uma recaida:
+ *
+ * 1. **Refletir & Aprender** — Cria um registro para entender a recaida sem resetar
+ *    o contador de dias de abstinencia (preserva progresso).
+ * 2. **Resetar & Comecar do Zero** — Reseta o contador de dias e inicia um novo ciclo.
+ *
+ * O modal utiliza um padrao de selecao expandivel: ao clicar em uma opcao,
+ * ela expande mostrando detalhes e botao de confirmacao. Usa estado local
+ * `selecionado` para controlar qual opcao esta expandida.
+ *
+ * @component
+ * @see {@link DetalhesPage} Pagina que renderiza este modal
+ */
+
 import React, { useState } from 'react';
 import { Heart, RefreshCw, BookOpen } from 'lucide-react';
 
+/** @type {string} Classe CSS para estilo de superficie do modal */
 const surface = 'bg-slate-900/80 border border-slate-700/60';
 
 /**
- * RecaidaModal: Modal especial para tratamento de recaídas
- * Oferece duas opções psicologicamente supportivas:
- * 1. Refletir & Aprender: cria um registro para entender a recaída
- * 2. Resetar & Começar: reseta o contador e começa novo ciclo
+ * Componente modal de tratamento de recaida.
+ *
+ * Renderiza overlay escurecido com modal centralizado. Retorna null se
+ * o modal estiver fechado ou nao houver vicio selecionado.
+ * Gerencia estado local `selecionado` ('refletir' | 'resetar' | null)
+ * para controlar a opcao expandida no accordion.
+ *
+ * @param {Object} props - Props do componente
+ * @param {boolean} props.isOpen - Controla visibilidade do modal
+ * @param {Function} props.onClose - Callback para fechar o modal
+ * @param {Object} props.vicio - Objeto do vicio associado a recaida (nome_vicio, id, etc.)
+ * @param {Function} props.onRefletir - Callback executado ao confirmar "Refletir & Aprender"
+ * @param {Function} props.onResetar - Callback executado ao confirmar "Resetar & Comecar"
+ * @param {boolean} props.loading - Flag de carregamento (desabilita botoes durante requisicao)
+ * @returns {JSX.Element|null} Modal de recaida ou null se fechado
  */
 const RecaidaModal = ({
   isOpen,
@@ -17,15 +48,31 @@ const RecaidaModal = ({
   onResetar,
   loading
 }) => {
+  /** @type {[string|null, Function]} Opcao atualmente expandida ('refletir'|'resetar'|null) */
   const [selecionado, setSelecionado] = useState(null);
 
+  // Retorna null se o modal estiver fechado ou sem vicio selecionado
   if (!isOpen || !vicio) return null;
 
+  /**
+   * Executa a acao "Refletir & Aprender".
+   * Limpa a selecao e chama o callback onRefletir com o vicio atual.
+   * O contador de abstinencia e preservado.
+   *
+   * @returns {Promise<void>}
+   */
   const handleRefletir = async () => {
     setSelecionado(null);
     await onRefletir(vicio);
   };
 
+  /**
+   * Executa a acao "Resetar & Comecar do Zero".
+   * Limpa a selecao e chama o callback onResetar com o vicio atual.
+   * O contador de abstinencia sera zerado.
+   *
+   * @returns {Promise<void>}
+   */
   const handleResetar = async () => {
     setSelecionado(null);
     await onResetar(vicio);

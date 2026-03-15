@@ -1,3 +1,35 @@
+/**
+ * @file App.jsx - Componente raiz de roteamento da aplicacao Revive.
+ *
+ * @description
+ * Define toda a estrutura de rotas da aplicacao utilizando React Router v6.
+ * As rotas sao divididas em dois grupos:
+ *
+ * **Rotas publicas:**
+ * - `/login` e `/cadastro` — Pagina de login/cadastro. Redireciona para `/` se ja autenticado.
+ *
+ * **Rotas protegidas (dentro de ProtectedRoute + AppShell):**
+ * - `/` — Dashboard principal
+ * - `/analytics` — Painel de analises gerais
+ * - `/metas` — Gerenciamento de metas
+ * - `/vicios/:id` — Detalhes de um vicio especifico (rota dinamica)
+ * - `/calendario` — Calendario interativo de humor/recaidas
+ * - `/conquistas` — Sistema de badges/gamificacao
+ * - `/relatorios` — Relatorios com exportacao CSV
+ * - `/perfil` — Configuracoes de perfil e dados
+ * - `/dicas` — Dicas de recuperacao
+ *
+ * **Layout:** Rotas protegidas sao renderizadas dentro do `AppShell` (sidebar + header).
+ * Nao utiliza lazy loading — todos os componentes sao importados estaticamente.
+ *
+ * **Catch-all:** Qualquer rota nao mapeada redireciona para `/` (autenticado) ou `/login`.
+ *
+ * @module App
+ * @see {@link module:components/layout/AppShell} Layout principal com sidebar
+ * @see {@link module:components/layout/ProtectedRoute} Guard de autenticacao
+ * @see {@link module:contexts/AuthContext} Contexto de autenticacao (token, user, authLoading)
+ */
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
@@ -14,6 +46,14 @@ import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
 import TipsPage from './pages/TipsPage';
 
+/**
+ * Componente raiz da aplicacao que define a arvore de rotas.
+ *
+ * Exibe tela de loading enquanto a verificacao de token JWT esta em andamento (authLoading).
+ * Apos a verificacao, renderiza as rotas publicas e protegidas conforme o estado de autenticacao.
+ *
+ * @returns {JSX.Element} Arvore de rotas React Router ou tela de carregamento
+ */
 export default function App() {
   const { token, user, authLoading } = useAuth();
 

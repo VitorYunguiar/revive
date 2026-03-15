@@ -1,12 +1,59 @@
+/**
+ * @file MetasCard.jsx
+ * @description Componente completo de gerenciamento de metas com visualizacao e formulario.
+ *
+ * Exibe um painel com estatisticas de metas (ativas vs concluidas), lista de metas
+ * em progresso com barra de progresso visual, secao colapsavel de metas concluidas
+ * e formulario inline para criacao de novas metas.
+ *
+ * Funcionalidades:
+ * - Visualizacao de metas ativas com progresso percentual (dias ou valor)
+ * - Botao "Marcar como Concluida" aparece quando progresso atinge 100%
+ * - Secao colapsavel (HTML details/summary) para metas ja concluidas
+ * - Formulario inline toggle para adicionar nova meta vinculada a um vicio
+ * - Acoes: completar meta, excluir meta, adicionar meta
+ *
+ * O progresso e calculado de duas formas:
+ * - Por dias: dias_abstinencia / dias_objetivo
+ * - Por valor: valor_economizado / valor_objetivo
+ *
+ * @component
+ * @see {@link MetasPage} Pagina pai que utiliza este componente
+ */
+
 import React, { useState } from 'react';
 import { Plus, Trash2, CheckCircle, Target } from 'lucide-react';
 
+/** @constant {string} surface - Classes CSS para superficie de card escura com borda */
 const surface = 'bg-slate-900/80 border border-slate-700/60';
+/** @constant {string} field - Classes CSS para campos de formulario com estilo consistente */
 const field = 'w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700/50 text-white placeholder-white/50 focus:border-[#5CC8FF] focus:ring-2 focus:ring-[#5CC8FF]/30 outline-none transition';
+/** @constant {string} pill - Classes CSS para badge/pill pequena (nao utilizada atualmente) */
 const pill = 'px-2 py-1 rounded-full text-xs font-semibold border border-white/15 bg-white/5 text-white/70';
 
+/**
+ * Renderiza o painel de gerenciamento de metas com estatisticas, lista e formulario.
+ *
+ * @param {Object} props - Props do componente
+ * @param {Array<Object>} props.metas - Lista de todas as metas do usuario
+ * @param {string} props.metas[].id - ID unico da meta
+ * @param {string} props.metas[].vicio_id - ID do vicio vinculado a meta
+ * @param {string} props.metas[].descricao_meta - Descricao textual da meta
+ * @param {string|null} props.metas[].dias_objetivo - Quantidade de dias alvo (pode ser null)
+ * @param {string|null} props.metas[].valor_objetivo - Valor monetario alvo em reais (pode ser null)
+ * @param {boolean} props.metas[].concluida - Indica se a meta foi concluida
+ * @param {Array<Object>} props.vicios - Lista de vicios para vincular metas e obter nomes
+ * @param {Function} props.onAddMeta - Callback assincrono para adicionar nova meta
+ * @param {Function} props.onCompleteMeta - Callback para marcar meta como concluida (recebe meta.id)
+ * @param {Function} props.onDeleteMeta - Callback para excluir meta (recebe meta.id)
+ * @param {boolean} props.loading - Indica operacao em andamento (desabilita botoes)
+ * @returns {JSX.Element} Painel completo de metas com estatisticas, lista e formulario
+ */
 const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loading }) => {
+  /** @type {[boolean, Function]} Controla visibilidade do formulario de nova meta */
   const [showForm, setShowForm] = useState(false);
+
+  /** @type {[Object, Function]} Estado do formulario de nova meta */
   const [formMeta, setFormMeta] = useState({
     vicio_id: '',
     descricao_meta: '',
@@ -14,6 +61,14 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
     valor_objetivo: ''
   });
 
+  /**
+   * Handler de submissao do formulario de nova meta.
+   * Valida campos obrigatorios (vicio_id e descricao_meta),
+   * chama onAddMeta e reseta o formulario apos sucesso.
+   *
+   * @async
+   * @param {Event} e - Evento de submit do formulario
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formMeta.vicio_id || !formMeta.descricao_meta) return;
@@ -23,16 +78,33 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
     setShowForm(false);
   };
 
+  /** Contagem de metas ja concluidas para exibicao no KPI e na secao colapsavel */
   const metasCompletadas = metas.filter(m => m.concluida).length;
+  /** Lista de metas ativas (nao concluidas) para exibicao na lista principal */
   const metasAtivas = metas.filter(m => !m.concluida);
 
-  // Encontrar o vício correspondente para cada meta
+  /**
+   * Busca o nome do vicio correspondente pelo ID.
+   *
+   * @param {string} vicioId - ID do vicio a buscar
+   * @returns {string} Nome do vicio ou "Vicio nao encontrado" se nao existir
+   */
   const getVicioNome = (vicioId) => {
     const vicio = vicios.find(v => v.id === vicioId);
     return vicio ? vicio.nome_vicio : 'Vício não encontrado';
   };
 
-  // Calcular progresso baseado em dias ou valor
+  /**
+   * Calcula o progresso percentual de uma meta com base em dias ou valor.
+   * Prioriza calculo por dias; se dias_objetivo nao existir, tenta por valor_objetivo.
+   * Resultado limitado a 100% via Math.min.
+   *
+   * @param {Object} meta - Objeto da meta
+   * @param {string|null} meta.dias_objetivo - Dias alvo para calculo
+   * @param {string|null} meta.valor_objetivo - Valor alvo para calculo
+   * @param {string} meta.vicio_id - ID do vicio vinculado
+   * @returns {number} Progresso percentual arredondado (0-100)
+   */
   const calcularProgresso = (meta) => {
     if (meta.dias_objetivo) {
       const vicio = vicios.find(v => v.id === meta.vicio_id);

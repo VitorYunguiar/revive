@@ -1,3 +1,20 @@
+/**
+ * @file DashboardPage.jsx
+ * @description Pagina principal (Dashboard) da aplicacao REVIVE.
+ *
+ * Exibe visao geral do progresso do usuario: KPIs resumidos (dias limpos,
+ * economia, maior streak, metas concluidas, tendencia de humor), heatmap de
+ * atividade dos ultimos 28 dias, cards de vicios cadastrados e timeline de
+ * atividades recentes.
+ *
+ * Utiliza os hooks {@link useData} e {@link useUI} para acessar dados globais
+ * e estado de carregamento. Diversos calculos sao memorizados com
+ * {@link React.useMemo} para evitar recomputacoes desnecessarias.
+ *
+ * @component
+ * @see {@link useData} Hook de acesso ao contexto de dados (vicios, metas, registros)
+ * @see {@link useUI} Hook de acesso ao contexto de interface (loading, tema)
+ */
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Heart, Plus, Repeat, Target, TrendingUp } from 'lucide-react';
@@ -12,6 +29,15 @@ import VicioCard from '../components/dashboard/VicioCard';
 import RecentTimeline from '../components/dashboard/RecentTimeline';
 import { glassSurface } from '../utils/constants';
 
+/**
+ * Componente da pagina Dashboard.
+ *
+ * Gerencia estados locais para o modal de recaida e o wizard de novo vicio.
+ * Calcula metricas derivadas (totalDiasLimpos, totalEconomizado, maiorStreak,
+ * metasConcluidas, heatmapData, recentActivity, moodTrend) por meio de useMemo.
+ *
+ * @returns {JSX.Element} Layout completo do dashboard com KPIs, heatmap, cards e timeline
+ */
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { loading } = useUI();
@@ -27,29 +53,41 @@ export default function DashboardPage() {
     loadAddictionDetails
   } = useData();
 
+  /** @type {Object|null} Vicio selecionado para registro de recaida (abre RecaidaModal) */
   const [recaidaVicio, setRecaidaVicio] = useState(null);
+  /** @type {boolean} Controla visibilidade do wizard de criacao de novo vicio */
   const [showWizard, setShowWizard] = useState(false);
 
+  // Soma total de dias de abstinencia de todos os vicios - O(n) onde n = numero de vicios
   const totalDiasLimpos = useMemo(
     () => addictions.reduce((acc, v) => acc + (v.dias_abstinencia || 0), 0),
     [addictions]
   );
 
+  // Calcula total economizado somando todos os vicios - O(n) onde n = numero de vicios
   const totalEconomizado = useMemo(
     () => addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0),
     [addictions]
   );
 
+  // Encontra o maior streak (dias consecutivos) entre todos os vicios - O(n)
   const maiorStreak = useMemo(
     () => addictions.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0),
     [addictions]
   );
 
+  // Conta metas concluidas filtrando pelo campo booleano 'concluida' - O(n)
   const metasConcluidas = useMemo(
     () => goals.filter(m => m.concluida).length,
     [goals]
   );
 
+  /**
+   * Gera dados do heatmap para os ultimos 28 dias.
+   * Para cada dia, conta registros e verifica se houve recaida.
+   * Complexidade: O(28 * (r + s)) onde r = registros e s = recaidas.
+   * @type {Array<{date: string, count: number, hasRelapse: boolean, day: number}>}
+   */
   const heatmapData = useMemo(() => {
     const days = [];
     const today = new Date();
@@ -66,6 +104,12 @@ export default function DashboardPage() {
     return days;
   }, [allRecords, relapses]);
 
+  /**
+   * Monta lista de atividades recentes combinando registros, recaidas e metas concluidas.
+   * Ordena por data decrescente e limita a 8 eventos.
+   * Complexidade: O(r + s + m + k*log(k)) onde k = total de eventos combinados.
+   * @type {Array<{id: string, type: string, date: Date, text: string, icon: React.Component}>}
+   */
   const recentActivity = useMemo(() => {
     const events = [];
 
@@ -102,6 +146,12 @@ export default function DashboardPage() {
     return events.sort((a, b) => b.date - a.date).slice(0, 8);
   }, [allRecords, relapses, goals]);
 
+  /**
+   * Calcula a media de humor dos ultimos 7 dias usando escala numerica (1-5).
+   * Retorna null se nao houver registros no periodo.
+   * Complexidade: O(n) onde n = total de registros.
+   * @type {number|null}
+   */
   const moodTrend = useMemo(() => {
     const moodScore = { excelente: 5, bom: 4, neutro: 3, ruim: 2, pessimo: 1, 'pÃ©ssimo': 1 };
     const last7 = new Date();
@@ -113,11 +163,21 @@ export default function DashboardPage() {
     return recent.reduce((acc, r) => acc + (moodScore[r.humor] || 3), 0) / recent.length;
   }, [allRecords]);
 
+  /**
+   * Handler para opcao "Refletir" no modal de recaida.
+   * Registra a recaida sem resetar o contador de dias.
+   * @param {Object} vicio - Objeto do vicio em que ocorreu a recaida
+   */
   const handleRefletir = async (vicio) => {
     await registerRelapse(vicio);
     setRecaidaVicio(null);
   };
 
+  /**
+   * Handler para opcao "Resetar" no modal de recaida.
+   * Registra a recaida e reseta o contador de abstinencia.
+   * @param {Object} vicio - Objeto do vicio em que ocorreu a recaida
+   */
   const handleResetar = async (vicio) => {
     await registerRelapse(vicio, { resetCounter: true });
     setRecaidaVicio(null);

@@ -1,9 +1,30 @@
+/**
+ * @file TipsPage.jsx
+ * @description Pagina de dicas de recuperacao da aplicacao REVIVE.
+ *
+ * Apresenta uma colecao curada de dicas organizadas por categoria
+ * (enfrentamento, exercicio, mindfulness, nutricao). Inclui "Dica do Dia"
+ * que muda automaticamente baseada no dia do ano, filtro por categoria
+ * e expansao individual de cada dica com animacao.
+ *
+ * As dicas sao definidas estaticamente no array 'tips'. O filtro e a dica
+ * do dia sao calculados via useMemo. Animacoes com Framer Motion (stagger).
+ *
+ * @component
+ * @see {@link staggerContainer} Variante de animacao para container escalonado
+ * @see {@link staggerItem} Variante de animacao para item escalonado
+ */
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Lightbulb, Heart, Dumbbell, Brain, Apple, ChevronDown } from 'lucide-react';
 import { glassSurface, screenTransition, staggerContainer, staggerItem } from '../utils/constants';
 import { MS_PER_DAY } from '../utils/formatters';
 
+/**
+ * Array estatico de dicas de recuperacao.
+ * Cada dica possui: category, icon, title, text, color.
+ * @type {Array<{category: string, icon: React.Component, title: string, text: string, color: string}>}
+ */
 const tips = [
   { category: 'coping', icon: Brain, title: 'Tecnica de respiracao 4-7-8', text: 'Inspire por 4 segundos, segure por 7, expire por 8. Repita 3 vezes. Isso ativa o sistema nervoso parassimpatico e reduz a ansiedade.', color: '#8b5cf6' },
   { category: 'coping', icon: Brain, title: 'Ancoragem sensorial', text: 'Quando sentir vontade, observe 5 coisas que ve, 4 que toca, 3 que ouve, 2 que cheira e 1 que saboreia. Isso traz voce ao presente.', color: '#8b5cf6' },
@@ -20,6 +41,11 @@ const tips = [
   { category: 'nutrition', icon: Apple, title: 'Evite acucar refinado', text: 'Picos e quedas de acucar no sangue podem intensificar desejos. Prefira carboidratos complexos para energia estavel.', color: '#f59e0b' },
 ];
 
+/**
+ * Categorias de filtro para as dicas.
+ * Inclui opcao 'all' para exibir todas as categorias.
+ * @type {Array<{id: string, label: string, icon: React.Component}>}
+ */
 const categories = [
   { id: 'all', label: 'Todas', icon: Lightbulb },
   { id: 'coping', label: 'Enfrentamento', icon: Brain },
@@ -28,16 +54,30 @@ const categories = [
   { id: 'nutrition', label: 'Nutricao', icon: Apple },
 ];
 
+/**
+ * Componente da pagina de Dicas.
+ *
+ * Gerencia estados locais: categoria selecionada e dica expandida (accordion).
+ * Calcula filteredTips e tipOfDay via useMemo.
+ * Padrao de UI: accordion (expandir/colapsar) com renderizacao condicional.
+ *
+ * @returns {JSX.Element} Pagina de dicas com destaque diario, filtros e grid expansivel
+ */
 export default function TipsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedTip, setExpandedTip] = useState(null);
 
+  // Filtra dicas pela categoria selecionada - O(n) onde n = total de dicas
   const filteredTips = useMemo(() =>
     selectedCategory === 'all' ? tips : tips.filter(t => t.category === selectedCategory),
     [selectedCategory]
   );
 
-  // Tip of the day (based on day of year)
+  /**
+   * Seleciona a "Dica do Dia" baseada no dia do ano (day of year).
+   * Usa operador modulo para ciclar pelas dicas ao longo do ano.
+   * Complexidade: O(1).
+   */
   const tipOfDay = useMemo(() => {
     const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / MS_PER_DAY);
     return tips[dayOfYear % tips.length];

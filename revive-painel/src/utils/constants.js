@@ -1,30 +1,116 @@
-// Glass Surface Classes
+/**
+ * @file constants.js
+ * @description Centraliza todas as constantes de UI utilizadas no painel REVIVE.
+ *
+ * Agrupa em um unico modulo:
+ * - **Classes Tailwind CSS compostas** (`glassSurface`, `fieldBase`, `pillBase`) que
+ *   padronizam a aparencia glassmorphism do design system.
+ * - **Configuracoes de animacao Framer Motion** (`navButtonMotion`, `cardMotion`,
+ *   `staggerContainer`, `screenTransition`, etc.) para manter consistencia de
+ *   micro-interacoes em todo o aplicativo.
+ * - **Definicoes de humor** (`moodColors`, `moodOptions`) com cores e emojis
+ *   associados a cada nivel de bem-estar do usuario.
+ * - **Definicoes de badges/conquistas** (`badgeDefinitions`) que descrevem os
+ *   marcos de progresso: streaks, economia, metas e consistencia de registros.
+ *
+ * @module utils/constants
+ */
+
+// ──────────────────────────────────────────────
+// Classes CSS compostas (Tailwind)
+// ──────────────────────────────────────────────
+
+/**
+ * Classe CSS de superficie principal com efeito glass (glassmorphism).
+ *
+ * Aplica fundo semi-transparente escuro, borda sutil e sombra profunda.
+ * Usada em cards, paineis e modais ao longo de todo o painel.
+ *
+ * @type {string}
+ */
 export const glassSurface = 'bg-slate-900/80 border border-slate-700/60 shadow-[0_20px_40px_rgba(2,6,23,0.4)]';
+
+/**
+ * Variante mais discreta da superficie glass, com menor opacidade de fundo e borda.
+ *
+ * Ideal para elementos secundarios que nao devem competir visualmente com o
+ * conteudo principal.
+ *
+ * @type {string}
+ */
 export const glassMutedSurface = 'bg-slate-900/60 border border-slate-700/40';
 
-// Form Field Base
+/**
+ * Classes base para campos de formulario (inputs, textareas, selects).
+ *
+ * Inclui padding, borda arredondada, fundo escuro, cor do texto branca,
+ * placeholder translucido e estado de foco com cor accent (#5CC8FF).
+ *
+ * @type {string}
+ */
 export const fieldBase = 'w-full px-4 py-3 rounded-2xl bg-slate-900/70 border border-slate-700/50 text-white placeholder-white/50 focus:border-[#5CC8FF] focus:ring-2 focus:ring-[#5CC8FF]/30 outline-none transition';
 
-// Pill/Badge Base
+/**
+ * Classes base para pills/badges inline.
+ *
+ * Componente compacto com layout flex, espacamento, cantos totalmente
+ * arredondados e tipografia em tamanho extra-pequeno (xs).
+ *
+ * @type {string}
+ */
 export const pillBase = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border';
 
-// Framer Motion Configs
+// ──────────────────────────────────────────────
+// Configuracoes de animacao (Framer Motion)
+// ──────────────────────────────────────────────
+
+/**
+ * Configuracao de animacao para botoes de navegacao.
+ *
+ * Aplica um leve aumento de escala no hover e uma reducao sutil no tap,
+ * proporcionando feedback tatil ao usuario.
+ *
+ * @type {{ whileHover: { scale: number }, whileTap: { scale: number } }}
+ */
 export const navButtonMotion = {
   whileHover: { scale: 1.01 },
   whileTap: { scale: 0.98 }
 };
 
+/**
+ * Configuracao de animacao para cards interativos.
+ *
+ * No hover, o card sobe 6px e ganha uma sombra mais pronunciada,
+ * usando transicao do tipo spring para um movimento organico.
+ *
+ * @type {{ whileHover: { y: number, boxShadow: string }, transition: { type: string, stiffness: number, damping: number } }}
+ */
 export const cardMotion = {
   whileHover: { y: -6, boxShadow: '0 35px 80px rgba(15, 20, 40, 0.55)' },
   transition: { type: 'spring', stiffness: 260, damping: 25 }
 };
 
+/**
+ * Configuracao de animacao para botoes de acao accent (CTAs).
+ *
+ * Comportamento identico ao `navButtonMotion` — leve scale no hover/tap.
+ *
+ * @type {{ whileHover: { scale: number }, whileTap: { scale: number } }}
+ */
 export const accentButtonMotion = {
   whileHover: { scale: 1.01 },
   whileTap: { scale: 0.98 }
 };
 
-// Stagger animation for grids
+/**
+ * Container pai para animacao stagger em grids/listas.
+ *
+ * Inicia com opacidade 0 (hidden) e revela os filhos sequencialmente
+ * com intervalo de 80ms entre cada item (`staggerChildren: 0.08`).
+ *
+ * @type {{ hidden: { opacity: number }, show: { opacity: number, transition: { staggerChildren: number } } }}
+ * @see staggerItem
+ */
 export const staggerContainer = {
   hidden: { opacity: 0 },
   show: {
@@ -33,12 +119,28 @@ export const staggerContainer = {
   }
 };
 
+/**
+ * Variantes de animacao para cada item filho dentro de um `staggerContainer`.
+ *
+ * Cada item entra com fade-in e deslizamento vertical de 20px, usando
+ * transicao spring para suavidade.
+ *
+ * @type {{ hidden: { opacity: number, y: number }, show: { opacity: number, y: number, transition: Object } }}
+ * @see staggerContainer
+ */
 export const staggerItem = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 25 } }
 };
 
-// Page transition
+/**
+ * Configuracao de transicao para mudanca de pagina/tela.
+ *
+ * Combina fade com leve deslizamento vertical (12px) na entrada e saida,
+ * com duracao de 300ms e easing `easeOut`.
+ *
+ * @type {{ initial: Object, animate: Object, exit: Object, transition: { duration: number, ease: string } }}
+ */
 export const screenTransition = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
@@ -46,7 +148,19 @@ export const screenTransition = {
   transition: { duration: 0.3, ease: 'easeOut' }
 };
 
-// KPI Border Map
+// ──────────────────────────────────────────────
+// Mapeamento visual de KPIs
+// ──────────────────────────────────────────────
+
+/**
+ * Mapeamento de cores de borda para KPI cards.
+ *
+ * Cada chave corresponde a uma cor semantica (emerald, cyan, yellow, red)
+ * e todas atualmente resolvem para a mesma borda sutil em slate,
+ * mantendo uniformidade visual nos indicadores.
+ *
+ * @type {Object.<string, string>}
+ */
 export const kpiBorderMap = {
   emerald: 'border-slate-600/70',
   cyan: 'border-slate-600/70',
@@ -54,7 +168,18 @@ export const kpiBorderMap = {
   red: 'border-slate-600/70'
 };
 
-// Mood colors
+// ──────────────────────────────────────────────
+// Definicoes de humor (Mood)
+// ──────────────────────────────────────────────
+
+/**
+ * Mapeamento de humores para cores hexadecimais.
+ *
+ * Usado em graficos (DonutChart) e indicadores visuais para colorir
+ * cada nivel de humor do usuario de forma consistente.
+ *
+ * @type {Object.<string, string>}
+ */
 export const moodColors = {
   excelente: '#10b981',
   bom: '#3b82f6',
@@ -63,7 +188,15 @@ export const moodColors = {
   'péssimo': '#ef4444'
 };
 
-// Mood options
+/**
+ * Lista de opcoes de humor disponiveis para selecao pelo usuario.
+ *
+ * Cada opcao contem um valor interno (`value`), um rotulo de exibicao
+ * (`label`) e um emoji representativo. Ordenadas da melhor para a
+ * pior percepcao de bem-estar.
+ *
+ * @type {Array<{ value: string, label: string, emoji: string }>}
+ */
 export const moodOptions = [
   { value: 'excelente', label: 'Excelente', emoji: '😄' },
   { value: 'bom', label: 'Bom', emoji: '🙂' },
@@ -72,7 +205,29 @@ export const moodOptions = [
   { value: 'péssimo', label: 'Péssimo', emoji: '😢' }
 ];
 
-// Badge definitions for achievements
+// ──────────────────────────────────────────────
+// Definicoes de Badges / Conquistas
+// ──────────────────────────────────────────────
+
+/**
+ * Definicoes completas de todas as conquistas (badges) do sistema REVIVE.
+ *
+ * Organizadas em quatro categorias:
+ * - **streak**: marcos de dias consecutivos de abstinencia (1d, 7d, 30d, 90d, 180d, 365d).
+ * - **savings**: marcos de economia acumulada em reais (R$50, R$100, R$500, R$1.000).
+ * - **goals**: marcos de metas concluidas (1, 5, 10).
+ * - **consistency**: marcos de registros diarios preenchidos (7, 30).
+ *
+ * Cada badge possui:
+ * - `id` — identificador unico (ex: 'streak-7').
+ * - `category` — categoria para agrupamento.
+ * - `name` / `description` — textos exibidos ao usuario.
+ * - `icon` — nome do icone Lucide React correspondente.
+ * - `requirement` — valor numerico minimo para desbloqueio.
+ * - `color` — cor hex para destaque visual do badge.
+ *
+ * @type {Array<{ id: string, category: string, name: string, description: string, icon: string, requirement: number, color: string }>}
+ */
 export const badgeDefinitions = [
   // Streak badges
   { id: 'streak-1', category: 'streak', name: '1 Dia Limpo', description: 'Primeiro dia de abstinencia', icon: 'Flame', requirement: 1, color: '#7CF6C4' },

@@ -1,3 +1,19 @@
+/**
+ * @file ProfilePage.jsx
+ * @description Pagina de perfil do usuario da aplicacao REVIVE.
+ *
+ * Exibe informacoes do usuario (nome, email), resumo estatistico
+ * (vicios ativos, metas concluidas, registros), preferencias (tema claro/escuro),
+ * acoes de dados (exportar JSON) e botao de logout.
+ *
+ * Utiliza tres contextos React: AuthContext (autenticacao), UIContext (tema)
+ * e DataContext (dados do usuario).
+ *
+ * @component
+ * @see {@link useAuth} Hook de autenticacao (usuario, logout)
+ * @see {@link useUI} Hook de interface (tema, toggle)
+ * @see {@link useData} Hook de dados (vicios, metas, registros, recaidas)
+ */
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Sun, Moon, Download, Shield, LogOut } from 'lucide-react';
@@ -6,11 +22,25 @@ import { useUI } from '../contexts/UIContext';
 import { useData } from '../contexts/DataContext';
 import { glassSurface, screenTransition } from '../utils/constants';
 
+/**
+ * Componente da pagina de Perfil.
+ *
+ * Funcionalidade principal: exportacao completa dos dados do usuario em JSON
+ * e alternancia de tema (claro/escuro) via toggle switch.
+ * A exportacao cria um Blob JSON e dispara download automatico.
+ *
+ * @returns {JSX.Element} Pagina de perfil com info do usuario, estatisticas, preferencias e acoes
+ */
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useUI();
   const { addictions, goals, allRecords, relapses } = useData();
 
+  /**
+   * Exporta todos os dados do usuario como arquivo JSON.
+   * Inclui vicios, metas, registros, recaidas e timestamp de exportacao.
+   * Cria Blob com JSON formatado (2 espacos) e dispara download via <a> programatico.
+   */
   const exportData = () => {
     const data = { addictions, goals, registros: allRecords, relapses, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

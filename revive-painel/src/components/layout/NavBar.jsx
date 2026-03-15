@@ -1,3 +1,26 @@
+/**
+ * @file NavBar.jsx
+ * @description Barra de navegacao horizontal com abas para todas as secoes da aplicacao.
+ *
+ * Renderiza uma barra de navegacao responsiva com botoes-aba para cada pagina
+ * do sistema. O item ativo e destacado visualmente com fundo e borda diferenciados.
+ * Em telas pequenas, os labels de texto sao ocultados, exibindo apenas os icones.
+ *
+ * Comportamento dinamico:
+ * - Quando um vicio esta selecionado (vicioSelecionado do DataContext),
+ *   um item "Detalhes" e inserido dinamicamente na posicao 4 da navegacao
+ *   (apos "Metas"), apontando para a rota /vicios/:id.
+ * - Um botao "Novo" (com destaque em verde) e sempre exibido ao final
+ *   para abrir o fluxo de cadastro de novo vicio.
+ *
+ * Utiliza Framer Motion para micro-animacoes nos botoes e react-router
+ * para navegacao programatica e deteccao da rota ativa.
+ *
+ * @component
+ * @see {@link AppShell} Componente pai que inclui a NavBar no layout
+ * @see {@link DataContext} Contexto que fornece o vicio selecionado
+ */
+
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -5,6 +28,11 @@ import { Heart, PieChart, Target, Plus, BarChart3, Calendar as CalendarIcon, Tro
 import { useData } from '../../contexts/DataContext';
 import { glassSurface, navButtonMotion } from '../../utils/constants';
 
+/**
+ * Itens estaticos de navegacao com path, label e icone Lucide.
+ * A ordem define a sequencia de exibicao na barra de navegacao.
+ * @type {Array<{path: string, label: string, icon: React.ComponentType}>}
+ */
 const navItems = [
   { path: '/', label: 'Jornada', icon: Heart },
   { path: '/analytics', label: 'Insights', icon: PieChart },
@@ -16,11 +44,21 @@ const navItems = [
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
+/**
+ * Renderiza a barra de navegacao horizontal com abas e botao de novo vicio.
+ *
+ * Constroi a lista de itens a partir do array estatico navItems e,
+ * condicionalmente, insere o item "Detalhes" na posicao 4 quando ha
+ * um vicio selecionado no DataContext (via splice no array clonado).
+ *
+ * @returns {JSX.Element} Barra de navegacao responsiva com estilizacao glassmorphism
+ */
 const NavBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { vicioSelecionado } = useData();
 
+  // Clona navItems e insere dinamicamente o item "Detalhes" se houver vicio selecionado
   const allItems = [...navItems];
   if (vicioSelecionado) {
     allItems.splice(3, 0, {

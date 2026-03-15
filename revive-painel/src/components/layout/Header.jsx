@@ -1,3 +1,24 @@
+/**
+ * @file Header.jsx
+ * @description Cabecalho principal da aplicacao com logo, informacoes do usuario e acoes.
+ *
+ * Implementa um header sticky que se oculta automaticamente ao rolar a pagina
+ * (auto-hide apos 120px de scroll). Contém:
+ * - Logo e titulo "Revive" com subtitulo "Painel de Progresso"
+ * - Botao de alternancia de tema (claro/escuro)
+ * - Exibicao do nome/email do usuario autenticado
+ * - Botao de logout
+ *
+ * Utiliza Framer Motion para animacoes de entrada e micro-interacoes nos botoes.
+ * O comportamento de auto-hide e implementado via scroll listener com flag passive
+ * para performance otimizada.
+ *
+ * @component
+ * @see {@link AppShell} Componente pai que inclui o Header no layout
+ * @see {@link AuthContext} Contexto que fornece dados do usuario e funcao de logout
+ * @see {@link UIContext} Contexto que fornece tema e funcao de alternancia
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, User, LogOut, Sun, Moon } from 'lucide-react';
@@ -5,11 +26,25 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
 import { glassSurface, navButtonMotion } from '../../utils/constants';
 
+/**
+ * Renderiza o cabecalho da aplicacao com auto-hide ao rolar.
+ *
+ * O header utiliza position sticky com z-index 40 e se esconde via
+ * translate-y negativo quando o scroll ultrapassa 120px. Os botoes
+ * possuem animacoes Framer Motion para feedback visual ao interagir.
+ *
+ * @returns {JSX.Element} Header animado com logo, controles de tema e sessao
+ */
 const Header = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useUI();
+  /** @type {[boolean, Function]} Controla ocultacao do header baseado na posicao de scroll */
   const [hideHeader, setHideHeader] = useState(false);
 
+  /**
+   * Listener de scroll com passive: true para nao bloquear a thread principal.
+   * Oculta o header quando o scroll vertical ultrapassa 120px.
+   */
   useEffect(() => {
     const handleScroll = () => {
       setHideHeader(window.scrollY > 120);

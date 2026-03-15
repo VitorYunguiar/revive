@@ -1,3 +1,15 @@
+/**
+ * @file ReportsPage.jsx
+ * @description Pagina de relatorios da aplicacao REVIVE.
+ *
+ * Permite ao usuario visualizar estatisticas filtradas por periodo
+ * (7, 30 ou 90 dias): total de registros, economia, recaidas, metas concluidas
+ * e distribuicao de humor. Inclui funcionalidade de exportacao em CSV
+ * e impressao/PDF.
+ *
+ * @component
+ * @see {@link useData} Hook para acessar dados globais
+ */
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Printer, Calendar, TrendingUp, DollarSign, Repeat } from 'lucide-react';
@@ -5,16 +17,31 @@ import { useData } from '../contexts/DataContext';
 import Card from '../components/ui/Card';
 import { glassSurface, screenTransition, moodColors } from '../utils/constants';
 
+/**
+ * Componente da pagina de Relatorios.
+ *
+ * Gerencia estado local 'periodo' (7, 30 ou 90 dias) para filtrar dados.
+ * Calcula estatisticas derivadas (stats) e data limite (dataLimite) via useMemo.
+ * Oferece exportacao CSV com geracao de Blob e download programatico.
+ *
+ * @returns {JSX.Element} Pagina de relatorios com filtros, estatisticas e acoes de exportacao
+ */
 export default function ReportsPage() {
   const { addictions, goals, allRecords, relapses } = useData();
   const [periodo, setPeriodo] = useState(30);
 
+  // Calcula a data limite para filtragem baseada no periodo selecionado - O(1)
   const dataLimite = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - periodo);
     return d;
   }, [periodo]);
 
+  /**
+   * Calcula estatisticas agregadas para o periodo selecionado.
+   * Inclui contagens de registros, recaidas, economia, metas e distribuicao de humor.
+   * Complexidade: O(r + s + n + m) onde r = registros, s = recaidas, n = vicios, m = metas.
+   */
   const stats = useMemo(() => {
     const regsPerido = allRecords.filter(r => new Date(r.data_registro) >= dataLimite);
     const recaidasPeriodo = relapses.filter(r => new Date(r.data_recaida) >= dataLimite);
@@ -36,6 +63,12 @@ export default function ReportsPage() {
     };
   }, [dataLimite, allRecords, relapses, addictions, goals]);
 
+  /**
+   * Exporta registros do periodo como arquivo CSV.
+   * Cria um Blob com dados separados por virgula, gera URL temporaria
+   * e dispara download automatico via elemento <a> programatico.
+   * Complexidade: O(n) onde n = registros no periodo.
+   */
   const exportCSV = () => {
     const headers = ['Data', 'Vicio ID', 'Humor', 'Gatilhos', 'Conquistas', 'Observacoes'];
     const rows = allRecords

@@ -1,3 +1,29 @@
+/**
+ * @file LoginPage.jsx - Pagina de login e cadastro da aplicacao Revive.
+ *
+ * @description
+ * Pagina publica de autenticacao que combina login e cadastro em uma unica tela.
+ * O layout e dividido em dois paineis lado a lado (grid 2 colunas em desktop):
+ *
+ * **Painel esquerdo:** Apresentacao da marca Revive com beneficios listados.
+ * **Painel direito:** Formulario alternavel entre login e cadastro, controlado
+ * pelo estado local `view` ('login' | 'cadastro').
+ *
+ * **Estados locais gerenciados:**
+ * - `view` - Controla qual formulario esta visivel ('login' ou 'cadastro')
+ * - `loading` - Flag de carregamento durante chamadas de API
+ * - `formLogin` - Dados do formulario de login { email, senha }
+ * - `formCadastro` - Dados do formulario de cadastro { nome, email, senha }
+ *
+ * **Handlers:**
+ * - `handleLogin` - Submete o formulario de login, navega para `/` em caso de sucesso
+ * - `handleCadastro` - Submete o formulario de cadastro, retorna a view de login em sucesso
+ *
+ * @component
+ * @see {@link useAuth} Hook de autenticacao (login, cadastro)
+ * @see {@link useUI} Hook de UI (alertas, toasts)
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Clock, Star, BarChart3 } from 'lucide-react';
@@ -7,15 +33,36 @@ import Alert from '../components/ui/Alert';
 import { InputField } from '../components/ui/Field';
 import { glassSurface } from '../utils/constants';
 
+/**
+ * Componente da pagina de login e cadastro.
+ *
+ * Alterna entre dois formularios (login/cadastro) usando estado local `view`.
+ * Limpa campos apos sucesso em ambos os fluxos. Exibe toasts de erro
+ * em caso de falha na autenticacao.
+ *
+ * @returns {JSX.Element} Pagina com painel de marca e formulario de autenticacao
+ */
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, cadastro } = useAuth();
   const { alert, setAlert, showToast } = useUI();
+  /** @type {[string, Function]} Controla qual formulario esta visivel: 'login' ou 'cadastro' */
   const [view, setView] = useState('login');
+  /** @type {[boolean, Function]} Flag de carregamento durante submissao do formulario */
   const [loading, setLoading] = useState(false);
+  /** @type {[Object, Function]} Dados controlados do formulario de login */
   const [formLogin, setFormLogin] = useState({ email: '', senha: '' });
+  /** @type {[Object, Function]} Dados controlados do formulario de cadastro */
   const [formCadastro, setFormCadastro] = useState({ nome: '', email: '', senha: '' });
 
+  /**
+   * Submete o formulario de login.
+   * Em caso de sucesso, limpa os campos e navega para a dashboard.
+   * Em caso de erro, exibe toast com a mensagem de erro.
+   *
+   * @param {Event} e - Evento de submit do formulario
+   * @returns {Promise<void>}
+   */
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -30,6 +77,14 @@ export default function LoginPage() {
     }
   };
 
+  /**
+   * Submete o formulario de cadastro.
+   * Em caso de sucesso, limpa os campos e volta para a view de login.
+   * Nao faz login automatico — o usuario deve entrar manualmente apos o cadastro.
+   *
+   * @param {Event} e - Evento de submit do formulario
+   * @returns {Promise<void>}
+   */
   const handleCadastro = async (e) => {
     e.preventDefault();
     setLoading(true);

@@ -1,8 +1,49 @@
+/**
+ * @file NovoVicioWizard.jsx
+ * @description Wizard multi-step (padrao Wizard Pattern) para cadastro de um novo vicio.
+ *
+ * Implementa um fluxo de 5 etapas sequenciais para guiar o usuario no cadastro:
+ * 1. Tipo de Vicio - selecao de categoria (cigarro, alcool, jogos, etc.) ou tipo personalizado
+ * 2. Objetivo - definicao da meta (parar, reduzir ou personalizado)
+ * 3. Prazo - periodo desejado (1 semana a 1 ano)
+ * 4. Economia - valor gasto por dia para calculo de economia estimada
+ * 5. Lembrete - configuracao de notificacoes diarias de motivacao
+ *
+ * Cada etapa possui validacao independente. O usuario pode navegar entre etapas
+ * (anterior/proximo) e a barra de progresso visual indica a etapa atual.
+ * O wizard reseta seu estado ao fechar e suporta fechamento via tecla ESC.
+ *
+ * Design Pattern: Wizard Pattern (formulario multi-step com validacao por etapa)
+ *
+ * @component
+ * @see {@link DashboardPage} Componente que controla a abertura/fechamento do wizard
+ */
+
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, Check, AlertCircle } from 'lucide-react';
 
+/**
+ * Wizard modal para cadastro de novo vicio em 5 etapas.
+ *
+ * Gerencia internamente o estado do formulario (formData), a etapa atual (etapa)
+ * e os erros de validacao (erros). Ao concluir, monta o payload com os dados
+ * normalizados e chama onSubmit. O componente reseta todo seu estado ao fechar.
+ *
+ * @param {Object} props - Props do componente
+ * @param {boolean} props.isOpen - Controla visibilidade do modal (true = aberto)
+ * @param {Function} props.onClose - Callback para fechar o modal (chamado ao clicar X, Cancelar ou ESC)
+ * @param {Function} props.onSubmit - Callback assincrono que recebe o payload do novo vicio
+ * @param {boolean} props.loading - Indica se a submissao esta em andamento (desabilita botao Concluir)
+ * @returns {JSX.Element|null} Modal wizard ou null quando isOpen e false
+ */
 const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
+  /** @type {[number, Function]} Etapa atual do wizard (0-4, indexado em zero) */
   const [etapa, setEtapa] = useState(0);
+
+  /**
+   * Estado do formulario com valores de todas as etapas.
+   * @type {[Object, Function]}
+   */
   const [formData, setFormData] = useState({
     tipo: '',
     tipoPersonalizado: '',
@@ -15,9 +56,10 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     reminderTime: '09:00'
   });
 
+  /** @type {[Object, Function]} Mapa de erros de validacao por campo */
   const [erros, setErros] = useState({});
 
-  // Detectar ESC para fechar
+  /** Listener de teclado para fechar o wizard ao pressionar ESC (acessibilidade) */
   useEffect(() => {
     if (!isOpen) return;
 
@@ -31,6 +73,7 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  /** Categorias predefinidas de vicios com emoji e label para selecao na Etapa 1 */
   const categorias = [
     { id: 'cigarro', label: 'Cigarro', emoji: '🚬' },
     { id: 'alcool', label: 'Álcool', emoji: '🍷' },
@@ -42,12 +85,14 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     { id: 'outro', label: 'Outro', emoji: '➕' }
   ];
 
+  /** Opcoes de objetivo para a Etapa 2 (parar, reduzir ou personalizado) */
   const objetivos = [
     { id: 'parar', label: 'Parar Completamente', desc: 'Abstinência total' },
     { id: 'reduzir', label: 'Reduzir', desc: 'Diminuir gradualmente' },
     { id: 'personalizado', label: 'Personalizado', desc: 'Minha própria meta' }
   ];
 
+  /** Opcoes de prazo predefinidas para a Etapa 3 */
   const prazos = [
     { id: '7', label: '1 Semana', dias: 7 },
     { id: '30', label: '1 Mês', dias: 30 },
@@ -56,6 +101,7 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     { id: 'outro', label: 'Outro', dias: null }
   ];
 
+  /** Definicao das 5 etapas do wizard com titulo e descricao para exibicao */
   const etapas = [
     { numero: 1, titulo: 'Tipo de Vício', descricao: 'O que você deseja controlar?' },
     { numero: 2, titulo: 'Objetivo', descricao: 'Qual é sua meta?' },
@@ -64,6 +110,13 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     { numero: 5, titulo: 'Lembrete', descricao: 'Deseja lembretes?' }
   ];
 
+  /**
+   * Valida os campos da etapa atual antes de permitir avanco.
+   * Cada etapa possui regras de validacao especificas.
+   *
+   * @param {number} numero - Indice da etapa a validar (0-4)
+   * @returns {boolean} true se a etapa e valida, false se ha erros
+   */
   const validarEtapa = (numero) => {
     const novasErros = {};
 
@@ -95,12 +148,20 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     return Object.keys(novasErros).length === 0;
   };
 
+  /**
+   * Avanca para a proxima etapa apos validacao.
+   * Nao avanca se a validacao falhar ou se ja estiver na ultima etapa.
+   */
   const handleProximo = () => {
     if (validarEtapa(etapa) && etapa < etapas.length - 1) {
       setEtapa(etapa + 1);
     }
   };
 
+  /**
+   * Retorna para a etapa anterior e limpa erros de validacao.
+   * Nao retrocede se ja estiver na primeira etapa (etapa 0).
+   */
   const handleAnterior = () => {
     if (etapa > 0) {
       setEtapa(etapa - 1);
@@ -108,6 +169,15 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     }
   };
 
+  /**
+   * Submete o formulario do wizard.
+   * Valida a etapa atual, monta o payload normalizado e chama onSubmit.
+   * Resolve o nome do vicio (categoria predefinida ou texto personalizado)
+   * e converte valores para os tipos corretos (float, int).
+   *
+   * @async
+   * @throws {Error} Captura e exibe erros de submissao no estado 'erros.submit'
+   */
   const handleSubmit = async () => {
     if (!validarEtapa(etapa)) return;
 
@@ -131,6 +201,10 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
     }
   };
 
+  /**
+   * Fecha o wizard e reseta todo o estado interno para valores iniciais.
+   * Garante que ao reabrir o wizard, o usuario comeca da etapa 1 com formulario limpo.
+   */
   const handleFechar = () => {
     setEtapa(0);
     setFormData({

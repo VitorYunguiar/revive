@@ -1,3 +1,20 @@
+/**
+ * @file CalendarPage.jsx
+ * @description Pagina de calendario da aplicacao REVIVE.
+ *
+ * Exibe um calendario mensal interativo onde cada dia mostra indicadores
+ * visuais de registros de humor (bolinha colorida), recaidas (bolinha vermelha)
+ * e metas concluidas (bolinha amarela). Ao clicar em um dia, exibe detalhes
+ * dos registros, recaidas e metas daquela data.
+ *
+ * Utiliza useState para controlar o mes/ano atual e o dia selecionado.
+ * O array de dias do calendario e memorizado com useMemo.
+ * Animacoes de entrada com Framer Motion.
+ *
+ * @component
+ * @see {@link useData} Hook para acessar registros, recaidas e metas
+ * @see {@link moodColors} Mapa de cores para cada tipo de humor
+ */
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, BookOpen, Repeat, Star } from 'lucide-react';
@@ -5,6 +22,15 @@ import { useData } from '../contexts/DataContext';
 import Card from '../components/ui/Card';
 import { glassSurface, screenTransition, moodColors } from '../utils/constants';
 
+/**
+ * Componente da pagina de Calendario.
+ *
+ * Gerencia navegacao entre meses (prevMonth/nextMonth) e selecao de dia.
+ * Calcula calendarDays via useMemo, preenchendo dias vazios no inicio
+ * e associando registros/recaidas/metas a cada dia do mes.
+ *
+ * @returns {JSX.Element} Calendario mensal interativo com detalhes por dia
+ */
 export default function CalendarPage() {
   const { allRecords, relapses, goals } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -18,6 +44,13 @@ export default function CalendarPage() {
 
   const monthName = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
+  /**
+   * Gera array de objetos representando cada dia do mes para renderizacao no grid.
+   * Inclui dias nulos no inicio para alinhar com o dia da semana correto.
+   * Para cada dia, filtra registros, recaidas e metas associadas.
+   * Complexidade: O(d * (r + s + m)) onde d = dias no mes, r = registros, s = recaidas, m = metas.
+   * @type {Array<null|{day: number, dateStr: string, registros: Array, recaidas: Array, metas: Array, mood: string|null, isToday: boolean}>}
+   */
   const calendarDays = useMemo(() => {
     const days = [];
     for (let i = 0; i < firstDayOfWeek; i++) {

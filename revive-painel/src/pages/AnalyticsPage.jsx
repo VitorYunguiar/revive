@@ -1,3 +1,20 @@
+/**
+ * @file AnalyticsPage.jsx
+ * @description Pagina de analises gerais (Analytics) da aplicacao REVIVE.
+ *
+ * Apresenta painel analitico completo com KPIs (vicios ativos, total economizado,
+ * metas concluidas, taxa de recaida), grafico donut de distribuicao de humor,
+ * tempo medio entre recaidas, top 5 gatilhos correlacionados, conquistas
+ * recentes e insights/recomendacoes automaticas baseadas nos dados.
+ *
+ * Faz uso intensivo de useMemo para derivar metricas a partir dos dados brutos.
+ * Todas as transformacoes sao documentadas com sua complexidade algoritmica.
+ *
+ * @component
+ * @see {@link useData} Hook para acessar dados globais (vicios, metas, registros, recaidas)
+ * @see {@link DonutChart} Componente de grafico donut para distribuicao de humor
+ * @see {@link KpiCard} Componente de card de KPI com indicador de tendencia
+ */
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, DollarSign, CheckCircle, Repeat, Clock, Flame, AlertCircle, BookOpen, Star } from 'lucide-react';
@@ -8,21 +25,46 @@ import DonutChart from '../components/ui/DonutChart';
 import { moodColors, screenTransition } from '../utils/constants';
 import { MS_PER_DAY } from '../utils/formatters';
 
+/**
+ * Componente da pagina de Analytics.
+ *
+ * Calcula diversas metricas derivadas com useMemo:
+ * - totalEconomizado: soma de valores economizados
+ * - viciosAtivos: contagem de vicios
+ * - metasConcluidas: contagem de metas finalizadas
+ * - diasUltimoRegistro: tempo desde o ultimo registro
+ * - taxaRecaida: porcentagem de recaidas por dia medio
+ * - tendenciaRecaidas: variacao percentual entre ultimos 30 e 60 dias
+ * - conquistasRecentes: ultimas 5 conquistas registradas
+ * - dadosHumor: distribuicao de humor (ultimos 30 dias) para grafico donut
+ * - tempoMedioRecaidas: media de dias entre recaidas consecutivas
+ * - topGatilhosRecaidas: top 5 gatilhos que precedem recaidas
+ *
+ * @returns {JSX.Element} Pagina de analises com KPIs, graficos e insights
+ */
 export default function AnalyticsPage() {
   const { addictions, goals, allRecords, relapses } = useData();
 
+  // Soma dos valores economizados de todos os vicios - O(n)
   const totalEconomizado = useMemo(() =>
     addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0),
     [addictions]
   );
 
+  // Numero de vicios ativos (equivale ao tamanho do array) - O(1)
   const viciosAtivos = useMemo(() => addictions.length, [addictions]);
 
+  // Conta metas com flag concluida=true - O(n) onde n = total de metas
   const metasConcluidas = useMemo(() =>
     goals.filter(meta => meta.concluida).length,
     [goals]
   );
 
+  /**
+   * Calcula ha quantos dias foi feito o ultimo registro.
+   * Retorna string formatada ('Hoje', '3d atras', etc.) ou '-' se nao houver registros.
+   * Complexidade: O(1) - acessa apenas o ultimo elemento do array ordenado.
+   */
   const diasUltimoRegistro = useMemo(() => {
     if (allRecords.length === 0) return '-';
     const ultimaData = new Date(allRecords[allRecords.length - 1].data_registro);
@@ -31,6 +73,11 @@ export default function AnalyticsPage() {
     return diff === 0 ? 'Hoje' : `${diff}d atras`;
   }, [allRecords]);
 
+  /**
+   * Calcula taxa de recaida como porcentagem de recaidas por dia medio de acompanhamento.
+   * Formula: (total_recaidas / media_dias_acompanhamento) * 100
+   * Complexidade: O(n) onde n = numero de vicios.
+   */
   const taxaRecaida = useMemo(() => {
     if (relapses.length === 0) return '0%';
     if (addictions.length === 0) return '0%';
@@ -43,6 +90,11 @@ export default function AnalyticsPage() {
     return `${taxa.toFixed(1)}%`;
   }, [relapses, addictions]);
 
+  /**
+   * Calcula variacao percentual de recaidas entre os ultimos 30 e 60 dias.
+   * Valor positivo = aumento de recaidas; negativo = diminuicao.
+   * Complexidade: O(n) onde n = total de recaidas.
+   */
   const tendenciaRecaidas = useMemo(() => {
     const agora = new Date();
     const _30dias = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -55,6 +107,11 @@ export default function AnalyticsPage() {
     return ((recaidas30 - recaidas60) / recaidas60) * 100;
   }, [relapses]);
 
+  /**
+   * Extrai as 5 conquistas mais recentes dos registros que possuem o campo 'conquistas'.
+   * Ordena por data decrescente.
+   * Complexidade: O(n*log(n)) devido a ordenacao, onde n = registros com conquistas.
+   */
   const conquistasRecentes = useMemo(() => {
     return allRecords
       .filter(r => r.conquistas && r.conquistas.trim() !== '')
@@ -67,6 +124,12 @@ export default function AnalyticsPage() {
       }));
   }, [allRecords]);
 
+  /**
+   * Agrega a distribuicao de humor dos ultimos 30 dias para alimentar o grafico donut.
+   * Usa um objeto como mapa de contagem (reduce com acumulador).
+   * Complexidade: O(n) onde n = total de registros.
+   * @type {Array<{label: string, value: number, cor: string}>}
+   */
   const dadosHumor = useMemo(() => {
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() - 30);
@@ -83,6 +146,11 @@ export default function AnalyticsPage() {
     }));
   }, [allRecords]);
 
+  /**
+   * Calcula o tempo medio (em dias) entre recaidas consecutivas por vicio.
+   * Agrupa recaidas por vicio, ordena por data e calcula diferencas entre pares consecutivos.
+   * Complexidade: O(n*log(n)) onde n = total de recaidas (devido a ordenacao por vicio).
+   */
   const tempoMedioRecaidas = useMemo(() => {
     if (relapses.length < 2) return 'N/A';
 
@@ -107,6 +175,12 @@ export default function AnalyticsPage() {
     return `${mediaFinal.toFixed(1)} dias`;
   }, [relapses]);
 
+  /**
+   * Identifica os top 5 gatilhos que mais aparecem nos registros ate 2 dias antes de recaidas.
+   * Correlaciona registros de humor/gatilhos com datas de recaida usando janela temporal.
+   * Complexidade: O(r * n) onde r = recaidas e n = registros.
+   * @type {Array<[string, number]>} Array de tuplas [gatilho, frequencia]
+   */
   const topGatilhosRecaidas = useMemo(() => {
     if (!relapses.length || !allRecords.length) return [];
 
