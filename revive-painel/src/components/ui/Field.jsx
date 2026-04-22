@@ -28,9 +28,9 @@ import { fieldBase } from '../../utils/constants';
  */
 export const Field = ({ label, hint, children }) => (
   <label className="block space-y-2">
-    <span className="text-sm font-semibold text-white/75">{label}</span>
+    <span className="text-sm font-semibold text-app">{label}</span>
     {children}
-    {hint && <span className="text-xs text-white/50">{hint}</span>}
+    {hint && <span className="text-xs text-muted">{hint}</span>}
   </label>
 );
 

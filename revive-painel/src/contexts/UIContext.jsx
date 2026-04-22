@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * @file UIContext.jsx - Contexto de interface do usuario (UI) da aplicacao Revive.
  *
@@ -24,7 +25,7 @@
  * @module contexts/UIContext
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 /**
  * Contexto React para gerenciamento de UI.
@@ -53,6 +54,11 @@ export function UIProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   /** @type {[string, Function]} Tema atual ('dark'|'light') — lazy init do localStorage */
   const [theme, setTheme] = useState(() => localStorage.getItem('revive_theme') || 'dark');
+  const [isNewAddictionOpen, setIsNewAddictionOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   /**
    * Exibe um alerta global temporario na interface.
@@ -128,13 +134,17 @@ export function UIProvider({ children }) {
     });
   }, []);
 
+  const openNewAddictionWizard = useCallback(() => setIsNewAddictionOpen(true), []);
+  const closeNewAddictionWizard = useCallback(() => setIsNewAddictionOpen(false), []);
+
   return (
     <UIContext.Provider value={{
       alert, setAlert, showAlert,
       loading, setLoading,
       confirmModal, setConfirmModal, showConfirm,
       toasts, showToast, removeToast,
-      theme, toggleTheme
+      theme, toggleTheme,
+      isNewAddictionOpen, openNewAddictionWizard, closeNewAddictionWizard
     }}>
       {children}
     </UIContext.Provider>

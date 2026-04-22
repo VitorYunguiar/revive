@@ -14,9 +14,10 @@
  * @see {@link useData} Hook para acessar dados de vicios, metas e registros
  */
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Trophy, Flame, DollarSign, Target, BookOpen, Lock } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import PageHeader from '../components/ui/PageHeader';
 import { glassSurface, screenTransition, badgeDefinitions, staggerContainer, staggerItem } from '../utils/constants';
 
 /** @type {Object.<string, React.Component>} Mapa de nomes de icone para componentes Lucide */
@@ -98,13 +99,17 @@ export default function AchievementsPage() {
   ];
 
   return (
-    <motion.div {...screenTransition} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-white">Conquistas</h2>
+    <Motion.div {...screenTransition} className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <PageHeader
+          eyebrow="Gamificação"
+          title="Conquistas"
+          description="Acompanhe marcos desbloqueados por consistência, economia, metas e streaks."
+        />
         <div className={`${glassSurface} rounded-2xl px-4 py-2 flex items-center gap-2`}>
           <Trophy className="w-5 h-5 text-amber-400" />
-          <span className="text-lg font-bold text-white">{earnedBadges.size}</span>
-          <span className="text-white/50 text-sm">/ {badgeDefinitions.length}</span>
+          <span className="text-lg font-bold text-app">{earnedBadges.size}</span>
+          <span className="text-muted text-sm">/ {badgeDefinitions.length}</span>
         </div>
       </div>
 
@@ -115,12 +120,12 @@ export default function AchievementsPage() {
             <Trophy className="w-7 h-7 text-amber-400" />
           </div>
           <div>
-            <p className="text-sm text-white/50">Progresso Total</p>
-            <p className="text-2xl font-bold text-white">{Math.round((earnedBadges.size / badgeDefinitions.length) * 100)}%</p>
+            <p className="text-sm text-muted">Progresso Total</p>
+            <p className="text-2xl font-bold text-app">{Math.round((earnedBadges.size / badgeDefinitions.length) * 100)}%</p>
           </div>
         </div>
         <div className="w-full bg-slate-700/40 rounded-full h-2 mt-3">
-          <motion.div
+          <Motion.div
             initial={{ width: 0 }}
             animate={{ width: `${(earnedBadges.size / badgeDefinitions.length) * 100}%` }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -137,9 +142,9 @@ export default function AchievementsPage() {
           <div key={cat.id}>
             <div className="flex items-center gap-2 mb-3">
               <CatIcon className="w-5 h-5 text-white/60" />
-              <h3 className="text-lg font-semibold text-white">{cat.label}</h3>
+              <h3 className="text-lg font-semibold text-app">{cat.label}</h3>
             </div>
-            <motion.div
+            <Motion.div
               variants={staggerContainer}
               initial="hidden"
               animate="show"
@@ -148,7 +153,7 @@ export default function AchievementsPage() {
               {badges.map(badge => {
                 const BadgeIcon = iconMap[badge.icon] || Flame;
                 return (
-                  <motion.div
+                  <Motion.div
                     key={badge.id}
                     variants={staggerItem}
                     className={`${glassSurface} rounded-2xl p-5 text-center relative overflow-hidden transition ${
@@ -166,8 +171,8 @@ export default function AchievementsPage() {
                     >
                       <BadgeIcon className="w-6 h-6" style={{ color: badge.color }} />
                     </div>
-                    <p className="font-semibold text-white text-sm mb-1">{badge.name}</p>
-                    <p className="text-xs text-white/50 mb-3">{badge.description}</p>
+                    <p className="font-semibold text-app text-sm mb-1">{badge.name}</p>
+                    <p className="text-xs text-muted mb-3">{badge.description}</p>
                     {!badge.earned && (
                       <div className="w-full bg-slate-700/40 rounded-full h-1.5">
                         <div
@@ -179,13 +184,13 @@ export default function AchievementsPage() {
                     {badge.earned && (
                       <span className="text-xs text-emerald-400 font-medium">Desbloqueado!</span>
                     )}
-                  </motion.div>
+                  </Motion.div>
                 );
               })}
-            </motion.div>
+            </Motion.div>
           </div>
         );
       })}
-    </motion.div>
+    </Motion.div>
   );
 }

@@ -20,11 +20,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { BarChart3, User, LogOut, Sun, Moon } from 'lucide-react';
+import { motion as Motion } from 'framer-motion';
+import { BarChart3, User, LogOut, Sun, Moon, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
 import { glassSurface, navButtonMotion } from '../../utils/constants';
+import Button from '../ui/Button';
 
 /**
  * Renderiza o cabecalho da aplicacao com auto-hide ao rolar.
@@ -37,7 +38,7 @@ import { glassSurface, navButtonMotion } from '../../utils/constants';
  */
 const Header = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useUI();
+  const { theme, toggleTheme, openNewAddictionWizard } = useUI();
   /** @type {[boolean, Function]} Controla ocultacao do header baseado na posicao de scroll */
   const [hideHeader, setHideHeader] = useState(false);
 
@@ -55,48 +56,58 @@ const Header = () => {
   }, []);
 
   return (
-    <motion.header
+    <Motion.header
       className={`sticky top-0 z-40 transition-transform duration-300 ${hideHeader ? '-translate-y-full' : 'translate-y-0'}`}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className={`${glassSurface} rounded-2xl border border-slate-700/60 px-4 sm:px-6 py-3 flex items-center justify-between gap-4`}>
-          <motion.div className="flex items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
-            <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-white border border-slate-700/60">
-              <BarChart3 className="w-6 h-6" />
+        <div className={`${glassSurface} rounded-2xl px-4 sm:px-5 py-3 flex items-center justify-between gap-4`}>
+          <Motion.div className="flex items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+            <div className="w-11 h-11 rounded-2xl bg-teal-400 text-slate-950 flex items-center justify-center border border-teal-200/60 shadow-lg shadow-teal-400/15">
+              <BarChart3 className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">Painel de Progresso</p>
-              <h1 className="text-2xl font-semibold text-white tracking-tight">Revive</h1>
+              <p className="eyebrow">Painel de Progresso</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-app">Revive</h1>
             </div>
-          </motion.div>
+          </Motion.div>
           <div className="flex items-center gap-3">
-            <motion.button
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={openNewAddictionWizard}
+              className="hidden sm:inline-flex"
+            >
+              <Plus className="w-4 h-4" />
+              Novo hábito
+            </Button>
+            <Motion.button
               {...navButtonMotion}
               onClick={toggleTheme}
-              className="p-2 text-white/70 rounded-xl transition border border-slate-700/60 bg-slate-800/60 hover:bg-slate-800"
+              className="p-2 text-muted hover:text-app rounded-xl transition surface-muted"
               title="Alternar tema"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </motion.button>
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/60 border border-slate-700/60 text-white/70">
+            </Motion.button>
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl surface-muted text-muted">
               <User className="w-4 h-4" />
-              <span className="text-sm font-semibold">{user?.nome || user?.email}</span>
+              <span className="text-sm font-semibold max-w-44 truncate">{user?.nome || user?.email}</span>
             </div>
-            <motion.button
+            <Motion.button
               {...navButtonMotion}
               onClick={logout}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 text-white/80 rounded-xl transition border border-slate-700/60 bg-slate-800/60 hover:bg-slate-800"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 text-muted hover:text-app rounded-xl transition surface-muted"
             >
               <LogOut className="w-5 h-5" />
               <span className="hidden sm:block text-sm font-semibold">Sair</span>
-            </motion.button>
+            </Motion.button>
           </div>
         </div>
       </div>
-    </motion.header>
+    </Motion.header>
   );
 };
 

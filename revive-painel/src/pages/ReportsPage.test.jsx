@@ -22,9 +22,9 @@ describe('ReportsPage', () => {
   it('renders summary cards from context data', () => {
     render(<ReportsPage />);
 
-    expect(screen.getByText('Relatorios')).toBeInTheDocument();
+    expect(screen.getByText('Relatórios')).toBeInTheDocument();
     expect(screen.getByText('R$ 160')).toBeInTheDocument();
-    expect(screen.getByText('Resumo por Vicio')).toBeInTheDocument();
+    expect(screen.getByText('Resumo por Vício')).toBeInTheDocument();
     expect(screen.getByText('Cigarro')).toBeInTheDocument();
     expect(screen.getByText('Alcool')).toBeInTheDocument();
   });

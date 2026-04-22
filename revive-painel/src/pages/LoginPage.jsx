@@ -31,6 +31,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '../contexts/UIContext';
 import Alert from '../components/ui/Alert';
 import { InputField } from '../components/ui/Field';
+import Button from '../components/ui/Button';
 import { glassSurface } from '../utils/constants';
 
 /**
@@ -104,17 +105,16 @@ export default function LoginPage() {
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-stretch relative z-10">
         <div className={`${glassSurface} rounded-3xl p-8 lg:p-10 border border-slate-700/50`}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-white border border-slate-700/60">
+            <div className="w-12 h-12 rounded-2xl bg-teal-400 flex items-center justify-center text-slate-950 border border-teal-200">
               <BarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-white/60">Jornada de Autocuidado</p>
-              <h1 className="text-3xl font-semibold text-white">Revive</h1>
+              <p className="eyebrow">Jornada de autocuidado</p>
+              <h1 className="text-3xl font-bold text-app">Revive</h1>
             </div>
           </div>
-          <p className="text-lg text-white/80 leading-relaxed mb-6">
-            Um painel desenhado para celebrar cada passo rumo a uma vida mais leve. Visual limpo, glassmorphism refinado
-            e fluxos prontos para a web ajudam voce a manter o foco em superacao, progresso e autocuidado.
+          <p className="text-lg text-muted leading-relaxed mb-6">
+            Um painel desenhado para acompanhar cada passo rumo a uma vida mais leve. Métricas, registros e metas ajudam você a manter foco em superação, progresso e autocuidado.
           </p>
           <div className="space-y-3">
             {[
@@ -126,7 +126,7 @@ export default function LoginPage() {
                 <div className="w-8 h-8 rounded-xl bg-[#7CF6C4]/20 text-[#7CF6C4] flex items-center justify-center">
                   {item.icon}
                 </div>
-                <p className="text-white/80 text-sm leading-relaxed">{item.text}</p>
+                <p className="text-muted text-sm leading-relaxed">{item.text}</p>
               </div>
             ))}
           </div>
@@ -135,21 +135,21 @@ export default function LoginPage() {
         <div className={`${glassSurface} rounded-3xl p-8 lg:p-10 border border-slate-700/50`}>
           <div className="flex items-center justify-between gap-4 mb-6">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">Acesso</p>
-              <h2 className="text-2xl font-semibold text-white">{view === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}</h2>
+              <p className="eyebrow">Acesso</p>
+              <h2 className="text-2xl font-semibold text-app">{view === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}</h2>
             </div>
             <div className="p-2 bg-slate-800/60 rounded-full border border-slate-700/60 flex gap-2">
               <button
                 type="button"
                 onClick={() => setView('login')}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition ${view === 'login' ? 'bg-[#1F2A3B] text-white border border-slate-600' : 'text-white/70 hover:text-white'}`}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition ${view === 'login' ? 'bg-teal-400 text-slate-950 border border-teal-200' : 'text-muted hover:text-app'}`}
               >
                 Entrar
               </button>
               <button
                 type="button"
                 onClick={() => setView('cadastro')}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition ${view === 'cadastro' ? 'bg-[#1F2A3B] text-white border border-slate-600' : 'text-white/70 hover:text-white'}`}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition ${view === 'cadastro' ? 'bg-teal-400 text-slate-950 border border-teal-200' : 'text-muted hover:text-app'}`}
               >
                 Criar conta
               </button>
@@ -176,13 +176,15 @@ export default function LoginPage() {
                 onChange={(e) => setFormLogin({ ...formLogin, senha: e.target.value })}
                 placeholder="********"
               />
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-2xl font-semibold bg-[#1F2A3B] text-white border border-slate-600 hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
                 {loading ? 'Entrando...' : 'Entrar e continuar a jornada'}
-              </button>
+              </Button>
             </form>
           ) : (
             <form onSubmit={handleCadastro} className="space-y-4">
@@ -210,13 +212,15 @@ export default function LoginPage() {
                 onChange={(e) => setFormCadastro({ ...formCadastro, senha: e.target.value })}
                 placeholder="Defina uma senha segura"
               />
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-2xl font-semibold bg-[#1F2A3B] text-white border border-slate-600 hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
                 {loading ? 'Criando...' : 'Criar conta e evoluir'}
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => setView('login')}

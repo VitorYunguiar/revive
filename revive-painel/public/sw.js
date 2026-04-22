@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'revive-v1';
+const CACHE_VERSION = 'revive-v2';
 const APP_SHELL = [
   '/',
   '/index.html',

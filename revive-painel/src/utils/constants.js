@@ -28,7 +28,7 @@
  *
  * @type {string}
  */
-export const glassSurface = 'bg-slate-900/80 border border-slate-700/60 shadow-[0_20px_40px_rgba(2,6,23,0.4)]';
+export const glassSurface = 'surface-card';
 
 /**
  * Variante mais discreta da superficie glass, com menor opacidade de fundo e borda.
@@ -38,7 +38,7 @@ export const glassSurface = 'bg-slate-900/80 border border-slate-700/60 shadow-[
  *
  * @type {string}
  */
-export const glassMutedSurface = 'bg-slate-900/60 border border-slate-700/40';
+export const glassMutedSurface = 'surface-muted';
 
 /**
  * Classes base para campos de formulario (inputs, textareas, selects).
@@ -48,7 +48,7 @@ export const glassMutedSurface = 'bg-slate-900/60 border border-slate-700/40';
  *
  * @type {string}
  */
-export const fieldBase = 'w-full px-4 py-3 rounded-2xl bg-slate-900/70 border border-slate-700/50 text-white placeholder-white/50 focus:border-[#5CC8FF] focus:ring-2 focus:ring-[#5CC8FF]/30 outline-none transition';
+export const fieldBase = 'field-control';
 
 /**
  * Classes base para pills/badges inline.
@@ -58,7 +58,7 @@ export const fieldBase = 'w-full px-4 py-3 rounded-2xl bg-slate-900/70 border bo
  *
  * @type {string}
  */
-export const pillBase = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border';
+export const pillBase = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border hairline surface-muted';
 
 // ──────────────────────────────────────────────
 // Configuracoes de animacao (Framer Motion)
@@ -86,7 +86,7 @@ export const navButtonMotion = {
  * @type {{ whileHover: { y: number, boxShadow: string }, transition: { type: string, stiffness: number, damping: number } }}
  */
 export const cardMotion = {
-  whileHover: { y: -6, boxShadow: '0 35px 80px rgba(15, 20, 40, 0.55)' },
+  whileHover: { y: -3, boxShadow: '0 24px 54px rgba(2, 6, 23, 0.28)' },
   transition: { type: 'spring', stiffness: 260, damping: 25 }
 };
 
@@ -162,10 +162,10 @@ export const screenTransition = {
  * @type {Object.<string, string>}
  */
 export const kpiBorderMap = {
-  emerald: 'border-slate-600/70',
-  cyan: 'border-slate-600/70',
-  yellow: 'border-slate-600/70',
-  red: 'border-slate-600/70'
+  emerald: 'border-emerald-400/25',
+  cyan: 'border-sky-400/25',
+  yellow: 'border-amber-400/25',
+  red: 'border-rose-400/25'
 };
 
 // ──────────────────────────────────────────────

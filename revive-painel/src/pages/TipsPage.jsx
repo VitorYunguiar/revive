@@ -15,8 +15,9 @@
  * @see {@link staggerItem} Variante de animacao para item escalonado
  */
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Lightbulb, Heart, Dumbbell, Brain, Apple, ChevronDown } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 import { glassSurface, screenTransition, staggerContainer, staggerItem } from '../utils/constants';
 import { MS_PER_DAY } from '../utils/formatters';
 
@@ -84,8 +85,12 @@ export default function TipsPage() {
   }, []);
 
   return (
-    <motion.div {...screenTransition} className="space-y-6">
-      <h2 className="text-3xl font-bold text-white">Dicas de Recuperacao</h2>
+    <Motion.div {...screenTransition} className="space-y-6">
+      <PageHeader
+        eyebrow="Apoio diário"
+        title="Dicas de recuperação"
+        description="Estratégias práticas para lidar com desejos, gatilhos e rotina."
+      />
 
       {/* Tip of the Day */}
       <div className={`${glassSurface} rounded-3xl p-6 border-l-4 border-[#7CF6C4]`}>
@@ -94,9 +99,9 @@ export default function TipsPage() {
             <Lightbulb className="w-6 h-6 text-[#7CF6C4]" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-widest text-[#7CF6C4] mb-1">Dica do Dia</p>
-            <h3 className="text-lg font-semibold text-white mb-2">{tipOfDay.title}</h3>
-            <p className="text-white/70 leading-relaxed">{tipOfDay.text}</p>
+            <p className="eyebrow text-teal-300 mb-1">Dica do dia</p>
+            <h3 className="text-lg font-semibold text-app mb-2">{tipOfDay.title}</h3>
+            <p className="text-muted leading-relaxed">{tipOfDay.text}</p>
           </div>
         </div>
       </div>
@@ -111,8 +116,8 @@ export default function TipsPage() {
               onClick={() => setSelectedCategory(cat.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition border ${
                 selectedCategory === cat.id
-                  ? 'bg-[#1F2A3B] text-white border-slate-600'
-                  : 'text-white/60 border-slate-700/60 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-teal-400 text-slate-950 border-teal-200'
+                  : 'text-muted border-slate-700/60 hover:text-app hover:bg-white/5'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -123,7 +128,7 @@ export default function TipsPage() {
       </div>
 
       {/* Tips Grid */}
-      <motion.div
+      <Motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="show"
@@ -133,7 +138,7 @@ export default function TipsPage() {
           const Icon = tip.icon;
           const isExpanded = expandedTip === index;
           return (
-            <motion.div
+            <Motion.div
               key={index}
               variants={staggerItem}
               className={`${glassSurface} rounded-2xl overflow-hidden transition cursor-pointer`}
@@ -146,26 +151,26 @@ export default function TipsPage() {
                       <Icon className="w-5 h-5" style={{ color: tip.color }} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white">{tip.title}</h4>
-                      {!isExpanded && <p className="text-sm text-white/50 mt-1 line-clamp-1">{tip.text}</p>}
+                      <h4 className="font-semibold text-app">{tip.title}</h4>
+                      {!isExpanded && <p className="text-sm text-muted mt-1 line-clamp-1">{tip.text}</p>}
                     </div>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-white/40 transition flex-shrink-0 mt-1 ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
                 {isExpanded && (
-                  <motion.p
+                  <Motion.p
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="text-white/70 leading-relaxed mt-3 ml-13"
+                    className="text-muted leading-relaxed mt-3 sm:ml-[52px]"
                   >
                     {tip.text}
-                  </motion.p>
+                  </Motion.p>
                 )}
               </div>
-            </motion.div>
+            </Motion.div>
           );
         })}
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   );
 }

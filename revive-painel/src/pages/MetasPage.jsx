@@ -13,7 +13,7 @@
  * @see {@link useData} Hook para operacoes CRUD de metas
  */
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { useData } from '../contexts/DataContext';
 import { useUI } from '../contexts/UIContext';
 import MetasCard from '../components/modals/MetasCard';
@@ -33,7 +33,7 @@ export default function MetasPage() {
   const { loading } = useUI();
 
   return (
-    <motion.div {...screenTransition}>
+    <Motion.div {...screenTransition}>
       <MetasCard
         metas={goals}
         vicios={addictions}
@@ -42,6 +42,6 @@ export default function MetasPage() {
         onDeleteMeta={deleteGoal}
         loading={loading}
       />
-    </motion.div>
+    </Motion.div>
   );
 }

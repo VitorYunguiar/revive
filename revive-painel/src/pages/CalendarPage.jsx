@@ -16,10 +16,10 @@
  * @see {@link moodColors} Mapa de cores para cada tipo de humor
  */
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, BookOpen, Repeat, Star } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import Card from '../components/ui/Card';
+import PageHeader from '../components/ui/PageHeader';
 import { glassSurface, screenTransition, moodColors } from '../utils/constants';
 
 /**
@@ -74,7 +74,7 @@ export default function CalendarPage() {
       });
     }
     return days;
-  }, [year, month, allRecords, relapses, goals]);
+  }, [year, month, daysInMonth, firstDayOfWeek, allRecords, relapses, goals]);
 
   const selectedDayData = selectedDay ? calendarDays.find(d => d && d.dateStr === selectedDay) : null;
 
@@ -82,14 +82,18 @@ export default function CalendarPage() {
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
   return (
-    <motion.div {...screenTransition} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-white capitalize">Calendario</h2>
+    <Motion.div {...screenTransition} className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <PageHeader
+          eyebrow="Histórico"
+          title="Calendário"
+          description="Visualize registros, recaídas e metas concluídas por dia."
+        />
         <div className="flex items-center gap-3">
           <button onClick={prevMonth} className="p-2 rounded-xl bg-slate-800/60 border border-slate-700/60 text-white/70 hover:text-white hover:bg-slate-800 transition">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-lg font-semibold text-white capitalize min-w-[180px] text-center">{monthName}</span>
+          <span className="text-lg font-semibold text-app capitalize min-w-[180px] text-center">{monthName}</span>
           <button onClick={nextMonth} className="p-2 rounded-xl bg-slate-800/60 border border-slate-700/60 text-white/70 hover:text-white hover:bg-slate-800 transition">
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -99,7 +103,7 @@ export default function CalendarPage() {
       <div className={`${glassSurface} rounded-3xl p-6`}>
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].map(d => (
-            <div key={d} className="text-center text-xs font-semibold text-white/40 py-2">{d}</div>
+            <div key={d} className="text-center text-xs font-semibold text-muted py-2">{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-1">
@@ -116,7 +120,7 @@ export default function CalendarPage() {
                   'hover:bg-white/5 border border-transparent'
                 }`}
               >
-                <span className={`text-sm font-medium ${dayData.isToday ? 'text-[#7CF6C4]' : 'text-white/80'}`}>{dayData.day}</span>
+                <span className={`text-sm font-medium ${dayData.isToday ? 'text-teal-300' : 'text-app'}`}>{dayData.day}</span>
                 <div className="flex gap-0.5">
                   {dayData.mood && (
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: moodColors[dayData.mood] || '#6b7280' }} />
@@ -131,26 +135,26 @@ export default function CalendarPage() {
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-white/10">
-          <div className="flex items-center gap-2 text-xs text-white/50">
+          <div className="flex items-center gap-2 text-xs text-muted">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Bom humor
           </div>
-          <div className="flex items-center gap-2 text-xs text-white/50">
-            <div className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Recaida
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <div className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Recaída
           </div>
-          <div className="flex items-center gap-2 text-xs text-white/50">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Meta concluida
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Meta concluída
           </div>
         </div>
       </div>
 
       {/* Selected Day Details */}
       {selectedDayData && (
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className={`${glassSurface} rounded-3xl p-6`}
         >
-          <h3 className="text-lg font-semibold text-white mb-4">
+          <h3 className="text-lg font-semibold text-app mb-4">
             {new Date(selectedDayData.dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
           </h3>
 
@@ -178,7 +182,7 @@ export default function CalendarPage() {
               {selectedDayData.recaidas.map((rec, i) => (
                 <div key={i} className="p-3 bg-rose-500/10 rounded-xl border border-rose-500/20 flex items-center gap-2">
                   <Repeat className="w-4 h-4 text-rose-400" />
-                  <span className="text-sm text-rose-300">Recaida registrada{rec.motivo ? `: ${rec.motivo}` : ''}</span>
+                  <span className="text-sm text-rose-300">Recaída registrada{rec.motivo ? `: ${rec.motivo}` : ''}</span>
                 </div>
               ))}
             </div>
@@ -189,13 +193,13 @@ export default function CalendarPage() {
               {selectedDayData.metas.map((meta, i) => (
                 <div key={i} className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-400" />
-                  <span className="text-sm text-amber-300">Meta concluida: {meta.descricao_meta}</span>
+                  <span className="text-sm text-amber-300">Meta concluída: {meta.descricao_meta}</span>
                 </div>
               ))}
             </div>
           )}
-        </motion.div>
+        </Motion.div>
       )}
-    </motion.div>
+    </Motion.div>
   );
 }

@@ -11,10 +11,12 @@
  * @see {@link useData} Hook para acessar dados globais
  */
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { FileText, Download, Printer, Calendar, TrendingUp, DollarSign, Repeat } from 'lucide-react';
+import { motion as Motion } from 'framer-motion';
+import { Download, Printer, Calendar, TrendingUp, DollarSign, Repeat } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Card from '../components/ui/Card';
+import PageHeader from '../components/ui/PageHeader';
+import Button from '../components/ui/Button';
 import { glassSurface, screenTransition, moodColors } from '../utils/constants';
 
 /**
@@ -86,9 +88,13 @@ export default function ReportsPage() {
   };
 
   return (
-    <motion.div {...screenTransition} className="space-y-6">
+    <Motion.div {...screenTransition} className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-3xl font-bold text-white">Relatorios</h2>
+        <PageHeader
+          eyebrow="Exportação"
+          title="Relatórios"
+          description="Filtre períodos, visualize distribuição de humor e exporte seus registros."
+        />
         <div className="flex gap-2">
           {[7, 30, 90].map(d => (
             <button
@@ -96,8 +102,8 @@ export default function ReportsPage() {
               onClick={() => setPeriodo(d)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition border ${
                 periodo === d
-                  ? 'bg-[#1F2A3B] text-white border-slate-600'
-                  : 'text-white/60 border-slate-700/60 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-teal-400 text-slate-950 border-teal-200'
+                  : 'text-muted border-slate-700/60 hover:text-app hover:bg-white/5'
               }`}
             >
               {d}d
@@ -110,23 +116,23 @@ export default function ReportsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className={`${glassSurface} rounded-2xl p-5 text-center`}>
           <Calendar className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-white">{stats.totalRegistros}</p>
-          <p className="text-xs text-white/50">Registros</p>
+          <p className="text-2xl font-bold text-app">{stats.totalRegistros}</p>
+          <p className="text-xs text-muted">Registros</p>
         </div>
         <div className={`${glassSurface} rounded-2xl p-5 text-center`}>
           <DollarSign className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-white">R$ {stats.totalEconomizado.toFixed(0)}</p>
-          <p className="text-xs text-white/50">Economizado</p>
+          <p className="text-2xl font-bold text-app">R$ {stats.totalEconomizado.toFixed(0)}</p>
+          <p className="text-xs text-muted">Economizado</p>
         </div>
         <div className={`${glassSurface} rounded-2xl p-5 text-center`}>
           <Repeat className="w-6 h-6 text-rose-400 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-white">{stats.totalRecaidas}</p>
-          <p className="text-xs text-white/50">Recaidas</p>
+          <p className="text-2xl font-bold text-app">{stats.totalRecaidas}</p>
+          <p className="text-xs text-muted">Recaídas</p>
         </div>
         <div className={`${glassSurface} rounded-2xl p-5 text-center`}>
           <TrendingUp className="w-6 h-6 text-amber-400 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-white">{stats.metasConcluidas}</p>
-          <p className="text-xs text-white/50">Metas Concluidas</p>
+          <p className="text-2xl font-bold text-app">{stats.metasConcluidas}</p>
+          <p className="text-xs text-muted">Metas concluídas</p>
         </div>
       </div>
 
@@ -149,12 +155,12 @@ export default function ReportsPage() {
             })}
           </div>
         ) : (
-          <p className="text-white/40 text-center py-6">Nenhum dado de humor no periodo.</p>
+          <p className="text-muted text-center py-6">Nenhum dado de humor no período.</p>
         )}
       </Card>
 
       {/* Vicios Summary */}
-      <Card title="Resumo por Vicio">
+      <Card title="Resumo por Vício">
         <div className="space-y-3">
           {addictions.map(v => (
             <div key={v.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
@@ -170,21 +176,23 @@ export default function ReportsPage() {
 
       {/* Export Actions */}
       <div className="flex gap-4">
-        <button
+        <Button
           onClick={exportCSV}
-          className={`${glassSurface} rounded-xl px-6 py-3 flex items-center gap-2 text-white/80 hover:text-white transition font-semibold`}
+          variant="secondary"
+          size="lg"
         >
           <Download className="w-5 h-5" />
           Exportar CSV
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => window.print()}
-          className={`${glassSurface} rounded-xl px-6 py-3 flex items-center gap-2 text-white/80 hover:text-white transition font-semibold`}
+          variant="secondary"
+          size="lg"
         >
           <Printer className="w-5 h-5" />
           Imprimir / PDF
-        </button>
+        </Button>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }

@@ -34,7 +34,9 @@ import ConfirmModal from '../ui/ConfirmModal';
 import ToastContainer from '../ui/Toast';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import Alert from '../ui/Alert';
+import NovoVicioWizard from '../modals/NovoVicioWizard';
 import { useUI } from '../../contexts/UIContext';
+import { useData } from '../../contexts/DataContext';
 
 /**
  * Layout principal que envolve todas as paginas autenticadas da aplicacao.
@@ -46,14 +48,31 @@ import { useUI } from '../../contexts/UIContext';
  * @returns {JSX.Element} Estrutura de layout com Header, NavBar, Outlet e camadas de UI
  */
 const AppShell = () => {
-  const { confirmModal, alert, setAlert } = useUI();
+  const {
+    confirmModal,
+    alert,
+    setAlert,
+    loading,
+    isNewAddictionOpen,
+    closeNewAddictionWizard
+  } = useUI();
+  const { createAddiction } = useData();
 
   return (
-    <div className="min-h-screen text-white relative">
+    <div className="min-h-screen text-app relative">
       <ConfirmModal {...confirmModal} />
       <ToastContainer />
+      <NovoVicioWizard
+        isOpen={isNewAddictionOpen}
+        onClose={closeNewAddictionWizard}
+        onSubmit={async (payload) => {
+          await createAddiction(payload);
+          closeNewAddictionWizard();
+        }}
+        loading={loading}
+      />
       <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {alert && <Alert type={alert.type} onClose={() => setAlert(null)}>{alert.message}</Alert>}
         <NavBar />
         <ErrorBoundary>

@@ -78,9 +78,7 @@ export default function VicioCard({
   }, [vicio, recaidas, metas]);
 
   return (
-    <div
-      className={`${glassSurface} rounded-3xl p-6 border border-white/10 flex flex-col relative overflow-hidden group`}
-    >
+    <div className={`${glassSurface} rounded-3xl p-6 flex flex-col relative overflow-hidden group transition hover:-translate-y-0.5`}>
       {/* Icone de chama exibido como badge quando usuario atinge 7+ dias de abstinencia */}
       {vicio.dias_abstinencia >= 7 && (
         <div className="absolute top-3 right-3">
@@ -93,14 +91,14 @@ export default function VicioCard({
       <div className="flex-grow">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">Em progresso</p>
-            <h3 className="text-xl font-semibold text-white">{vicio.nome_vicio}</h3>
-            <p className="text-sm text-white/60 mt-1">{vicio.tempo_formatado}</p>
+            <p className="eyebrow">Em progresso</p>
+            <h3 className="text-xl font-semibold text-app">{vicio.nome_vicio}</h3>
+            <p className="text-sm text-muted mt-1">{vicio.tempo_formatado}</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={onViewDetails}
-              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition border border-white/10"
+              className="p-2 text-muted hover:text-app hover:bg-white/10 rounded-lg transition hairline border"
               title="Ver detalhes"
             >
               <BarChart3 className="w-5 h-5" />
@@ -118,11 +116,11 @@ export default function VicioCard({
         {/* Barra de progresso da meta ativa - exibida apenas se existe meta vinculada */}
         {progresso !== null && (
           <div className="mb-4">
-            <div className="flex items-center justify-between text-xs text-white/50 mb-1">
+            <div className="flex items-center justify-between text-xs text-muted mb-1">
               <span>Meta: {meta.descricao_meta}</span>
               <span>{Math.round(progresso)}%</span>
             </div>
-            <div className="w-full bg-slate-700/40 rounded-full h-1.5">
+            <div className="w-full bg-slate-700/30 rounded-full h-1.5">
               <div
                 style={{ width: `${progresso}%` }}
                 className={`h-full rounded-full ${progresso >= 100 ? 'bg-[#35D3FF]' : 'bg-[#7CF6C4]'}`}
@@ -132,25 +130,25 @@ export default function VicioCard({
         )}
 
         <div className="grid grid-cols-3 gap-3">
-          <div className="p-3 rounded-2xl border border-white/10 bg-white/5">
+          <div className="p-3 rounded-2xl surface-muted">
             <div className="flex flex-col items-center text-center gap-2">
-              <Calendar className="w-4 h-4 text-[#7CF6C4]" />
-              <p className="text-[10px] uppercase tracking-[0.14em] text-white/60">Dias</p>
-              <p className="text-lg font-semibold text-white tabular-nums">{vicio.dias_abstinencia}</p>
+              <Calendar className="w-4 h-4 text-teal-300" />
+              <p className="text-[10px] uppercase font-semibold text-muted">Dias</p>
+              <p className="text-lg font-semibold text-app tabular-nums">{vicio.dias_abstinencia}</p>
             </div>
           </div>
-          <div className="p-3 rounded-2xl border border-white/10 bg-white/5">
+          <div className="p-3 rounded-2xl surface-muted">
             <div className="flex flex-col items-center text-center gap-2">
-              <DollarSign className="w-4 h-4 text-[#35D3FF]" />
-              <p className="text-[10px] uppercase tracking-[0.14em] text-white/60">R$</p>
-              <p className="text-lg font-semibold text-white tabular-nums">{Number(vicio.valor_economizado).toFixed(0)}</p>
+              <DollarSign className="w-4 h-4 text-sky-300" />
+              <p className="text-[10px] uppercase font-semibold text-muted">R$</p>
+              <p className="text-lg font-semibold text-app tabular-nums">{Number(vicio.valor_economizado).toFixed(0)}</p>
             </div>
           </div>
-          <div className="p-3 rounded-2xl border border-white/10 bg-white/5">
+          <div className="p-3 rounded-2xl surface-muted">
             <div className="flex flex-col items-center text-center gap-2">
               <Repeat className="w-4 h-4 text-amber-300" />
-              <p className="text-[10px] uppercase tracking-[0.14em] text-white/60">30d</p>
-              <p className="text-lg font-semibold text-white tabular-nums">{recaidasVicio30dias}</p>
+              <p className="text-[10px] uppercase font-semibold text-muted">30d</p>
+              <p className="text-lg font-semibold text-app tabular-nums">{recaidasVicio30dias}</p>
             </div>
           </div>
         </div>
@@ -158,9 +156,9 @@ export default function VicioCard({
 
       <button
         onClick={onRegisterRelapse}
-        className="w-full mt-4 px-4 py-2 bg-slate-800/70 text-white rounded-xl transition font-semibold border border-slate-700/60 hover:bg-slate-700/80"
+        className="w-full mt-4 px-4 py-2 btn-secondary"
       >
-        Registrar Recaida
+        Registrar Recaída
       </button>
     </div>
   );

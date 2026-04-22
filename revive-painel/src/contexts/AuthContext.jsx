@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * @file AuthContext.jsx - Contexto de autenticacao da aplicacao Revive.
  *
@@ -53,7 +54,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   /** @type {[boolean, Function]} Indica se a verificacao inicial do token esta em andamento */
   const [authLoading, setAuthLoading] = useState(true);
-  const { showAlert, showToast } = useUI();
+  const { showToast } = useUI();
 
   /**
    * Efeito de montagem: verifica se o token salvo no localStorage ainda e valido.
@@ -66,6 +67,7 @@ export function AuthProvider({ children }) {
     } else {
       setAuthLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**

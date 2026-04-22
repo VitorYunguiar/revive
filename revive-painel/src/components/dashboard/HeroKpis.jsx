@@ -70,62 +70,62 @@ export default function HeroKpis({
 }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-      <div className={`${glassSurface} rounded-2xl p-5 col-span-2 lg:col-span-1`}>
+      <div className={`${glassSurface} rounded-2xl p-5 col-span-2 lg:col-span-1 border-emerald-300/20`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-            <Flame className="w-5 h-5 text-emerald-400" />
+          <div className="w-10 h-10 icon-tile bg-emerald-400/12 text-emerald-300 border-emerald-300/20">
+            <Flame className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/50">Dias Limpos</p>
-            <p className="text-2xl font-bold text-white">{totalDiasLimpos}</p>
+            <p className="text-xs uppercase font-semibold text-muted">Dias Limpos</p>
+            <p className="text-2xl font-bold text-app">{totalDiasLimpos}</p>
           </div>
         </div>
       </div>
 
       <div className={`${glassSurface} rounded-2xl p-5`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-cyan-400" />
+          <div className="w-10 h-10 icon-tile bg-sky-400/12 text-sky-300 border-sky-300/20">
+            <DollarSign className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/50">Economizado</p>
-            <p className="text-xl font-bold text-white">R$ {totalEconomizado.toFixed(0)}</p>
+            <p className="text-xs uppercase font-semibold text-muted">Economizado</p>
+            <p className="text-xl font-bold text-app">R$ {totalEconomizado.toFixed(0)}</p>
           </div>
         </div>
       </div>
 
       <div className={`${glassSurface} rounded-2xl p-5`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-            <Star className="w-5 h-5 text-amber-400" />
+          <div className="w-10 h-10 icon-tile bg-amber-400/12 text-amber-300 border-amber-300/20">
+            <Star className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/50">Maior Streak</p>
-            <p className="text-2xl font-bold text-white">{maiorStreak}d</p>
+            <p className="text-xs uppercase font-semibold text-muted">Maior Streak</p>
+            <p className="text-2xl font-bold text-app">{maiorStreak}d</p>
           </div>
         </div>
       </div>
 
       <div className={`${glassSurface} rounded-2xl p-5`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-            <Target className="w-5 h-5 text-purple-400" />
+          <div className="w-10 h-10 icon-tile bg-violet-400/12 text-violet-300 border-violet-300/20">
+            <Target className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/50">Metas</p>
-            <p className="text-2xl font-bold text-white">{metasConcluidas}</p>
+            <p className="text-xs uppercase font-semibold text-muted">Metas</p>
+            <p className="text-2xl font-bold text-app">{metasConcluidas}</p>
           </div>
         </div>
       </div>
 
       <div className={`${glassSurface} rounded-2xl p-5`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
-            <Heart className="w-5 h-5 text-pink-400" />
+          <div className="w-10 h-10 icon-tile bg-rose-400/12 text-rose-300 border-rose-300/20">
+            <Heart className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/50">Humor 7d</p>
-            <p className="text-lg font-bold text-white">{getMoodLabel(moodTrend)}</p>
+            <p className="text-xs uppercase font-semibold text-muted">Humor 7d</p>
+            <p className="text-lg font-bold text-app">{getMoodLabel(moodTrend)}</p>
           </div>
         </div>
       </div>

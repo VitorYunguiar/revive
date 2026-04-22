@@ -57,10 +57,20 @@ ReactDOM.createRoot(document.getElementById('root')).render(
  * Falha silenciosa caso o registro nao seja possivel —
  * a aplicacao continua funcionando normalmente sem cache offline.
  */
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
       // Falha silenciosa: a app continua funcionando sem offline.
     });
+  });
+} else if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations?.().then((registrations) => {
+    registrations.forEach((registration) => registration.unregister());
+  });
+
+  caches?.keys?.().then((keys) => {
+    keys
+      .filter((key) => key.startsWith('revive-'))
+      .forEach((key) => caches.delete(key));
   });
 }

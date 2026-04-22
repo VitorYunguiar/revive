@@ -16,13 +16,15 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Calendar, DollarSign, TrendingUp, Trash2, Target, BookOpen } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useUI } from '../contexts/UIContext';
 import RecaidaModal from '../components/modals/RecaidaModal';
 import SelectHumor from '../components/ui/SelectHumor';
 import { InputField } from '../components/ui/Field';
+import PageHeader from '../components/ui/PageHeader';
+import Button from '../components/ui/Button';
 import { glassSurface, fieldBase, screenTransition } from '../utils/constants';
 
 /**
@@ -55,7 +57,7 @@ export default function DetalhesPage() {
   // Carrega detalhes do vicio quando o parametro de rota (id) muda
   useEffect(() => {
     if (id) loadAddictionDetails(id);
-  }, [id]);
+  }, [id, loadAddictionDetails]);
 
   if (!selectedAddiction) {
     return (
@@ -113,7 +115,7 @@ export default function DetalhesPage() {
   const addictionGoals = goals.filter(m => m.vicio_id === selectedAddiction.id);
 
   return (
-    <motion.div {...screenTransition} className="space-y-6">
+    <Motion.div {...screenTransition} className="space-y-6">
       <RecaidaModal
         isOpen={recaidaVicio !== null}
         onClose={() => setRecaidaVicio(null)}
@@ -126,11 +128,11 @@ export default function DetalhesPage() {
       {/* Header */}
       <div className={`${glassSurface} rounded-3xl p-6 border border-slate-700/60`}>
         <div className="flex items-start justify-between mb-6">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/60">Foco e consistencia</p>
-            <h2 className="text-3xl font-bold text-white">{selectedAddiction.nome_vicio}</h2>
-            <p className="text-lg text-white/70 mt-1">{selectedAddiction.tempo_formatado}</p>
-          </div>
+          <PageHeader
+            eyebrow="Foco e consistência"
+            title={selectedAddiction.nome_vicio}
+            description={selectedAddiction.tempo_formatado}
+          />
           <button onClick={() => { deleteAddiction(selectedAddiction); navigate('/'); }} className="p-3 text-rose-200 hover:bg-rose-500/15 rounded-lg transition border border-rose-300/30">
             <Trash2 className="w-6 h-6" />
           </button>
@@ -139,23 +141,23 @@ export default function DetalhesPage() {
           <div className="p-5 rounded-2xl border border-white/10 bg-white/5">
             <div className="flex items-center gap-3 mb-2">
               <Calendar className="w-6 h-6 text-[#7CF6C4]" />
-              <h3 className="font-semibold text-white/80">Dias limpo</h3>
+              <h3 className="font-semibold text-muted">Dias limpo</h3>
             </div>
-            <p className="text-4xl font-bold text-white">{selectedAddiction.dias_abstinencia}</p>
+            <p className="text-4xl font-bold text-app">{selectedAddiction.dias_abstinencia}</p>
           </div>
           <div className="p-5 rounded-2xl border border-white/10 bg-white/5">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign className="w-6 h-6 text-[#35D3FF]" />
-              <h3 className="font-semibold text-white/80">Economizado</h3>
+              <h3 className="font-semibold text-muted">Economizado</h3>
             </div>
-            <p className="text-4xl font-bold text-white">R$ {Number(selectedAddiction.valor_economizado).toFixed(2)}</p>
+            <p className="text-4xl font-bold text-app">R$ {Number(selectedAddiction.valor_economizado).toFixed(2)}</p>
           </div>
           <div className="p-5 rounded-2xl border border-white/10 bg-white/5">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="w-6 h-6 text-amber-300" />
-              <h3 className="font-semibold text-white/80">Economia diaria</h3>
+              <h3 className="font-semibold text-muted">Economia diária</h3>
             </div>
-            <p className="text-4xl font-bold text-white">R$ {Number(selectedAddiction.valor_economizado_por_dia).toFixed(2)}</p>
+            <p className="text-4xl font-bold text-app">R$ {Number(selectedAddiction.valor_economizado_por_dia).toFixed(2)}</p>
           </div>
         </div>
         <button onClick={() => setRecaidaVicio(selectedAddiction)} className="w-full mt-6 px-6 py-3 bg-rose-500/15 text-rose-100 rounded-xl hover:bg-rose-500/25 transition font-semibold border border-rose-300/30">
@@ -167,20 +169,20 @@ export default function DetalhesPage() {
         {/* Meta + Metas ativas */}
         <div className="space-y-6">
           <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Target className="w-6 h-6 text-[#7CF6C4]" />Nova meta para "{selectedAddiction.nome_vicio}"</h3>
+            <h3 className="text-xl font-bold text-app mb-4 flex items-center gap-2"><Target className="w-6 h-6 text-teal-300" />Nova meta para "{selectedAddiction.nome_vicio}"</h3>
             <form onSubmit={handleSubmitMeta} className="space-y-4">
               <InputField type="text" value={formMeta.descricao_meta} onChange={(e) => setFormMeta({ ...formMeta, descricao_meta: e.target.value })} required label="Descricao da meta" placeholder="Algo que motive voce" />
               <div className="grid grid-cols-2 gap-3">
                 <InputField type="number" min="1" value={formMeta.dias_objetivo} onChange={(e) => setFormMeta({ ...formMeta, dias_objetivo: e.target.value })} label="Dias objetivo" placeholder="Ex: 30" />
                 <InputField type="number" step="0.01" min="0" value={formMeta.valor_objetivo} onChange={(e) => setFormMeta({ ...formMeta, valor_objetivo: e.target.value })} label="Valor objetivo (R$)" placeholder="Ex: 150.00" />
               </div>
-              <button type="submit" disabled={loading} className="w-full py-3 rounded-2xl font-semibold bg-slate-800/70 text-white border border-slate-700/60 hover:bg-slate-800 transition disabled:opacity-50">Criar meta</button>
+              <Button type="submit" disabled={loading} variant="primary" size="lg" className="w-full">Criar meta</Button>
             </form>
           </div>
 
           {addictionGoals.length > 0 && (
             <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
-              <h3 className="text-xl font-bold text-white mb-4">Metas Ativas</h3>
+              <h3 className="text-xl font-bold text-app mb-4">Metas ativas</h3>
               <div className="space-y-3">
                 {addictionGoals.map((meta) => (
                   <div key={meta.id} className="p-4 bg-white/5 backdrop-blur rounded-lg border border-white/20">
@@ -203,7 +205,7 @@ export default function DetalhesPage() {
 
         {/* Daily Registry Form */}
         <div id="form-registro" className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6 text-[#7CF6C4]" />Novo Registro Diario</h3>
+          <h3 className="text-xl font-bold text-app mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6 text-teal-300" />Novo registro diário</h3>
           <form onSubmit={handleSubmitRegistro} className="space-y-4">
             <SelectHumor
               value={formRegistro.humor}
@@ -213,7 +215,7 @@ export default function DetalhesPage() {
             <input type="text" value={formRegistro.gatilhos} onChange={(e) => setFormRegistro({ ...formRegistro, gatilhos: e.target.value })} className={fieldBase} placeholder="Gatilhos (separados por virgula)" />
             <textarea value={formRegistro.conquistas} onChange={(e) => setFormRegistro({ ...formRegistro, conquistas: e.target.value })} className={fieldBase} placeholder="Conquistas do dia..." rows="2" />
             <textarea value={formRegistro.observacoes} onChange={(e) => setFormRegistro({ ...formRegistro, observacoes: e.target.value })} className={fieldBase} placeholder="Observacoes..." rows="2" />
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-2xl font-semibold bg-slate-800/70 text-white border border-slate-700/60 hover:bg-slate-800 transition disabled:opacity-50">Salvar registro</button>
+            <Button type="submit" disabled={loading} variant="primary" size="lg" className="w-full">Salvar registro</Button>
           </form>
         </div>
       </div>
@@ -221,7 +223,7 @@ export default function DetalhesPage() {
       {/* Record History */}
       {selectedAddictionRecords.length > 0 && (
         <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
-          <h3 className="text-xl font-bold text-white mb-4">Historico de Registros</h3>
+          <h3 className="text-xl font-bold text-app mb-4">Histórico de registros</h3>
           <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
             {selectedAddictionRecords.map((registro) => (
               <div key={registro.id} className="p-4 bg-white/5 backdrop-blur rounded-lg border-l-4 border-[#7CF6C4]">
@@ -237,6 +239,6 @@ export default function DetalhesPage() {
           </div>
         </div>
       )}
-    </motion.div>
+    </Motion.div>
   );
 }

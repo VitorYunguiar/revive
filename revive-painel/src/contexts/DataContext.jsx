@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * @file DataContext.jsx - Contexto central de dados da aplicacao Revive.
  *
@@ -24,7 +25,7 @@
  *
  * **Funcoes expostas via hook useData():**
  * - CRUD de vicios: `createAddiction`, `deleteAddiction`, `loadAddictions`, `loadAddictionDetails`
- * - Registros diarios: `createRecord`
+ * - Registros diarios: `createRecord`, `createRecordForAddiction`
  * - Recaidas: `registerRelapse`, `loadRelapses`
  * - Metas: `createGoal`, `completeGoal`, `deleteGoal`, `loadGoals`
  *
@@ -347,25 +348,32 @@ export function DataProvider({ children }) {
    * @param {number} [recordForm.nivel_desejo] - Nivel de desejo (1-10)
    * @returns {Promise<boolean>} `true` se criado com sucesso, `false` caso contrario
    */
-  const createRecord = useCallback(async (recordForm) => {
+  const createRecordForAddiction = useCallback(async (recordForm, addictionId) => {
     // Validacao no frontend — evita chamada desnecessaria a API
     if (!recordForm.humor) {
       showToast('error', 'Selecione um humor antes de salvar');
       return false;
     }
-    if (!selectedAddiction?.id) {
+    if (!addictionId) {
       showToast('error', 'Selecione um vicio antes de salvar o registro.');
       return false;
     }
     const result = await withLoading(async () => {
-      await registrosService.criarRegistro({ ...recordForm, vicio_id: selectedAddiction.id }, token);
+      await registrosService.criarRegistro({ ...recordForm, vicio_id: addictionId }, token);
       showToast('success', 'Registro diario criado!');
-      await loadAddictionDetails(selectedAddiction.id);
+      if (selectedAddiction?.id && String(selectedAddiction.id) === String(addictionId)) {
+        await loadAddictionDetails(addictionId);
+      }
+      await loadAllRecords();
       return true;
     }, 'Nao foi possivel criar o registro diario.');
     // O operador ?? garante retorno false se withLoading retornar null (erro)
     return result ?? false;
-  }, [token, selectedAddiction, showToast, loadAddictionDetails, withLoading]);
+  }, [token, selectedAddiction, showToast, loadAddictionDetails, loadAllRecords, withLoading]);
+
+  const createRecord = useCallback(async (recordForm) => (
+    createRecordForAddiction(recordForm, selectedAddiction?.id)
+  ), [createRecordForAddiction, selectedAddiction]);
 
   /**
    * Cria uma nova meta para o usuario.
@@ -481,6 +489,7 @@ export function DataProvider({ children }) {
         deleteAddiction,
         registerRelapse,
         createRecord,
+        createRecordForAddiction,
         createGoal,
         completeGoal,
         deleteGoal,

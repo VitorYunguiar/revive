@@ -37,12 +37,12 @@ import { glassSurface } from '../../utils/constants';
  */
 export default function ActivityHeatmap({ heatmapData }) {
   return (
-    <div className={`${glassSurface} rounded-3xl p-5 border border-slate-700/60`}>
-      <p className="text-xs uppercase tracking-widest text-white/50 mb-3">Atividade (28 dias)</p>
+    <div className={`${glassSurface} rounded-3xl p-5`}>
+      <p className="eyebrow mb-3">Atividade (28 dias)</p>
       <div className="grid grid-cols-7 gap-1.5">
         {/* Cabecalho com iniciais dos dias da semana em portugues */}
         {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
-          <div key={i} className="text-[9px] text-white/30 text-center font-medium">{d}</div>
+          <div key={i} className="text-[9px] text-muted text-center font-medium">{d}</div>
         ))}
         {/* Celulas do heatmap - cor determinada por recaida ou contagem de registros */}
         {heatmapData.map((day, i) => (
@@ -53,7 +53,7 @@ export default function ActivityHeatmap({ heatmapData }) {
               : day.count >= 3 ? 'bg-emerald-400/80'
               : day.count >= 2 ? 'bg-emerald-400/50'
               : day.count >= 1 ? 'bg-emerald-400/25'
-              : 'bg-slate-700/30'
+              : 'bg-slate-700/25'
             }`}
             title={`${day.date}: ${day.count} registro(s)`}
           />

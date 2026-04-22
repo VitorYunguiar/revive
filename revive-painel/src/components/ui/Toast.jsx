@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 import { useUI } from '../../contexts/UIContext';
 
@@ -21,22 +21,22 @@ const ToastContainer = () => {
   const { toasts, removeToast } = useUI();
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] space-y-3 max-w-sm">
+    <div className="fixed bottom-6 right-4 sm:right-6 z-[100] space-y-3 max-w-sm">
       <AnimatePresence>
         {toasts.map(toast => (
-          <motion.div
+          <Motion.div
             key={toast.id}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, x: 80, scale: 0.95 }}
-            className={`flex items-start gap-3 p-4 rounded-xl border backdrop-blur-xl ${bgMap[toast.type] || bgMap.info}`}
+            className={`surface-strong flex items-start gap-3 p-4 rounded-2xl border ${bgMap[toast.type] || bgMap.info}`}
           >
             {iconMap[toast.type] || iconMap.info}
-            <p className="text-sm text-white/90 flex-1">{toast.message}</p>
-            <button onClick={() => removeToast(toast.id)} className="text-white/40 hover:text-white/80 transition">
+            <p className="text-sm text-app flex-1">{toast.message}</p>
+            <button onClick={() => removeToast(toast.id)} className="text-muted hover:text-app transition">
               <X className="w-4 h-4" />
             </button>
-          </motion.div>
+          </Motion.div>
         ))}
       </AnimatePresence>
     </div>

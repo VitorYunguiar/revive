@@ -18,7 +18,7 @@ const Alert = ({ type = 'info', children, onClose }) => {
         <div>{children}</div>
       </div>
       {onClose && (
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-300">
+        <button onClick={onClose} className="text-muted hover:text-app">
           <X className="w-4 h-4" />
         </button>
       )}

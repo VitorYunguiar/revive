@@ -23,9 +23,10 @@
 
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Heart, PieChart, Target, Plus, BarChart3, Calendar as CalendarIcon, Trophy, FileText, Lightbulb, User } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
+import { useUI } from '../../contexts/UIContext';
 import { glassSurface, navButtonMotion } from '../../utils/constants';
 
 /**
@@ -56,7 +57,8 @@ const navItems = [
 const NavBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { vicioSelecionado } = useData();
+  const { selectedAddiction: vicioSelecionado } = useData();
+  const { openNewAddictionWizard } = useUI();
 
   // Clona navItems e insere dinamicamente o item "Detalhes" se houver vicio selecionado
   const allItems = [...navItems];
@@ -69,34 +71,36 @@ const NavBar = () => {
   }
 
   return (
-    <div className={`${glassSurface} border border-slate-700/60 rounded-2xl p-2 mb-6 flex flex-wrap gap-2`}>
+    <div className={`${glassSurface} rounded-2xl p-2 mb-6 flex gap-2 overflow-x-auto`}>
       {allItems.map((item) => {
         const isActive = location.pathname === item.path;
         const Icon = item.icon;
         return (
-          <motion.button
+          <Motion.button
             key={item.path}
             {...navButtonMotion}
             onClick={() => navigate(item.path)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition ${
+            title={item.label}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold transition whitespace-nowrap ${
               isActive
-                ? 'bg-[#1F2A3B] text-white border border-slate-600'
-                : 'text-white/70 hover:text-white bg-slate-800/60 hover:bg-slate-800/80 border border-transparent'
+                ? 'bg-teal-400 text-slate-950 border border-teal-200 shadow-sm'
+                : 'text-muted hover:text-app bg-transparent hover:bg-white/5 border border-transparent'
             }`}
           >
             <Icon className="w-4 h-4" />
             <span className="hidden sm:inline">{item.label}</span>
-          </motion.button>
+          </Motion.button>
         );
       })}
-      <motion.button
+      <Motion.button
         {...navButtonMotion}
-        onClick={() => navigate('/novo-vicio')}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[#7CF6C4] bg-[#7CF6C4]/10 hover:bg-[#7CF6C4]/20 border border-[#7CF6C4]/30 transition"
+        onClick={openNewAddictionWizard}
+        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold text-teal-200 bg-teal-400/10 hover:bg-teal-400/16 border border-teal-300/25 transition whitespace-nowrap"
+        title="Novo hábito"
       >
         <Plus className="w-4 h-4" />
         <span className="hidden sm:inline">Novo</span>
-      </motion.button>
+      </Motion.button>
     </div>
   );
 };

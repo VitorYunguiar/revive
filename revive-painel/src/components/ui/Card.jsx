@@ -39,12 +39,12 @@ import { glassSurface } from '../../utils/constants';
  * @returns {JSX.Element} Card estilizado com glassSurface e cabecalho condicional
  */
 const Card = ({ title, subtitle, actions, children, className = '' }) => (
-  <div className={`${glassSurface} rounded-2xl p-6 ${className}`}>
+  <div className={`${glassSurface} rounded-2xl p-5 sm:p-6 ${className}`}>
     {(title || subtitle || actions) && (
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          {subtitle && <p className="text-[11px] uppercase tracking-[0.28em] text-white/50 mb-1">{subtitle}</p>}
-          {title && <h3 className="text-xl font-semibold text-white">{title}</h3>}
+          {subtitle && <p className="eyebrow mb-1">{subtitle}</p>}
+          {title && <h3 className="text-xl font-semibold text-app">{title}</h3>}
         </div>
         {actions}
       </div>

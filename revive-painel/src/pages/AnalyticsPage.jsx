@@ -16,12 +16,13 @@
  * @see {@link KpiCard} Componente de card de KPI com indicador de tendencia
  */
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Heart, DollarSign, CheckCircle, Repeat, Clock, Flame, AlertCircle, BookOpen, Star } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Card from '../components/ui/Card';
 import KpiCard from '../components/ui/KpiCard';
 import DonutChart from '../components/ui/DonutChart';
+import PageHeader from '../components/ui/PageHeader';
 import { moodColors, screenTransition } from '../utils/constants';
 import { MS_PER_DAY } from '../utils/formatters';
 
@@ -203,8 +204,12 @@ export default function AnalyticsPage() {
   }, [allRecords, relapses]);
 
   return (
-    <motion.div {...screenTransition} className="space-y-6">
-      <h2 className="text-3xl font-bold text-white">Painel de Analises Gerais</h2>
+    <Motion.div {...screenTransition} className="space-y-6">
+      <PageHeader
+        eyebrow="Insights"
+        title="Painel de análises gerais"
+        description="Identifique padrões de humor, recaídas, economia e consistência para tomar decisões melhores."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard icon={<Heart className="text-emerald-400 w-8 h-8" />} title="Vicios Ativos" value={viciosAtivos} border="emerald" />
@@ -240,28 +245,28 @@ export default function AnalyticsPage() {
           {topGatilhosRecaidas.length > 0 ? (
             <ul className="space-y-2">
               {topGatilhosRecaidas.map(([gatilho, freq], index) => (
-                <li key={index} className="flex items-center justify-between text-gray-300 bg-[#1A1D2E] p-3 rounded-lg border border-gray-700">
+                <li key={index} className="flex items-center justify-between text-app surface-muted p-3 rounded-xl">
                   <span className="capitalize flex items-center gap-2"><Flame className="w-4 h-4 text-red-400" />{gatilho}</span>
-                  <span className="text-sm text-gray-400">{freq} ocorrencias</span>
+                  <span className="text-sm text-muted">{freq} ocorrências</span>
                 </li>
               ))}
             </ul>
-          ) : <p className="text-gray-400 flex items-center justify-center h-full">Nenhuma correlacao de gatilho encontrada.</p>}
+          ) : <p className="text-muted flex items-center justify-center h-full">Nenhuma correlação de gatilho encontrada.</p>}
         </Card>
 
         <Card title="Conquistas Recentes">
           <div className="space-y-3 max-h-[240px] overflow-y-auto pr-2">
             {conquistasRecentes.length > 0 ? conquistasRecentes.map((item) => (
-              <div key={item.id} className="flex items-start gap-3 p-3 bg-[#1A1D2E] rounded-lg">
+              <div key={item.id} className="flex items-start gap-3 p-3 surface-muted rounded-xl">
                 <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center flex-shrink-0 mt-1">
                   <Star className="w-5 h-5 text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-gray-300">{item.descricao}</p>
-                  <p className="text-xs text-gray-500">{item.data.toLocaleDateString('pt-BR')}</p>
+                  <p className="text-app">{item.descricao}</p>
+                  <p className="text-xs text-muted">{item.data.toLocaleDateString('pt-BR')}</p>
                 </div>
               </div>
-            )) : <p className="text-gray-400 flex items-center justify-center h-full">Nenhuma conquista registrada recentemente.</p>}
+            )) : <p className="text-muted flex items-center justify-center h-full">Nenhuma conquista registrada recentemente.</p>}
           </div>
         </Card>
       </div>
@@ -317,6 +322,6 @@ export default function AnalyticsPage() {
           </div>
         </Card>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }
