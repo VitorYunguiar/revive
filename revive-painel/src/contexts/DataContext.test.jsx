@@ -1,14 +1,19 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataProvider } from './DataContext';
+import { DataProvider, useData } from './DataContext';
 
 const {
+  mockAuthState,
   mockShowToast,
   mockSetLoading,
   mockShowConfirm,
   mockListarVicios
 } = vi.hoisted(() => ({
+  mockAuthState: {
+    token: 'test-token',
+    user: { id: 'user-1' }
+  },
   mockShowToast: vi.fn(),
   mockSetLoading: vi.fn(),
   mockShowConfirm: vi.fn(),
@@ -16,10 +21,7 @@ const {
 }));
 
 vi.mock('./AuthContext', () => ({
-  useAuth: () => ({
-    token: 'test-token',
-    user: { id: 'user-1' }
-  })
+  useAuth: () => mockAuthState
 }));
 
 vi.mock('./UIContext', () => ({
@@ -59,12 +61,20 @@ vi.mock('../services/registros.service', () => ({
 }));
 
 function Dummy() {
-  return <div>Data provider mounted</div>;
+  const { addictions } = useData();
+  return (
+    <div>
+      <span>Data provider mounted</span>
+      <span data-testid="addictions">{addictions.map(addiction => addiction.nome_vicio).join(',')}</span>
+    </div>
+  );
 }
 
 describe('DataContext error handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthState.token = 'test-token';
+    mockAuthState.user = { id: 'user-1' };
     mockListarVicios.mockRejectedValue(new Error('erro de teste'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -78,6 +88,42 @@ describe('DataContext error handling', () => {
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith('error', 'Nao foi possivel carregar seus vicios.');
+    });
+  });
+
+  it('clears user data immediately when the authenticated user changes', async () => {
+    mockListarVicios
+      .mockResolvedValueOnce({
+        vicios: [{
+          id: 'vicio-1',
+          nome_vicio: 'Cigarro',
+          data_inicio: new Date().toISOString(),
+          valor_economizado_por_dia: 0
+        }]
+      })
+      .mockReturnValueOnce(new Promise(() => {}));
+
+    const { rerender, getByTestId } = render(
+      <DataProvider>
+        <Dummy />
+      </DataProvider>
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('addictions')).toHaveTextContent('Cigarro');
+    });
+
+    mockAuthState.token = 'second-token';
+    mockAuthState.user = { id: 'user-2' };
+
+    rerender(
+      <DataProvider>
+        <Dummy />
+      </DataProvider>
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('addictions')).toHaveTextContent('');
     });
   });
 });

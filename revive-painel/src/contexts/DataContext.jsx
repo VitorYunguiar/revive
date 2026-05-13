@@ -34,7 +34,7 @@
  * @see {@link module:contexts/UIContext} - Fornece feedback visual (toasts, loading)
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useUI } from './UIContext';
 import * as viciosService from '../services/vicios.service';
@@ -76,6 +76,8 @@ const DataContext = createContext(null);
 export function DataProvider({ children }) {
   const { token, user } = useAuth();
   const { showToast, setLoading, showConfirm } = useUI();
+  const activeTokenRef = useRef(token);
+  activeTokenRef.current = token;
 
   // ─── Estado Local (React useState) ────────────────────────────────────
   /** @type {[Array<Object>, Function]} Lista de vicios do usuario autenticado */
@@ -92,6 +94,20 @@ export function DataProvider({ children }) {
   const [relapses, setRelapses] = useState([]);
   /** @type {[string, Function]} Mensagem motivacional diaria obtida da API */
   const [motivationalMessage, setMotivationalMessage] = useState('');
+
+  const resetDataState = useCallback(() => {
+    setAddictions([]);
+    setSelectedAddiction(null);
+    setSelectedAddictionRecords([]);
+    setAllRecords([]);
+    setGoals([]);
+    setRelapses([]);
+    setMotivationalMessage('');
+  }, []);
+
+  const isCurrentToken = useCallback((requestToken) => (
+    activeTokenRef.current === requestToken
+  ), []);
 
   // ─── Funcoes Auxiliares Internas ───────────────────────────────────────
 
@@ -158,7 +174,9 @@ export function DataProvider({ children }) {
    * @returns {Promise<void>}
    */
   const loadAddictions = useCallback(() => withLoading(async () => {
-    const data = await viciosService.listarVicios(token);
+    const requestToken = token;
+    const data = await viciosService.listarVicios(requestToken);
+    if (!isCurrentToken(requestToken)) return;
     // Processamento O(n): itera sobre cada vicio aplicando sanitizacao e formatacao
     const processed = (data.vicios || []).map(addiction => ({
       ...addiction,
@@ -167,7 +185,7 @@ export function DataProvider({ children }) {
       tempo_formatado: addiction.tempo_formatado || calcularTempoDecorrido(addiction.data_inicio)
     }));
     setAddictions(processed);
-  }, 'Nao foi possivel carregar seus vicios.'), [token, withLoading]);
+  }, 'Nao foi possivel carregar seus vicios.'), [token, isCurrentToken, withLoading]);
 
   /**
    * Carrega os detalhes completos de um vicio especifico, incluindo seus registros diarios.
@@ -201,12 +219,14 @@ export function DataProvider({ children }) {
    */
   const loadGoals = useCallback(async () => {
     try {
-      const data = await metasService.listarMetas(token);
+      const requestToken = token;
+      const data = await metasService.listarMetas(requestToken);
+      if (!isCurrentToken(requestToken)) return;
       setGoals(data.metas || []);
     } catch (error) {
       handleDataError(error, 'Nao foi possivel carregar suas metas.');
     }
-  }, [token, handleDataError]);
+  }, [token, isCurrentToken, handleDataError]);
 
   /**
    * Carrega o historico de recaidas do usuario.
@@ -214,12 +234,14 @@ export function DataProvider({ children }) {
    */
   const loadRelapses = useCallback(async () => {
     try {
-      const data = await recaidasService.listarRecaidas(token);
+      const requestToken = token;
+      const data = await recaidasService.listarRecaidas(requestToken);
+      if (!isCurrentToken(requestToken)) return;
       setRelapses(data.recaidas || []);
     } catch (error) {
       handleDataError(error, 'Nao foi possivel carregar as recaidas.');
     }
-  }, [token, handleDataError]);
+  }, [token, isCurrentToken, handleDataError]);
 
   /**
    * Carrega a mensagem motivacional diaria da API.
@@ -228,16 +250,19 @@ export function DataProvider({ children }) {
    * @returns {Promise<void>}
    */
   const loadMotivationalMessage = useCallback(async () => {
+    const requestToken = token;
     try {
-      const data = await mensagensService.getMensagemDiaria('geral', token);
+      const data = await mensagensService.getMensagemDiaria('geral', requestToken);
+      if (!isCurrentToken(requestToken)) return;
       setMotivationalMessage(data.mensagem?.mensagem || 'Voce esta no caminho certo! Continue firme!');
     } catch (error) {
+      if (!isCurrentToken(requestToken)) return;
       console.error(error);
       // Graceful degradation: exibe mensagem local em caso de falha na API
       setMotivationalMessage('Cada dia e uma vitoria! Parabens pela sua jornada!');
       showToast('error', 'Nao foi possivel carregar a mensagem do dia.');
     }
-  }, [token, showToast]);
+  }, [token, isCurrentToken, showToast]);
 
   /**
    * Carrega todos os registros de todos os vicios em paralelo.
@@ -250,17 +275,20 @@ export function DataProvider({ children }) {
    * @returns {Promise<void>}
    */
   const loadAllRecords = useCallback(async () => {
+    const requestToken = token;
     try {
       // Dispara N requisicoes em paralelo (uma por vicio)
-      const requests = addictions.map(addiction => registrosService.listarRegistros(addiction.id, token));
+      const requests = addictions.map(addiction => registrosService.listarRegistros(addiction.id, requestToken));
       const responses = await Promise.all(requests);
+      if (!isCurrentToken(requestToken)) return;
       // flatMap: achata [[reg1, reg2], [reg3]] -> [reg1, reg2, reg3]
       setAllRecords(responses.flatMap(response => response.registros || []));
     } catch (error) {
+      if (!isCurrentToken(requestToken)) return;
       handleDataError(error, 'Nao foi possivel carregar o historico de registros.');
       setAllRecords([]);
     }
-  }, [addictions, token, handleDataError]);
+  }, [addictions, token, isCurrentToken, handleDataError]);
 
   // ─── Funcoes de Escrita (Criacao, Atualizacao, Exclusao) ───────────────
 
@@ -433,12 +461,13 @@ export function DataProvider({ children }) {
    * Na pratica, executa uma vez apos o login bem-sucedido.
    */
   useEffect(() => {
+    resetDataState();
     if (!user || !token) return;
     loadAddictions();
     loadMotivationalMessage();
     loadGoals();
     loadRelapses();
-  }, [user, token, loadAddictions, loadMotivationalMessage, loadGoals, loadRelapses]);
+  }, [user, token, resetDataState, loadAddictions, loadMotivationalMessage, loadGoals, loadRelapses]);
 
   /**
    * Efeito secundario: carrega registros de todos os vicios apos a lista de vicios estar disponivel.
