@@ -1287,6 +1287,28 @@ app.get('/api/health', (req, res) => {
 });
 
 /* =========================================================================
+ * FRONTEND EM PRODUCAO
+ * ========================================================================= */
+
+/**
+ * Em producao, a API tambem publica o build estatico do painel React.
+ * Isso permite subir o REVIVE como um unico web service, com frontend e
+ * backend no mesmo dominio publico.
+ */
+if (isProduction) {
+    const webDistPath = path.join(__dirname, 'revive-painel', 'dist');
+    const webIndexPath = path.join(webDistPath, 'index.html');
+
+    app.use(express.static(webDistPath));
+
+    app.get(/^\/(?!api\/).*/, (req, res, next) => {
+        res.sendFile(webIndexPath, (err) => {
+            if (err) next();
+        });
+    });
+}
+
+/* =========================================================================
  * INICIALIZAÇÃO DO SERVIDOR
  * ========================================================================= */
 

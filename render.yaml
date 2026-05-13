@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: revive
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm install --prefix revive-painel && npm run build --prefix revive-painel
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
