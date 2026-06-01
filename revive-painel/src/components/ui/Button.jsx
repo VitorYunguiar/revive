@@ -2,9 +2,10 @@ import React from 'react';
 
 const variantClass = {
   primary: 'btn-primary',
+  accent: 'btn-accent',
   secondary: 'btn-secondary',
-  ghost: 'border border-transparent text-muted hover:text-app hover:bg-white/5',
-  danger: 'border border-rose-300/30 bg-rose-500/12 text-rose-100 hover:bg-rose-500/20'
+  ghost: 'border border-transparent text-muted hover:text-app hover:bg-black/5 rounded-full',
+  danger: 'btn-danger'
 };
 
 const sizeClass = {

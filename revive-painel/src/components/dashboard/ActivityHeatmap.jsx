@@ -19,7 +19,6 @@
  */
 
 import React from 'react';
-import { glassSurface } from '../../utils/constants';
 
 /**
  * Renderiza o heatmap de atividade dos ultimos 28 dias.
@@ -36,24 +35,32 @@ import { glassSurface } from '../../utils/constants';
  * @returns {JSX.Element} Grid visual tipo heatmap com estilizacao glassmorphism
  */
 export default function ActivityHeatmap({ heatmapData }) {
+  const activeDays = heatmapData.filter(day => day.count > 0 && !day.hasRelapse).length;
+
   return (
-    <div className={`${glassSurface} rounded-3xl p-5`}>
-      <p className="eyebrow mb-3">Atividade (28 dias)</p>
+    <div className="surface-sand rounded-[34px] p-6">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="eyebrow">Atividade</p>
+          <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-app">Ultimos 28 dias</h3>
+        </div>
+        <span className="rounded-full bg-[#121212] px-3 py-2 text-sm font-black text-[#fbfaf5]">{activeDays}/28</span>
+      </div>
       <div className="grid grid-cols-7 gap-1.5">
         {/* Cabecalho com iniciais dos dias da semana em portugues */}
         {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
-          <div key={i} className="text-[9px] text-muted text-center font-medium">{d}</div>
+          <div key={i} className="text-[9px] text-muted text-center font-black">{d}</div>
         ))}
         {/* Celulas do heatmap - cor determinada por recaida ou contagem de registros */}
         {heatmapData.map((day, i) => (
           <div
             key={i}
-            className={`w-full aspect-square rounded-sm transition-colors ${
+            className={`w-full aspect-square rounded-[8px] transition-colors ${
               day.hasRelapse ? 'bg-rose-500/60'
-              : day.count >= 3 ? 'bg-emerald-400/80'
-              : day.count >= 2 ? 'bg-emerald-400/50'
-              : day.count >= 1 ? 'bg-emerald-400/25'
-              : 'bg-slate-700/25'
+              : day.count >= 3 ? 'bg-[#121212]'
+              : day.count >= 2 ? 'bg-[#121212]/70'
+              : day.count >= 1 ? 'bg-[#121212]/35'
+              : 'bg-[#121212]/10'
             }`}
             title={`${day.date}: ${day.count} registro(s)`}
           />

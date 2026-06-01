@@ -84,6 +84,7 @@ export async function cadastro(nome, email, senha) {
  */
 export async function verificarToken(token) {
   const response = await fetch(`${API_BASE}/vicios`, {
+    cache: 'no-store',
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) throw new Error('Token invalido');

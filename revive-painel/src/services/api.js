@@ -44,18 +44,36 @@ import { API_BASE } from '../config/env';
  * const vicios = await apiCall('/vicios', {}, token);
  */
 export async function apiCall(endpoint, options = {}, token = null) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers: { ...headers, ...options.headers }
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      cache: 'no-store',
+      headers: { ...headers, ...options.headers }
+    });
+  } catch {
+    throw new Error('Nao foi possivel conectar ao servidor. Tente novamente em alguns segundos.');
+  }
 
-  const data = await response.json();
+  const text = await response.text();
+  let data = {};
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { erro: text };
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(data.mensagem || data.erro || 'Erro na requisicao');
+    throw new Error(data.mensagem || data.erro || `Erro na requisicao (${response.status})`);
   }
 
   return data;

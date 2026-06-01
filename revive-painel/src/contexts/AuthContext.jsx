@@ -117,6 +117,14 @@ export function AuthProvider({ children }) {
    */
   const handleCadastro = useCallback(async (nome, email, senha) => {
     const data = await authService.cadastro(nome, email, senha);
+    if (data.token) {
+      setToken(data.token);
+      localStorage.setItem('revive_token', data.token);
+      setUser(data.usuario);
+      showToast('success', 'Cadastro realizado com sucesso!');
+      return data;
+    }
+
     showToast('success', 'Cadastro realizado! Faca login para continuar.');
     return data;
   }, [showToast]);

@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:homolog": "vite --host 0.0.0.0",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run src/utils src/services",
+    "test:integration": "vitest run src/contexts src/pages src/components",
     "test:watch": "vitest"
   },
   "dependencies": {

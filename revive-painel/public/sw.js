@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'revive-v2';
+const CACHE_VERSION = 'revive-v5';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -26,6 +26,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(

@@ -8,7 +8,6 @@
  *
  * Hierarquia de composicao:
  * - ConfirmModal (overlay global de confirmacao)
- * - ToastContainer (notificacoes toast empilhadas)
  * - Header (cabecalho com logo, usuario e acoes)
  * - Alert (alerta contextual dismissavel)
  * - NavBar (navegacao horizontal com abas)
@@ -31,7 +30,6 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import NavBar from './NavBar';
 import ConfirmModal from '../ui/ConfirmModal';
-import ToastContainer from '../ui/Toast';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import Alert from '../ui/Alert';
 import NovoVicioWizard from '../modals/NovoVicioWizard';
@@ -61,7 +59,6 @@ const AppShell = () => {
   return (
     <div className="min-h-screen text-app relative">
       <ConfirmModal {...confirmModal} />
-      <ToastContainer />
       <NovoVicioWizard
         isOpen={isNewAddictionOpen}
         onClose={closeNewAddictionWizard}
@@ -71,14 +68,19 @@ const AppShell = () => {
         }}
         loading={loading}
       />
-      <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {alert && <Alert type={alert.type} onClose={() => setAlert(null)}>{alert.message}</Alert>}
-        <NavBar />
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
-      </main>
+      <div className="revive-app-frame">
+        <NavBar variant="sidebar" />
+        <main className="revive-shell">
+          <Header />
+          <div className="revive-content">
+            {alert && <Alert type={alert.type} onClose={() => setAlert(null)}>{alert.message}</Alert>}
+            <NavBar />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

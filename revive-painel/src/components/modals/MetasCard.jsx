@@ -1,32 +1,22 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, CheckCircle, Target, Trophy } from 'lucide-react';
+import { CheckCircle, Plus, Target, Trash2, Trophy } from 'lucide-react';
 import Button from '../ui/Button';
+import { SelectField } from '../ui/Field';
 import { fieldBase } from '../../utils/constants';
+
+const initialForm = { vicio_id: '', descricao_meta: '', dias_objetivo: '', valor_objetivo: '' };
 
 const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loading }) => {
   const [showForm, setShowForm] = useState(false);
-  const [formMeta, setFormMeta] = useState({
-    vicio_id: '',
-    descricao_meta: '',
-    dias_objetivo: '',
-    valor_objetivo: ''
-  });
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!formMeta.vicio_id || !formMeta.descricao_meta) return;
-
-    await onAddMeta(formMeta);
-    setFormMeta({ vicio_id: '', descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
-    setShowForm(false);
-  };
+  const [formMeta, setFormMeta] = useState(initialForm);
 
   const metasCompletadas = metas.filter(meta => meta.concluida).length;
   const metasAtivas = metas.filter(meta => !meta.concluida);
+  const vicioOptions = vicios.map(vicio => ({ value: vicio.id, label: vicio.nome_vicio }));
 
   const getVicioNome = (vicioId) => {
     const vicio = vicios.find(item => item.id === vicioId);
-    return vicio ? vicio.nome_vicio : 'Hábito não encontrado';
+    return vicio ? vicio.nome_vicio : 'Habito nao encontrado';
   };
 
   const calcularProgresso = (meta) => {
@@ -44,14 +34,28 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
     return 0;
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!formMeta.vicio_id || !formMeta.descricao_meta) return;
+
+    await onAddMeta(formMeta);
+    setFormMeta(initialForm);
+    setShowForm(false);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setFormMeta(initialForm);
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <p className="eyebrow mb-2">Planejamento</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-app">Metas</h2>
-            <p className="text-muted mt-2">Organize marcos claros para sustentar sua evolução.</p>
+            <h2 className="text-4xl sm:text-5xl font-black leading-[0.95] tracking-[-0.07em] text-app">Metas</h2>
+            <p className="text-muted mt-2">Organize marcos claros para sustentar sua evolucao.</p>
           </div>
           <Button type="button" variant="primary" onClick={() => setShowForm(true)}>
             <Plus className="w-4 h-4" />
@@ -61,20 +65,20 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="surface-card rounded-2xl p-6">
+        <div className="surface-card rounded-[30px] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-muted">Metas ativas</p>
-              <p className="text-4xl font-bold text-teal-300 mt-2">{metasAtivas.length}</p>
+              <p className="text-sm font-black text-muted">Metas ativas</p>
+              <p className="text-5xl font-black tracking-[-0.07em] text-teal-300 mt-2">{metasAtivas.length}</p>
             </div>
             <Target className="w-8 h-8 text-teal-300 opacity-70" />
           </div>
         </div>
-        <div className="surface-card rounded-2xl p-6">
+        <div className="surface-card rounded-[30px] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-muted">Metas concluídas</p>
-              <p className="text-4xl font-bold text-sky-300 mt-2">{metasCompletadas}</p>
+              <p className="text-sm font-black text-muted">Metas concluidas</p>
+              <p className="text-5xl font-black tracking-[-0.07em] text-sky-300 mt-2">{metasCompletadas}</p>
             </div>
             <Trophy className="w-8 h-8 text-sky-300 opacity-70" />
           </div>
@@ -82,24 +86,20 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="surface-card rounded-3xl p-5 sm:p-6 space-y-3">
+        <form onSubmit={handleSubmit} className="interactive-panel rounded-[34px] p-5 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <select
+            <SelectField
               value={formMeta.vicio_id}
-              onChange={(event) => setFormMeta({ ...formMeta, vicio_id: event.target.value })}
-              className={fieldBase}
-            >
-              <option value="">Selecione um hábito</option>
-              {vicios.map(vicio => (
-                <option key={vicio.id} value={vicio.id}>{vicio.nome_vicio}</option>
-              ))}
-            </select>
+              onChange={(nextValue) => setFormMeta({ ...formMeta, vicio_id: nextValue })}
+              options={vicioOptions}
+              placeholder="Selecione um habito"
+            />
 
             <input
               type="text"
               value={formMeta.descricao_meta}
               onChange={(event) => setFormMeta({ ...formMeta, descricao_meta: event.target.value })}
-              placeholder="Descrição da meta..."
+              placeholder="Descricao da meta..."
               className={fieldBase}
             />
           </div>
@@ -122,7 +122,7 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <Button
               type="submit"
               variant="primary"
@@ -131,15 +131,7 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
             >
               Adicionar meta
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setShowForm(false);
-                setFormMeta({ vicio_id: '', descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
-              }}
-              className="flex-1"
-            >
+            <Button type="button" variant="secondary" onClick={handleCancel} className="flex-1">
               Cancelar
             </Button>
           </div>
@@ -148,22 +140,22 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
 
       {metasAtivas.length > 0 ? (
         <div className="space-y-3">
-          <h3 className="text-lg font-bold text-app">Metas em progresso</h3>
+          <h3 className="text-lg font-black text-app">Metas em progresso</h3>
           {metasAtivas.map((meta) => {
             const progresso = calcularProgresso(meta);
             const isCompleted = progresso >= 100;
 
             return (
-              <div key={meta.id} className="surface-card rounded-2xl p-4 space-y-4">
+              <div key={meta.id} className="surface-card rounded-[26px] p-4 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <p className="font-semibold text-app">{meta.descricao_meta}</p>
+                      <p className="font-black text-app">{meta.descricao_meta}</p>
                       <span className="text-xs px-2 py-1 rounded-full bg-teal-400/12 text-teal-300 border border-teal-300/25">
                         {getVicioNome(meta.vicio_id)}
                       </span>
                     </div>
-                    {meta.dias_objetivo && <p className="text-sm text-muted">Objetivo: {meta.dias_objetivo} dias de abstinência</p>}
+                    {meta.dias_objetivo && <p className="text-sm text-muted">Objetivo: {meta.dias_objetivo} dias de abstinencia</p>}
                     {meta.valor_objetivo && <p className="text-sm text-muted">Objetivo: R$ {parseFloat(meta.valor_objetivo).toFixed(2)} economizados</p>}
                   </div>
                   <button
@@ -184,19 +176,13 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
                         style={{ width: `${progresso}%` }}
                       />
                     </div>
-                    <span className="text-sm font-semibold text-teal-300 min-w-[45px] text-right">{progresso}%</span>
+                    <span className="text-sm font-black text-teal-300 min-w-[45px] text-right">{progresso}%</span>
                   </div>
 
                   {isCompleted && !meta.concluida && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={loading}
-                      onClick={() => onCompleteMeta(meta.id)}
-                      className="w-full"
-                    >
+                    <Button type="button" variant="secondary" disabled={loading} onClick={() => onCompleteMeta(meta.id)} className="w-full">
                       <CheckCircle className="w-4 h-4" />
-                      Marcar como concluída
+                      Marcar como concluida
                     </Button>
                   )}
                 </div>
@@ -205,17 +191,17 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
           })}
         </div>
       ) : (
-        <div className="surface-card rounded-3xl p-8 text-center">
+        <div className="surface-card rounded-[34px] p-8 text-center">
           <Target className="w-10 h-10 text-teal-300 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-app">Nenhuma meta ativa</h3>
-          <p className="text-muted mt-1">Crie uma meta para transformar intenção em acompanhamento concreto.</p>
+          <h3 className="text-lg font-black text-app">Nenhuma meta ativa</h3>
+          <p className="text-muted mt-1">Crie uma meta para transformar intencao em acompanhamento concreto.</p>
         </div>
       )}
 
       {metasCompletadas > 0 && (
-        <details className="group surface-muted rounded-2xl p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-muted hover:text-app transition">
-            Metas concluídas ({metasCompletadas})
+        <details className="group surface-muted rounded-[24px] p-4">
+          <summary className="cursor-pointer text-sm font-black text-muted hover:text-app transition">
+            Metas concluidas ({metasCompletadas})
           </summary>
           <div className="space-y-2 mt-3">
             {metas.filter(meta => meta.concluida).map(meta => (

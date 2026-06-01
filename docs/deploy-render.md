@@ -29,11 +29,13 @@ Cadastre no servico:
 
 ```ini
 SUPABASE_URL=...
-SUPABASE_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 JWT_SECRET=...
+NODE_ENV=production
 ```
 
-Use a mesma `SUPABASE_URL`, `SUPABASE_KEY` e `JWT_SECRET` do `.env` local.
+Use a mesma `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `JWT_SECRET` do `.env` local.
+Se voce usar `SUPABASE_KEY`, ela precisa ser a service role key. A anon key pode falhar no cadastro quando a tabela `usuarios` estiver protegida por RLS.
 
 `ALLOWED_ORIGINS` e opcional neste deploy, porque o painel e a API rodam no mesmo dominio. Se a API for consumida por outro frontend no futuro, cadastre:
 

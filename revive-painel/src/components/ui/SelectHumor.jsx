@@ -73,14 +73,18 @@ const SelectHumor = ({ value, onChange, label }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`${fieldBase} text-left flex items-center justify-between hover:bg-white/10`}
+        className={`${fieldBase} group text-left flex items-center justify-between gap-3`}
       >
-        <span>{opcaoSelecionada ? opcaoSelecionada.fullLabel : label}</span>
-        <ChevronDown className={`w-5 h-5 text-muted transition ${isOpen ? 'rotate-180' : ''}`} />
+        <span className={opcaoSelecionada ? 'font-black text-app' : 'font-bold text-muted'}>
+          {opcaoSelecionada ? opcaoSelecionada.fullLabel : label}
+        </span>
+        <span className={`grid h-8 w-8 place-items-center rounded-full border border-[var(--line)] bg-black/5 text-muted transition group-hover:text-app ${isOpen ? 'rotate-180 text-[var(--accent-strong)]' : ''}`}>
+          <ChevronDown className="w-4 h-4" />
+        </span>
       </button>
 
       {isOpen && (
-        <div className="mt-2 w-full surface-strong rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+        <div className="interactive-field-menu absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-64 overflow-y-auto rounded-[22px] p-2">
           {opcoes.map((opcao) => (
             <button
               key={opcao.value}
@@ -89,15 +93,15 @@ const SelectHumor = ({ value, onChange, label }) => {
                 onChange(opcao.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-4 py-3 text-left flex items-center gap-3 transition border-b border-white/10 last:border-b-0 ${
+              className={`w-full min-h-12 rounded-[16px] px-3 py-2 text-left flex items-center gap-3 transition ${
                 value === opcao.value
-                  ? 'bg-teal-400/16 text-app'
-                  : 'text-muted hover:bg-white/8 hover:text-app'
+                  ? 'bg-[var(--accent)] text-[#121212]'
+                  : 'text-app hover:bg-black/5'
               }`}
             >
               <span className="text-2xl">{opcao.emoji}</span>
-              <span className="font-medium">{opcao.label}</span>
-              {value === opcao.value && <CheckCircle className="w-5 h-5 ml-auto text-teal-300" />}
+              <span className="font-black">{opcao.label}</span>
+              {value === opcao.value && <CheckCircle className="w-5 h-5 ml-auto" />}
             </button>
           ))}
         </div>

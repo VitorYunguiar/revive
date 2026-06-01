@@ -30,7 +30,8 @@ bash
 ini
    PORT=3000
    SUPABASE_URL=...        # URL do seu projeto
-   SUPABASE_KEY=...        # Service role key
+   SUPABASE_SERVICE_ROLE_KEY=...  # Service role key
+   SUPABASE_KEY=...        # Fallback opcional
    JWT_SECRET=supersegredo
 
 
@@ -86,13 +87,20 @@ A API utiliza relacionamentos simples por `usuario_id`/`vicio_id`. Ajuste nomes/
 | --- | --- | --- |
 | `npm run dev` | raiz | API com nodemon |
 | `npm start` | raiz | API em modo padrão |
+| `npm run test:api` | raiz | Executa testes unitarios e de integracao da API |
+| `npm run test:web` | raiz | Executa testes unitarios e de integracao do painel |
+| `npm run validate` | raiz | Pipeline local completa: API, testes do painel e build |
 | `npm run dev` | `revive-painel/` | Frontend Vite |
+| `npm run test:unit` | `revive-painel/` | Testes unitarios de funcoes puras e servicos do painel |
+| `npm run test:integration` | `revive-painel/` | Testes de contextos, paginas e componentes do painel |
 | `npm run build` | `revive-painel/` | Build para produção |
 
 ## 8. Dicas adicionais
 
+- Para publicar na Vercel, use `vercel.json` na raiz e siga `docs/deploy-vercel.md`.
 - Para usar autenticação JWT, o painel salva `revive_token` no `localStorage` após login.
 - Ao zipar o projeto, inclua o `.env.example` com placeholders (nunca exponha chaves reais).
 - Certifique-se de liberar CORS no Supabase se consumir diretamente de outros domínios.
+- O tutorial detalhado de testes está em `docs/testes.md`.
 
 Pronto! Com esses passos, qualquer pessoa conseguirá subir a API e o painel localmente.

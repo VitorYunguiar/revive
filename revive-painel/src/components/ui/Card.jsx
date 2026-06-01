@@ -23,6 +23,14 @@
 import React from 'react';
 import { glassSurface } from '../../utils/constants';
 
+const variantClass = {
+  surface: glassSurface,
+  sand: 'surface-sand',
+  dark: 'surface-dark',
+  accent: 'surface-accent',
+  muted: 'surface-muted'
+};
+
 /**
  * Componente de card reutilizavel com estilo glass morphism.
  *
@@ -38,13 +46,13 @@ import { glassSurface } from '../../utils/constants';
  * @param {string} [props.className=''] - Classes CSS adicionais para customizacao
  * @returns {JSX.Element} Card estilizado com glassSurface e cabecalho condicional
  */
-const Card = ({ title, subtitle, actions, children, className = '' }) => (
-  <div className={`${glassSurface} rounded-2xl p-5 sm:p-6 ${className}`}>
+const Card = ({ title, subtitle, actions, children, className = '', variant = 'surface' }) => (
+  <div className={`${variantClass[variant] || glassSurface} rounded-[30px] p-5 sm:p-6 ${className}`}>
     {(title || subtitle || actions) && (
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           {subtitle && <p className="eyebrow mb-1">{subtitle}</p>}
-          {title && <h3 className="text-xl font-semibold text-app">{title}</h3>}
+          {title && <h3 className="text-xl font-black tracking-[-0.04em] text-app">{title}</h3>}
         </div>
         {actions}
       </div>

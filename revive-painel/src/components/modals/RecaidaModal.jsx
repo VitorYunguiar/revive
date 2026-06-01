@@ -5,8 +5,8 @@ const optionClass = (active, tone) => {
   const activeTone = tone === 'emerald'
     ? 'bg-emerald-400/12 border-emerald-300/45'
     : 'bg-sky-400/12 border-sky-300/45';
-  return `w-full p-5 rounded-2xl border transition text-left ${
-    active ? activeTone : 'surface-muted hover:bg-white/10'
+  return `w-full p-5 rounded-[26px] border transition text-left ${
+    active ? activeTone : 'surface-muted hover:bg-black/5'
   }`;
 };
 
@@ -34,7 +34,7 @@ const RecaidaModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="surface-strong rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+      <div className="surface-strong rounded-[34px] shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 icon-tile bg-rose-400/12 text-rose-300 border-rose-300/25">
@@ -42,16 +42,16 @@ const RecaidaModal = ({
             </div>
             <div>
               <p className="eyebrow">Registro sensível</p>
-              <h2 className="text-2xl font-bold text-app">Recaída registrada</h2>
+              <h2 className="text-3xl font-black tracking-[-0.055em] text-app">Recaída registrada</h2>
               <p className="text-muted text-sm">{vicio.nome_vicio}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-muted hover:text-app hover:bg-white/10">
+          <button onClick={onClose} className="p-2 rounded-xl text-muted hover:text-app hover:bg-black/5">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="surface-muted rounded-2xl p-4 mb-5">
+        <div className="surface-muted rounded-[24px] p-4 mb-5">
           <p className="text-muted leading-relaxed">
             Uma recaída não apaga seu progresso. Escolha como deseja registrar este momento para manter a jornada clara.
           </p>

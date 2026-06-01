@@ -31,6 +31,7 @@ import App from './App.jsx';
 import { UIProvider } from './contexts/UIContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import ToastContainer from './components/ui/Toast';
 import './index.css';
 
 /**
@@ -47,6 +48,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <App />
           </DataProvider>
         </AuthProvider>
+        <ToastContainer />
       </UIProvider>
     </BrowserRouter>
   </React.StrictMode>

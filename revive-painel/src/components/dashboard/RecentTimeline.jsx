@@ -53,17 +53,17 @@ export default function RecentTimeline({ recentActivity }) {
   if (recentActivity.length === 0) return null;
 
   return (
-    <div className={`${glassSurface} rounded-3xl p-6`}>
+    <div className={`${glassSurface} rounded-[34px] p-6`}>
       <div className="mb-4">
         <p className="eyebrow">Histórico</p>
-        <h3 className="text-lg font-semibold text-app">Atividade recente</h3>
+        <h3 className="text-3xl font-black tracking-[-0.055em] text-app">Atividade recente</h3>
       </div>
       <div className="space-y-3">
         {recentActivity.map((event) => {
           const Icon = event.icon;
           return (
-            <div key={event.id} className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${typeColors[event.type]}`}>
+            <div key={event.id} className="surface-muted rounded-[22px] p-3 flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-[16px] flex items-center justify-center flex-shrink-0 ${typeColors[event.type]}`}>
                 <Icon className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">

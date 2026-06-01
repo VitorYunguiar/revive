@@ -65,6 +65,8 @@ const PORT = process.env.PORT || 3000;
  */
 const isProduction = process.env.NODE_ENV === 'production';
 
+app.set('trust proxy', 1);
+
 /**
  * Constante com a quantidade de milissegundos em um dia (86.400.000 ms).
  * Utilizada nos cálculos de dias de abstinência.
@@ -83,11 +85,12 @@ const MS_PER_DAY = 86_400_000;
 const supabaseUrl = process.env.SUPABASE_URL;
 
 /**
- * Chave de acesso anônima (anon key) do Supabase (definida via variável de ambiente).
- * Essa chave é segura para uso no backend quando combinada com Row Level Security (RLS).
+ * Chave de acesso do Supabase (definida via variável de ambiente).
+ * Em producao, prefira SUPABASE_SERVICE_ROLE_KEY no backend para permitir
+ * cadastro mesmo quando a tabela usuarios estiver protegida por RLS.
  * @type {string}
  */
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 /**
  * Cliente Supabase utilizado como camada de acesso a dados (Repository Pattern).
@@ -106,14 +109,36 @@ const supabase = createClient(supabaseUrl, supabaseKey);
  * As origens permitidas são definidas pela variável de ambiente ALLOWED_ORIGINS
  * (separadas por vírgula) ou padrão localhost:5173 para desenvolvimento.
  */
+const configuredAllowedOrigins = process.env.ALLOWED_ORIGINS
+    ?.split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+const defaultAllowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const localNetworkOriginPattern = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = configuredAllowedOrigins || defaultAllowedOrigins;
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        if (!isProduction && localNetworkOriginPattern.test(origin)) return callback(null, true);
+
+        // Nao falha a requisicao: para origens nao listadas, apenas nao emite
+        // headers CORS. Isso preserva chamadas same-origin em producao no Render.
+        return callback(null, false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
 }));
 
 /** Middleware para parsing automático de JSON no corpo das requisições */
 app.use(express.json());
+
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
 
 /**
  * Middleware de logging HTTP no formato 'combined' (Apache-like).
@@ -155,6 +180,7 @@ const swaggerSpec = swaggerJsdoc({
 });
 
 /** Rota que serve a interface Swagger UI para explorar a documentação da API */
+app.get('/api/docs', swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
 /* =========================================================================
@@ -170,10 +196,21 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: t
  * Protege contra ataques de força bruta em login e cadastro.
  * @type {import('express-rate-limit').RateLimitRequestHandler}
  */
-const authLimiter = rateLimit({
+const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 15,
-    message: { erro: 'Muitas tentativas de autenticacao. Tente novamente em 15 minutos.' }
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
+});
+
+const cadastroLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: { erro: 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.' }
 });
 
 /**
@@ -184,15 +221,21 @@ const authLimiter = rateLimit({
  */
 const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
-    max: 100,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { erro: 'Limite de requisicoes excedido. Tente novamente em 1 minuto.' }
 });
 
 /** Aplica rate limiter mais restritivo nas rotas de autenticação */
-app.use('/api/auth', authLimiter);
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/cadastro', cadastroLimiter);
 
 /** Aplica rate limiter geral em todas as rotas /api */
-app.use('/api', apiLimiter);
+app.use('/api', (req, res, next) => {
+    if (req.path.startsWith('/auth/')) return next();
+    return apiLimiter(req, res, next);
+});
 
 /* =========================================================================
  * MIDDLEWARE DE AUTENTICAÇÃO JWT
@@ -271,6 +314,9 @@ function sanitize(str) {
 function logInternalError(context, error) {
     console.error(`[${new Date().toISOString()}] ${context}`, {
         message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
         stack: error?.stack
     });
 }
@@ -296,6 +342,37 @@ function sendInternalError(res, userMessage, error) {
 
     const payload = { erro: userMessage };
     // Em desenvolvimento, adiciona detalhes técnicos para facilitar a depuração
+    if (!isProduction) {
+        payload.detalhes = error?.message;
+    }
+
+    return res.status(500).json(payload);
+}
+
+function isSupabaseUniqueViolation(error) {
+    return error?.code === '23505' || /duplicate key/i.test(error?.message || '');
+}
+
+function isSupabasePermissionError(error) {
+    return error?.code === '42501'
+        || /row-level security|permission denied|rls/i.test(error?.message || '');
+}
+
+function sendCadastroDatabaseError(res, error) {
+    logInternalError('Erro ao cadastrar usuario', error);
+
+    if (isSupabaseUniqueViolation(error)) {
+        return res.status(400).json({ erro: 'Email ja cadastrado' });
+    }
+
+    if (isSupabasePermissionError(error)) {
+        return res.status(500).json({
+            erro: 'Banco sem permissao para cadastrar usuario. Verifique SUPABASE_SERVICE_ROLE_KEY no Render.',
+            codigo: 'SUPABASE_PERMISSION_DENIED'
+        });
+    }
+
+    const payload = { erro: 'Erro ao cadastrar usuario' };
     if (!isProduction) {
         payload.detalhes = error?.message;
     }
@@ -338,7 +415,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
     try {
         // Sanitiza entradas de texto para prevenir XSS
         const nome = sanitize(req.body.nome);
-        const email = sanitize(req.body.email);
+        const email = sanitize(req.body.email)?.toLowerCase();
         const { senha } = req.body;
 
         // --- Guard Clauses: validação de campos obrigatórios ---
@@ -363,11 +440,15 @@ app.post('/api/auth/cadastro', async (req, res) => {
 
         // --- Verificação de unicidade do email ---
         // Consulta o banco para verificar se já existe um usuário com este email
-        const { data: usuarioExistente } = await supabase
+        const { data: usuarioExistente, error: usuarioExistenteError } = await supabase
             .from('usuarios')
             .select('id')
             .eq('email', email)
-            .single();
+            .maybeSingle();
+
+        if (usuarioExistenteError) {
+            return sendCadastroDatabaseError(res, usuarioExistenteError);
+        }
 
         if (usuarioExistente) {
             return res.status(400).json({ erro: 'Email ja cadastrado' });
@@ -385,11 +466,20 @@ app.post('/api/auth/cadastro', async (req, res) => {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            return sendCadastroDatabaseError(res, error);
+        }
+
+        const token = jwt.sign(
+            { id: data.id, email: data.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
 
         // Retorna dados do usuário criado (sem a senha hash por segurança)
         res.status(201).json({
             mensagem: 'Usuario cadastrado com sucesso',
+            token,
             usuario: { id: data.id, nome: data.nome, email: data.email }
         });
     } catch (error) {
@@ -421,7 +511,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
  */
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const email = sanitize(req.body.email);
+        const email = sanitize(req.body.email)?.toLowerCase();
         const { senha } = req.body;
 
         if (!email || !senha) {
@@ -1317,8 +1407,9 @@ if (isProduction) {
  * A condição NODE_ENV !== 'test' evita que o servidor suba durante
  * a execução de testes automatizados (o framework de testes, como Jest,
  * importa o app diretamente via module.exports sem iniciar o listener).
+ * Na Vercel, o app e importado por uma Function e nao deve abrir uma porta.
  */
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
     app.listen(PORT, () => {
         console.log(`API REVIVE rodando na porta ${PORT}`);
         console.log(`Health check: http://localhost:${PORT}/api/health`);
