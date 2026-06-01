@@ -50,7 +50,7 @@ const steps = [
 const optionClass = (active) => `p-4 rounded-2xl transition text-left border ${
   active
     ? 'bg-teal-400/18 border-teal-300/60 shadow-lg shadow-teal-400/10'
-    : 'surface-muted hover:bg-white/10'
+    : 'surface-muted hover:bg-black/5'
 }`;
 
 const ErrorMessage = ({ children }) => (
@@ -154,15 +154,15 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-2xl surface-strong rounded-3xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div className="w-full max-w-2xl surface-strong rounded-[34px] overflow-hidden max-h-[92vh] flex flex-col">
         <div className="relative px-6 sm:px-8 py-6 border-b hairline">
           <p className="eyebrow mb-2">Novo cadastro</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-app">Novo hábito</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.06em] text-app">Novo hábito</h1>
           <p className="text-muted mt-1">Etapa {etapa + 1} de {steps.length}</p>
           <button
             type="button"
             onClick={handleFechar}
-            className="absolute top-5 right-5 p-2 hover:bg-white/10 rounded-xl transition text-muted hover:text-app"
+            className="absolute top-5 right-5 p-2 hover:bg-black/5 rounded-xl transition text-muted hover:text-app"
             aria-label="Fechar"
           >
             <X className="w-5 h-5" />
@@ -187,7 +187,7 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
         </div>
 
         <div className="px-6 sm:px-8 py-6 min-h-80 overflow-y-auto">
-          <h2 className="text-2xl font-bold text-app mb-2">{steps[etapa].title}</h2>
+          <h2 className="text-3xl font-black tracking-[-0.055em] text-app mb-2">{steps[etapa].title}</h2>
           <p className="text-muted mb-6">{steps[etapa].description}</p>
 
           {etapa === 0 && (
@@ -336,7 +336,7 @@ const NovoVicioWizard = ({ isOpen, onClose, onSubmit, loading }) => {
 
           {etapa === 4 && (
             <div className="space-y-4">
-              <label className="flex items-center gap-4 p-4 surface-muted rounded-2xl cursor-pointer hover:bg-white/10 transition">
+              <label className="flex items-center gap-4 p-4 surface-muted rounded-2xl cursor-pointer hover:bg-black/5 transition">
                 <input
                   type="checkbox"
                   checked={formData.lembretesDiarios}

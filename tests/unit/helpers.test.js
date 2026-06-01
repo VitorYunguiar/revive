@@ -1,11 +1,10 @@
-const { describe, it, expect } = require('vitest');
 const {
     sanitize,
     formatDuration,
     calculateAddictionStats
-} = require('../index');
+} = require('../../index');
 
-describe('helper functions', () => {
+describe('api helper functions', () => {
     it('sanitize trims strings and keeps nullish values', () => {
         expect(sanitize('  abc  ')).toBe('abc');
         expect(sanitize('')).toBe('');

@@ -21,7 +21,6 @@
 
 import React from 'react';
 import { DollarSign, Flame, Heart, Star, Target } from 'lucide-react';
-import { glassSurface } from '../../utils/constants';
 
 /**
  * Converte uma pontuacao numerica de humor em um label descritivo em portugues.
@@ -69,64 +68,44 @@ export default function HeroKpis({
   moodTrend
 }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-      <div className={`${glassSurface} rounded-2xl p-5 col-span-2 lg:col-span-1 border-emerald-300/20`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 icon-tile bg-emerald-400/12 text-emerald-300 border-emerald-300/20">
-            <Flame className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs uppercase font-semibold text-muted">Dias Limpos</p>
-            <p className="text-2xl font-bold text-app">{totalDiasLimpos}</p>
-          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+      <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+        <Flame className="w-6 h-6 text-[var(--accent)]" />
+        <div className="mt-5">
+          <p className="text-[0.68rem] uppercase tracking-[0.16em] font-black text-white/40">Dias limpos</p>
+          <p className="mt-1 text-3xl font-black tracking-[-0.06em] text-white">{totalDiasLimpos}</p>
         </div>
       </div>
 
-      <div className={`${glassSurface} rounded-2xl p-5`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 icon-tile bg-sky-400/12 text-sky-300 border-sky-300/20">
-            <DollarSign className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs uppercase font-semibold text-muted">Economizado</p>
-            <p className="text-xl font-bold text-app">R$ {totalEconomizado.toFixed(0)}</p>
-          </div>
+      <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+        <DollarSign className="w-6 h-6 text-[var(--accent)]" />
+        <div className="mt-5">
+          <p className="text-[0.68rem] uppercase tracking-[0.16em] font-black text-white/40">Economia</p>
+          <p className="mt-1 text-2xl font-black tracking-[-0.06em] text-white">R$ {totalEconomizado.toFixed(0)}</p>
         </div>
       </div>
 
-      <div className={`${glassSurface} rounded-2xl p-5`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 icon-tile bg-amber-400/12 text-amber-300 border-amber-300/20">
-            <Star className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs uppercase font-semibold text-muted">Maior Streak</p>
-            <p className="text-2xl font-bold text-app">{maiorStreak}d</p>
-          </div>
+      <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+        <Star className="w-6 h-6 text-[var(--accent)]" />
+        <div className="mt-5">
+          <p className="text-[0.68rem] uppercase tracking-[0.16em] font-black text-white/40">Streak</p>
+          <p className="mt-1 text-3xl font-black tracking-[-0.06em] text-white">{maiorStreak}d</p>
         </div>
       </div>
 
-      <div className={`${glassSurface} rounded-2xl p-5`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 icon-tile bg-violet-400/12 text-violet-300 border-violet-300/20">
-            <Target className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs uppercase font-semibold text-muted">Metas</p>
-            <p className="text-2xl font-bold text-app">{metasConcluidas}</p>
-          </div>
+      <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+        <Target className="w-6 h-6 text-[var(--accent)]" />
+        <div className="mt-5">
+          <p className="text-[0.68rem] uppercase tracking-[0.16em] font-black text-white/40">Metas</p>
+          <p className="mt-1 text-3xl font-black tracking-[-0.06em] text-white">{metasConcluidas}</p>
         </div>
       </div>
 
-      <div className={`${glassSurface} rounded-2xl p-5`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 icon-tile bg-rose-400/12 text-rose-300 border-rose-300/20">
-            <Heart className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs uppercase font-semibold text-muted">Humor 7d</p>
-            <p className="text-lg font-bold text-app">{getMoodLabel(moodTrend)}</p>
-          </div>
+      <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+        <Heart className="w-6 h-6 text-[var(--accent)]" />
+        <div className="mt-5">
+          <p className="text-[0.68rem] uppercase tracking-[0.16em] font-black text-white/40">Humor 7d</p>
+          <p className="mt-1 text-2xl font-black tracking-[-0.06em] text-white">{getMoodLabel(moodTrend)}</p>
         </div>
       </div>
     </div>

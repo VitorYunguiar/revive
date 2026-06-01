@@ -3,12 +3,25 @@
   "version": "1.0.0",
   "description": "API RESTful para o aplicativo REVIVE - Plataforma de apoio à recuperação de vícios",
   "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
     "dev:stack": "concurrently -n api,painel \"npm run dev\" \"npm run dev --prefix revive-painel\"",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "dev:homolog": "concurrently -n api,painel \"npm run dev\" \"npm run dev:homolog --prefix revive-painel\"",
+    "test": "npm run test:api && npm run test:web",
+    "test:watch": "vitest",
+    "test:api": "npm run test:api:unit && npm run test:api:integration",
+    "test:api:unit": "vitest run tests/unit",
+    "test:api:integration": "vitest run tests/integration",
+    "test:web": "npm run test:unit --prefix revive-painel && npm run test:integration --prefix revive-painel",
+    "test:web:unit": "npm run test:unit --prefix revive-painel",
+    "test:web:integration": "npm run test:integration --prefix revive-painel",
+    "build:web": "npm run build --prefix revive-painel",
+    "lint:web": "npm run lint --prefix revive-painel",
+    "validate": "npm run test:api && npm run test:web && npm run build:web"
   },
   "keywords": [
     "revive",

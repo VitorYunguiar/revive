@@ -37,13 +37,13 @@ import TrendIndicator from './TrendIndicator';
  * @returns {JSX.Element} Card de KPI com glassSurface e borda colorida
  */
 const KpiCard = ({ icon, title, value, border, trend }) => (
-  <div className={`${glassSurface} rounded-2xl p-5 border-[1.5px] ${kpiBorderMap[border] || 'hairline'}`}>
+  <div className={`${glassSurface} rounded-[26px] p-5 border-[1.5px] ${kpiBorderMap[border] || 'hairline'}`}>
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1">
-        {icon}
+        <div className="w-12 h-12 icon-tile text-[var(--accent-strong)]">{icon}</div>
         <div>
-          <p className="text-xs uppercase font-semibold text-muted">{title}</p>
-          <p className="text-2xl font-bold text-app">{value}</p>
+          <p className="text-xs uppercase tracking-[0.16em] font-black text-muted">{title}</p>
+          <p className="text-3xl font-black tracking-[-0.06em] text-app">{value}</p>
         </div>
       </div>
       {trend !== undefined && <TrendIndicator trend={trend} />}

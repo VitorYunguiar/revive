@@ -1,0 +1,649 @@
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607   
+Documento de Especificação de Projeto Integrador  
+REVIVE  
+ 
+Sumário  
+1. PARTE 00 - HISTÓRICO DE VERSÃO DO PROJETO  3 
+2. PARTE 01 – IDENTIFICAÇÃO DO PRODUTO, EQUIPE E REPOSITÓRIO  3 
+3. 1 IDENTIFICAÇÃO DO PRODUTO  3 
+4. 2 DESCRIÇÃO GERAL DO PRODUTO  3 
+5. 2.1 Resumo do Negócio  3 
+6. 2.2 Problemas Identificados  4 
+7. 3 EQUIPE DO PROJETO  4 
+8. 4 RESPOSITÓRIOS E ARTEFATOS DO PROJETO  5 
+9. PARTE 02 – PLANEJAMENTO DO SEMESTRE  6 
+10. 5 SITUAÇÃO ATUAL DO PROJETO  6 
+11. 6 OBJETIVOS DO SEMESTRE  7 
+12. 7 CRONOGRAMA DO SEMESTRE  7 
+13. PARTE 03 – ENTENDIMENTO DO PÚBLICO, DO NEGÓCIO E LEVANTAMENTO INICIAL DE REQUISITOS  8 
+14. 8 PÚBLICO -ALVO DO PRODUTO  8 
+15. 9 CONTEXTO DE NEGÓCIO  9 
+16. 10 SOLUÇÕES EXISTENTES  9 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  17. 11 PESQUISA COM USUÁRIOS  10 
+18. 12 RESULTADOS DE PESQUISA COM USUÁRIO  10 
+19. 13 REGRAS DE NEGÓCIO  10 
+20. 14 REQUISITOS FUNCIONAIS  11 
+21. 15 REQUISITOS NÃO FUNCIONAIS  11 
+22. PARTE 04 – DESIGN, MODELAGEM, DADOS E SOLUÇÃO TECNOLÓGICA  11 
+23. 16 DESIGN DA SOLUÇÃO E EXPERIÊNCIA DO USUÁRIO  11 
+24. 16.1 Fluxo de Navegação  11 
+25. 16.2 Protótipos do Sistema  12 
+26. 17 GESTÃO DO PROJETO DE MODELAGEM DO SISTEMA  12 
+27. 17.1 Organização do Projeto (Abordagem Ágil)  12 
+28. 17.2 Modelagem e Diagramas do Sistema  12 
+29. 18 DADOS E MODELAGEM DA INFORMAÇÃO  13 
+30. 18.1 Modelo de Dados  13 
+31. 18.2 Estrutura e Manipulação de Dados  13 
+32. 19 SOLUÇÃO TECNOLÓGICA E EXPERIMENTAÇÃO TÉCNICA INICIAL  13 
+33. 19.1 Escolhas Tecnológicas  14 
+34. 19.2 Experimentação Técnica e Primeiros Testes  14 
+35. PARTE 05 – ARQUITETURA, TECNOLOGIA E IMPLEMENTAÇÃO EVOLUTIVA DO SISTEMA  14 
+36. 20 ARQUITETURA GERAL DO SISTEMA  14 
+37. 21 TECNOLOGIAS E FERRAMENTAS DO PROJETO  15 
+38. 22 IMPLEMENTAÇÃO POR CAMADAS DO SISTEMA  15 
+39. 22.1 Frontend  16 
+40. 22.2 Backend  16 
+41. 23 ORGANIZAÇÃO DO CÓDIGO E REPOSITÓRIO  17 
+42. PARTE 06 – QUALIDADE, SEGURANÇA, AVALIAÇÃO E EXTENSÕES DO PROJETO  17 
+43. 24 QUALIDADE DO SOFTWARE E TESTES  17 
+44. 25 SEGURANÇA DA INFORMAÇÃO  18 
+45. 26 EXTENSÕES E TECNOLOGIAS COMPLEMENTARES  18 
+46. 27 AVALIAÇÃO GERAL DO PROJETO INTEGRADOR  19 
+ 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607   
+PARTE 00 - HISTÓRICO DE VERSÃO  DO PROJETO  
+ 
+Versão  Período  Fase  Data  Descrição  
+1.0 1º 01 08/03/2026  Criação inicial do documento do projeto, definição do 
+nome do produto, descrição geral, identificação da 
+equipe e planejamento do semestre.  
+1.1 1º 02 19/04/2026  Ajustes na descrição do produto, inclusão dos objetivos 
+do semestre, revisão do planejamento e primeiros 
+refinamentos a partir do feedback recebido.  
+ 
+PARTE 01 – IDENTIFICAÇÃO DO PRODUTO, EQUIPE E REPOSITÓRIO  
+ 
+1 IDENTIFICAÇÃO DO PRODUTO  
+ 
+Nome do Produto: REVIVE  
+ 
+Descrição do Produto:  
+O REVIVE é um aplicativo web voltado para pessoas que desejam acompanhar e superar vícios e 
+dependências, oferecendo ferramentas de registro diário, acompanhamento de abstinência e 
+suporte motivacional. O produto permite que o usuário cadastre os vícios qu e deseja combater, 
+registre diariamente seu humor, gatilhos e conquistas, acompanhe o tempo de abstinência em 
+dias e visualize a economia financeira gerada ao deixar de gastar com o vício. Além disso, o REVIVE 
+oferece um sistema de metas pessoais, um histó rico de recaídas com espaço para reflexão, um 
+calendário de atividades, conquistas desbloqueáveis e mensagens motivacionais diárias. O 
+produto foi pensado para ser um companheiro de recuperação acessível, organizado e 
+encorajador, auxiliando o usuário a ma nter o controle sobre sua jornada de superação de forma 
+prática e visual.  
+ 
+2 DESCRIÇÃO GERAL DO PRODUTO  
+ 
+O REVIVE está inserido no contexto de saúde e bem -estar pessoal, mais especificamente na área 
+de recuperação de dependências e mudança de hábitos. Milhões de pessoas lidam diariamente 
+com vícios que afetam sua saúde física, mental e financeira, como tabagi smo, alcoolismo, jogos de 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  azar, uso excessivo de redes sociais, entre outros. A atividade principal desse contexto é o 
+acompanhamento contínuo do progresso de abstinência, o registro de experiências diárias e a 
+busca por motivação para manter -se firme no processo de recuperação. Es se cenário é relevante 
+porque a falta de ferramentas acessíveis e organizadas para automonitoramento contribui para 
+altas taxas de recaída e abandono do tratamento, tornando essencial a existência de soluções 
+digitais que apoiem o usuário de forma prática e contínua.  
+ 
+2.2 Problemas Identificados  
+ 
+Item Descrição  
+O problema de  Ausência de uma ferramenta unificada para registro e 
+acompanhamento da jornada de recuperação de vícios, fazendo 
+com que o usuário não consiga visualizar seu progresso de forma 
+clara e organizada.  
+Afeta  Pessoas em processo de recuperação de vícios e dependências que 
+buscam acompanhar sua evolução de forma autônoma.  
+Cujo impacto é  Falta de consciência sobre o próprio progresso, dificuldade em 
+identificar padrões de gatilhos e recaídas, desmotivação pela 
+ausência de reconhecimento das conquistas e perda de controle 
+sobre a economia financeira gerada pela abstinência.  
+Benefícios de uma 
+solução seriam  Maior controle e consciência sobre a jornada de recuperação, 
+identificação de padrões comportamentais, motivação contínua 
+por meio de conquistas e métricas visuais, e clareza sobre o 
+impacto financeiro positivo da abstinência.  
+3 EQUIPE DO PROJETO  
+ 
+Matrícula  Nome Completo  Função no Projeto  
+2310796  Vitor de Aguiar Adrião  Product Owner  
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  2310685  João Marcelo Pin to Desenvolvedor Back -end 
+2311143  Davi Maestri Ribeiro  Dese nvolvedor Front -end 
+ Renato Luan  Orientador Principal  
+  Orientador Secundário  
+ 
+4 RESPOSITÓRIOS E ARTEFATOS DO PROJETO  
+ 
+Tipo de 
+Artefato  Link 
+Descrição  
+Repositório 
+de Código  AINDA NÃO FOI  CRIADO UM REPOSITORIO  Repositório 
+principal 
+contendo o 
+código -fonte do 
+backend (API 
+Express) e do 
+frontend 
+(React).  
+Documentaç
+ão da API  http://localhost:3000/api/docs (Swagger UI)  Documentação 
+interativa da 
+API REST gerada 
+automaticamen
+te via 
+Swagger/Open
+API. 
+Banco de 
+Dados  Supabase (PostgreSQL em nuvem)  Banco de dados 
+hospedado no 
+Supabase, 
+contendo as 
+tabelas do 
+sistema REVIVE.  
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  Protótipo / 
+Aplicação 
+Web (inserir link se houver deploy)  Aplicação web 
+frontend 
+desenvolvida 
+em React, 
+servida pelo 
+Vite em 
+ambiente de 
+desenvolviment
+o. 
+Notion 
+(Semestre 
+Anterior)  https://www.notion.so/REVIVE -
+1e3adcf9a7868044aaebf445e2247305  Workspace do 
+projeto com 
+documentação 
+e artefatos do 
+semestre 
+anterior.  
+Figma 
+(Protótipo 
+Visual)  https://www.figma.com/design/1keY3WNeLoTr4KGegWctv
+V/REVIVE -WEB -v.1.2 Protótipo visual 
+e design da 
+aplicação web.  
+ 
+PARTE 02 – PLANEJAMENTO DO SEMESTRE  
+ 
+SITUAÇÃO ATUAL DO PROJETO   
+ 
+O projeto REVIVE encontra -se em um estágio funcional avançado, com a maioria das 
+funcionalidades principais já implementadas e operacionais. O backend, construído com 
+Express.js, está completo e conta com autenticação JWT, rotas para gerenciamento de vício s, 
+registros diários, recaídas, metas e mensagens motivacionais, além de documentação Swagger 
+integrada. O banco de dados no Supabase está estruturado com seis tabelas (usuarios, vicios, 
+registros_diarios, historico_recaidas, metas e mensagens_motivacionai s) e os relacionamentos 
+entre elas estão funcionando corretamente.  
+ 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  O frontend, desenvolvido em React 19 com Vite e Tailwind CSS, possui 10 páginas completas 
+(Login, Dashboard, Analytics, Detalhes, Metas, Calendário, Conquistas, Relatórios, Perfil e Dicas), 
+com sistema de rotas protegidas, três contextos de gerenciamento d e estado (Auth, Data e UI), e 
+mais de 20 componentes reutilizáveis. O design segue o estilo glassmorphism com suporte a tema 
+claro e escuro, animações com Framer Motion e layout responsivo.  
+ 
+O projeto também conta com testes automatizados tanto no backend (testes de rotas e funções 
+auxiliares com Vitest e Supertest) quanto no frontend (testes de contextos e páginas com React 
+Testing Library). Um Service Worker básico está implementado para sup orte offline parcial. As 
+convenções de código estão documentadas e a estrutura de pastas segue uma organização clara 
+por responsabilidades.  
+ 
+6 OBJETIVOS DO SEMESTRE  
+ 
+Os objetivos para o semestre atual incluem: consolidar a estabilidade e a qualidade do sistema já 
+desenvolvido por meio de testes mais abrangentes e correção de bugs identificados durante o uso; 
+aprimorar a experiência do usuário com refinamentos na interf ace, acessibilidade e performance; 
+expandir a cobertura de testes automatizados para garantir a confiabilidade dos fluxos críticos de 
+autenticação, registro de vícios e acompanhamento de recaídas; documentar de forma completa 
+a arquitetura e as decisões té cnicas do projeto; e preparar o sistema para um possível deploy em 
+ambiente de produção, configurando variáveis de ambiente, domínio e certificados SSL.  
+ 
+Esses objetivos foram definidos considerando que as funcionalidades principais já estão 
+implementadas, tornando o foco atual a maturidade, a qualidade e a preparação para entrega final 
+do projeto integrador.  
+ 
+7 CRONOGRAMA DO SEMESTRE  
+ 
+O cronograma do semestre está organizado em seis etapas principais, distribuídas ao longo de 16 
+semanas:  
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607   
+Análise (Semana 1 –2): Revisão do estado atual, identificação de melhorias, atualização do 
+documento de especificação.  
+Refinamento (Semana 3 –5): Correção de bugs, melhorias de UX/UI, refinamento de validações e 
+tratamento de erros.  
+Testes (Semana 6 –8): Ampliação da cobertura de testes automatizados, testes manuais de fluxos 
+completos, testes de carga.  
+Documentação (Semana 9 –10): Documentação final da arquitetura, API, modelo de dados e guia 
+de implantação.  
+Deploy (Semana 11 –13): Configuração de ambiente de produção, deploy da aplicação, testes em 
+produção.  
+Validação (Semana 14 –16): Validação final, ajustes pós -deploy, preparação da apresentação e 
+entrega final.  
+PARTE 03 – ENTENDIMENTO DO PÚBLICO, DO NEGÓCIO E 
+LEVANTAMENTO INICIAL DE REQUISITOS  
+ 
+8 PÚBLICO -ALVO DO PRODUTO  
+O público -alvo do REVIVE é composto por pessoas que desejam superar vícios ou dependências e 
+buscam uma ferramenta digital para acompanhar sua jornada de recuperação de forma autônoma. 
+Esse público inclui desde jovens adultos até pessoas de meia -idade que lidam com vícios como 
+tabagismo, alcoolismo, dependência de jogos de azar, uso excessivo de redes sociais, compulsão 
+alimentar, entre outros.  
+O perfil principal do usuário é alguém que possui familiaridade básica com tecnologia e 
+smartphones, que busca organização e motivação para manter a abstinência, e que valoriza a 
+privacidade no acompanhamento de sua recuperação. Existem dois perfis de uso principais: o 
+usuário que está iniciando o processo de recuperação e precisa de suporte motivacional constante, 
+e o usuário que já está em estágio mais avançado de abstinência e deseja monitorar seu progresso, 
+identificar padrões e manter -se vigilante cont ra recaídas.  
+O REVIVE não substitui acompanhamento profissional de saúde, mas atua como uma ferramenta 
+complementar que oferece registro estruturado, visualização de progresso e incentivo contínuo, 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  podendo ser utilizado de forma independente ou em conjunto com tratamentos médicos e 
+psicológicos.  
+ 
+9 CONTEXTO DE NEGÓCIO  
+ 
+O REVIVE está inserido no mercado de aplicativos de saúde e bem -estar digital, uma área em 
+crescimento acelerado impulsionada pela maior conscientização sobre saúde mental e pela 
+popularização do uso de smartphones como ferramentas de autocuidado. Especifi camente, o 
+produto se posiciona no segmento de aplicativos de recuperação de dependências e mudança de 
+hábitos.  
+O contexto em que o problema ocorre é o do dia a dia de pessoas que enfrentam vícios e precisam 
+de acompanhamento contínuo, muitas vezes sem acesso frequente a profissionais de saúde ou 
+grupos de apoio presenciais. A atividade principal nesse cenário é o m onitoramento da 
+abstinência, o registro de experiências diárias e a identificação de gatilhos que podem levar a 
+recaídas.  
+As dificuldades existentes incluem a falta de ferramentas específicas e integradas para esse 
+acompanhamento, a dependência de anotações manuais desorganizadas, a ausência de métricas 
+claras de progresso e a carência de estímulos motivacionais no momento ce rto. Essas lacunas 
+representam oportunidades de melhoria que o REVIVE busca preencher, oferecendo uma solução 
+digital organizada, visual e encorajadora que centraliza todas as informações da jornada de 
+recuperação em um único lugar.  
+10 SOLUÇÕES EXISTENTES  
+ 
+No mercado atual, existem algumas soluções voltadas para o acompanhamento de vícios e mudança 
+de hábitos. Aplicativos como "I Am Sober" e "Quit Tracker" oferecem contadores de abstinência e 
+notificações motivacionais, porém geralmente focam em um único tipo  de vício (como álcool ou 
+tabaco) e possuem funcionalidades limitadas no plano gratuito. Outras soluções, como "HabitBull" 
+e "Loop Habit Tracker", são voltadas para o rastreamento genérico de hábitos, sem funcionalidades 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  específicas para recuperação de dependências, como registro de recaídas com reflexão ou 
+acompanhamento financeiro da economia gerada pela abstinência.  
+Processos manuais também são comuns: muitos usuários utilizam planilhas, cadernos ou aplicativos 
+de notas para registrar seu progresso, o que resulta em informações desorganizadas e difíceis de 
+visualizar ao longo do tempo. Grupos de apoio presenciais, emb ora valiosos, não oferecem uma 
+ferramenta digital integrada para monitoramento individual contínuo.  
+O REVIVE se diferencia dessas soluções por oferecer, em uma única plataforma, o acompanhamento 
+simultâneo de múltiplos vícios, cálculo automático da economia financeira, registro diário com 
+humor e gatilhos, sistema de metas, histórico de recaídas com espa ço para reflexão, conquistas 
+desbloqueáveis e mensagens motivacionais, tudo em uma interface moderna e responsiva.  
+ 
+11 PESQUISA COM USUÁRIOS  
+ 
+ 
+No semestre anterior, foi definido um Pipeline Funcional para coleta de dados com objetivo de 
+coletar informações sobre hábitos e comportamentos relacionados a vícios em jovens adultos (18 a 
+30 anos). A pesquisa abrangeu campos como identificação do partic ipante, informações sobre o 
+vício principal, fatores emocionais e ambientais, e impactos e percepções.  
+12 RESULTADOS DE PESQUISA COM USUÁRIO  
+ 
+No semestre anterior, a análise de uma amostra simulada de 20 jovens adultos revelou que o cigarro 
+é o vício mais prevalente (60%), seguido do álcool (20%). Os principais gatilhos identificados foram 
+Ansiedade (30%) e Estresse (25%). Esses dados justificar am a integração de recursos de bem -estar 
+emocional e a personalização das mensagens motivacionais diárias no aplicativo.  
+13 REGRAS DE NEGÓCIO  
+ID Descrição  Requisitos Relacionados  
+RNE -001 O usuário deve possuir uma conta autenticada para 
+acessar qualquer funcionalidade do sistema além do RF-001, RF -002, RNF -001 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  login. 
+Detalhamento: O sistema utiliza autenticação baseada em JWT com validade de 7 dias. Todas as rotas protegidas exigem 
+um token válido no cabeçalho Authorization.  
+ 
+14 REQUISITOS FUNCIONAIS  
+ID Descrição  Status  Prioridade  
+RF-001 O sistema deve permitir que o usuário se cadastre 
+com nome, e -mail e senha.  Implementado  Alta 
+Detalhamento: O cadastro é realizado pela rota POST /api/auth/cadastro. O sistema valida a unicidade do e -mail, a força 
+da senha (mínimo 6 caracteres, maiúscula e caractere especial) e armazena a senha criptografada com bcrypt.  
+15 REQUISITOS NÃO FUNCIONAIS  
+ 
+ID Descrição  Status  Prioridade  
+RNF-001 O sistema deve garantir a segurança dos dados do 
+usuário por meio de criptografia de senhas e 
+autenticação por token.  Implementado  Alta 
+Detalhamento: Senhas são armazenadas com hash bcrypt (10 salt rounds). A autenticação utiliza JWT com expiração 
+de 7 dias. Tokens são validados em todas as requisições protegidas.  
+ 
+ 
+ 
+ 
+PARTE 04 – DESIGN, MODELAGEM, DADOS E SOLUÇÃO TECNOLÓGICA  
+ 
+16 DESIGN DA SOLUÇÃO E EXPERIÊNCIA DO USUÁRIO  
+ 
+16.1 Fluxo de Navegação  
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  O fluxo de navegação do REVIVE é organizado da seguinte forma: o usuário inicia na Tela de 
+Login/Cadastro, onde pode fazer login ou criar uma nova conta. Após autenticação, é 
+redirecionado ao Dashboard (Painel Principal) com KPIs, heatmap de atividades, ca rds dos vícios e 
+timeline de atividades recentes. A partir do Dashboard, o usuário pode acessar: Detalhes do Vício 
+(estatísticas aprofundadas e histórico), Metas (criação e gerenciamento de metas pessoais), 
+Analytics (gráficos e tendências), Calendário (vi são em calendário dos registros), Conquistas 
+(badges desbloqueáveis), Relatórios (relatórios imprimíveis), Dicas (orientações sobre 
+recuperação) e Perfil (configurações e alternância de tema). A navegação é realizada por uma barra 
+lateral (NavBar) persiste nte, acompanhada de um cabeçalho (Header) com informações do usuário 
+e botão de logout.  
+16.2 Protótipos do Sistema  
+O sistema foi desenvolvido com design glassmorphism, utilizando as fontes Space Grotesk (títulos) 
+e Manrope (corpo), com paleta baseada em verde esmeralda (#7CF6C4) e azul ciano (#35D3FF) 
+sobre fundo escuro (#050910). Os componentes utilizam efeitos de vid ro (backdrop blur), bordas 
+sutis com gradiente e animações suaves com Framer Motion. Os protótipos visuais do semestre 
+anterior estão disponíveis no Figma.  
+ 
+17 GESTÃO DO PROJETO DE MODELAGEM DO SISTEMA  
+ 
+17.1 Organização do Projeto (Abordagem Ágil)  
+O projeto utiliza Git para controle de versão e está organizado em um repositório monolítico 
+contendo tanto o backend quanto o frontend. O desenvolvimento segue ciclos curtos de 
+implementação, com foco em entregas incrementais de funcionalidades. As conven ções de código 
+estão documentadas em docs/coding -conventions.md, estabelecendo padrões de nomenclatura 
+e estrutura de código.  
+17.2 Modelagem e Diagramas do Sistema  
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  O sistema REVIVE é modelado em torno de seis entidades principais: Usuário (entidade central, 
+possuindo vícios e metas), Vício (pertence a um usuário e possui registros diários e histórico de 
+recaídas), Registro Diário (vinculado a um vício específico), Re caída (vinculada a um vício, 
+registrando dias de abstinência perdidos), Meta (pertence a um usuário e pode ser vinculada 
+opcionalmente a um vício) e Mensagem Motivacional (independente, acessada aleatoriamente).  
+ 
+18 DADOS E MODELAGEM DA INFORMAÇÃO  
+ 
+18.1 Modelo de Dados  
+O banco de dados do REVIVE está hospedado no Supabase (PostgreSQL em nuvem) e é composto 
+por seis tabelas: usuarios (id, nome, email, senha_hash, created_at, updated_at), vicios (id, 
+usuario_id, nome_vicio, data_inicio, data_ultima_recaida, valor_economiza do_por_dia, ativo, 
+data_criacao), registros_diarios (id, vicio_id, data_registro, humor, gatilhos, conquistas, 
+observacoes, created_at), historico_recaidas (id, vicio_id, data_recaida, motivo, 
+dias_abstinencia_perdidos, created_at), metas (id, usuario_id, vicio_id, descricao_meta, 
+dias_objetivo, valor_objetivo, concluida, data_criacao) e mensagens_motivacionais (id, 
+mensagem, tipo_vicio, ativa, created_at).  
+18.2 Estrutura e Manipulação de Dados  
+Os dados do REVIVE são armazenados em um banco PostgreSQL hospedado no Supabase, 
+acessado pelo backend por meio da biblioteca @supabase/supabase -js. A comunicação com o 
+banco é feita exclusivamente pelo servidor Express, que atua como intermediário entre o  frontend 
+e o banco de dados. A manipulação de dados segue o padrão de operações CRUD para cada 
+entidade. Os cálculos de estatísticas (dias de abstinência, economia financeira, duração formatada) 
+são realizados no backend pela função calculateAddictionStat s() antes de enviar os dados ao 
+frontend.  
+19 SOLUÇÃO TECNOLÓGICA E EXPERIMENTAÇÃO TÉCNICA INICIAL  
+ 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607   
+ 
+ 
+19.1 Escolhas Tecnológicas  
+As tecnologias do REVIVE foram escolhidas com base na adequação ao problema, na experiência 
+da equipe e no ecossistema disponível. Node.js com Express.js foi escolhido para o backend por 
+ser leve, rápido de desenvolver e amplamente utilizado. React 19 foi escolhido para o frontend por 
+oferecer componentização e reatividade. Vite foi adotado como build tool por sua velocidade. 
+Tailwind CSS permite estilização rápida e consistente. Supabase (PostgreSQL) oferece banco 
+gerenciado em nuvem. JWT e bcrypt foram ad otados para autenticação e segurança. Framer 
+Motion para animações e Vitest para testes.  
+19.2 Experimentação Técnica e Primeiros Testes  
+As primeiras experimentações técnicas incluíram: conexão com o Supabase e operações CRUD, 
+implementação e teste do fluxo completo de autenticação JWT, testes de hash de senhas com 
+bcrypt, criação de componentes React básicos para validar a estrutura de com ponentização, 
+implementação de testes unitários para funções auxiliares (sanitize, formatDuration, 
+calculateAddictionStats) e testes de integração para rotas da API, e experimentação inicial com 
+Service Worker para suporte offline.  
+PARTE 05 – ARQUITETURA, TECNOLOGIA E IMPLEMENTAÇÃO EVOLUTIVA 
+DO SISTEMA  
+ 
+ 
+20 ARQUITETURA GERAL DO SISTEMA  
+ 
+ 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  O REVIVE adota uma arquitetura cliente -servidor em três camadas: (1) Camada de Apresentação 
+(Frontend) — Aplicação React SPA servida pelo Vite, com comunicação via requisições HTTP 
+(fetch), gerenciamento de estado com React Context API (AuthContext, DataCo ntext, UIContext) e 
+roteamento com React Router DOM v7. (2) Camada de Aplicação (Backend/API) — Servidor 
+Express.js com API REST, middleware de autenticação JWT, middleware de segurança (CORS, rate 
+limiting, sanitização), lógica de negócio e documentação a utomática via Swagger/OpenAPI. (3) 
+Camada de Dados — Banco de dados PostgreSQL hospedado no Supabase, acessado 
+exclusivamente pelo backend via @supabase/supabase -js, com seis tabelas e relacionamentos por 
+chave estrangeira.  
+Essa separação garante que o frontend nunca acessa o banco diretamente, mantendo a segurança 
+dos dados. O backend centraliza a lógica de negócio, validação e autenticação, enquanto o 
+frontend se concentra na interface e experiência do usuário.  
+ 
+21 TECNOLOGIAS E FERRAMENTAS DO PROJETO  
+ 
+ 
+As principais tecnologias utilizadas no projeto são: JavaScript (ES2022+) como linguagem única 
+para frontend e backend; Node.js (v22.20.0) como runtime; Express.js (v5.1.0) como framework 
+backend; React (v19.1.1) como framework frontend; Vite (v5.3.1) como  build tool; Tailwind CSS 
+(v4.1.14) para estilização; Framer Motion para animações; Lucide React para ícones; React Router 
+DOM (v7.13.0) para roteamento; PostgreSQL via Supabase como banco de dados; 
+@supabase/supabase -js (v2.75.0) como cliente DB; JWT para  autenticação; bcrypt para 
+criptografia; cors e express -rate-limit para segurança; Morgan para logging; swagger -jsdoc e 
+swagger -ui-express para documentação; Vitest para testes; Supertest para testes HTTP; React 
+Testing Library para testes frontend; e Git para controle de versão.  
+ 
+22 IMPLEMENTAÇÃO POR CAMADAS DO SISTEMA  
+ 
+ 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607   
+ 
+ 
+22.1 Frontend  
+O frontend do REVIVE é uma Single Page Application (SPA) construída com React 19 e servida pelo 
+Vite. A estrutura está organizada por responsabilidades: pages/ (10 páginas da aplicação), 
+components/ (subdividida em dashboard/, layout/, modals/ e ui/), cont exts/ (AuthContext, 
+DataContext, UIContext), services/ (camada HTTP que encapsula chamadas à API), utils/ 
+(constantes e formatadores) e config/ (configuração de ambiente). O roteamento é gerenciado 
+pelo React Router DOM v7 com rotas protegidas pelo compone nte ProtectedRoute. A estilização 
+utiliza Tailwind CSS com design tokens customizados e estilo glassmorphism com tema 
+claro/escuro.  
+ 
+22.2 Backend  
+O backend do REVIVE é um servidor Express.js que expõe uma API REST completa no arquivo 
+index.js. Os middlewares globais incluem CORS com validação de origens, parsing de JSON, logging 
+com Morgan, documentação Swagger em /api/docs e rate limiting. As rotas  de autenticação 
+implementam cadastro com validação de senha forte e hash bcrypt, e login com verificação de 
+credenciais e geração de JWT. O middleware authMiddleware valida o token JWT em rotas 
+protegidas. As rotas de negócio oferecem CRUD completo para v ícios, registros diários, recaídas, 
+metas e mensagens motivacionais. Funções auxiliares incluem calculateAddictionStats(), 
+formatDuration() e sanitize().  
+ 
+22.3 Integração  
+A comunicação entre frontend e backend ocorre via requisições HTTP (fetch API) com formato 
+JSON. O fluxo de autenticação funciona assim: o usuário faz login no frontend, a requisição é 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  enviada para POST /api/auth/login, o backend valida credenciais e retorna um JWT, e o frontend 
+armazena o token no localStorage. Para requisições autenticadas, o serviço api.js injeta 
+automaticamente o header Authorization: Bearer <token>. O fluxo de dados  do Dashboard, por 
+exemplo, dispara requisições simultâneas para múltiplos endpoints, o backend consulta o 
+Supabase e calcula estatísticas, e o frontend renderiza os componentes.  
+ 
+23 ORGANIZAÇÃO DO CÓDIGO E REPOSITÓRIO  
+ 
+O repositório do REVIVE segue uma estrutura monorepo com separação clara entre backend e 
+frontend. Na raiz estão o index.js (servidor Express), package.json, .env, vitest.config.js e start -
+revive.cmd. A pasta docs/ contém openapi.js e coding -conventions.md . A pasta tests/ contém 
+routes.test.js e helpers.test.js. O subprojeto revive -painel/ contém o frontend React com 
+package.json, .env, vite.config.js, vitest.config.js, public/ (com sw.js) e src/ (com main.jsx, App.jsx, 
+index.css, e pastas components/, cont exts/, pages/, services/, config/, utils/ e test/).  
+Padrões adotados: identificadores de código em inglês (camelCase para variáveis/funções, 
+PascalCase para componentes), textos de interface em português, componentes React em 
+arquivos .jsx, testes junto aos arquivos que testam ou em pasta tests/, e variávei s de ambiente 
+separadas para frontend e backend.  
+ 
+PARTE 06 – QUALIDADE, SEGURANÇA, AVALIAÇÃO E EXTENSÕES DO 
+PROJETO  
+ 
+24 QUALIDADE DO SOFTWARE E TESTES  
+ 
+ 
+O projeto REVIVE implementa testes automatizados em ambas as camadas utilizando o framework 
+Vitest. No backend, routes.test.js contém testes de integração que verificam o endpoint de saúde 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  (GET /api/health), validação de campos no login e validação de campos no cadastro. helpers.test.js 
+contém testes unitários para as funções sanitize(), formatDuration() e calculateAddictionStats(). 
+No frontend, existem testes do contexto de autenticação (Au thContext.test.jsx), testes do 
+contexto de dados (DataContext.test.jsx) e testes da página de relatórios (ReportsPage.test.jsx). 
+Além dos testes automatizados, o sistema utiliza ErrorBoundary no frontend, validação de entrada 
+no backend e logging com Morga n. 
+ 
+ 
+25 SEGURANÇA DA INFORMAÇÃO  
+ 
+ 
+O REVIVE implementa diversas camadas de segurança: senhas armazenadas com hash bcrypt (10 
+salt rounds), autenticação via JWT com expiração de 7 dias, middleware authMiddleware que 
+valida o token em todas as rotas protegidas, verificação de propriedade em c ada rota (via 
+usuario_id), rate limiting com express -rate-limit (15 tentativas por 15 minutos para autenticação 
+e 100 requisições por minuto para API geral), CORS configurado com lista de origens permitidas, 
+sanitização de entradas com trim(), validação de  força de senha no cadastro, variáveis sensíveis 
+em arquivo .env fora do repositório, acesso ao banco exclusivamente pelo backend, e tratamento 
+de erros que retorna mensagens genéricas ao frontend sem expor informações internas.  
+26 EXTENSÕES E TECNOLOGIAS COMPLEMENTARES  
+ 
+O REVIVE utiliza as seguintes tecnologias complementares: Service Worker — Implementação 
+básica de Service Worker (public/sw.js) para suporte parcial a uso offline, permitindo que a 
+aplicação funcione minimamente mesmo sem conexão à internet, o que é relev ante para o 
+contexto do projeto pois permite que o usuário acesse seus dados em momentos de 
+indisponibilidade de rede. Swagger/OpenAPI — Documentação interativa automática da API REST 
+acessível em /api/docs, facilitando o desenvolvimento, testes e manutenç ão da API, criando uma 
+interface visual onde desenvolvedores podem testar endpoints diretamente no navegador.  
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607   
+27 AVALIAÇÃO GERAL DO PROJETO INTEGRADOR  
+O desenvolvimento do REVIVE ao longo dos períodos representou uma jornada 
+significativa de aprendizado técnico e amadurecimento profissional para toda a equipe. Mais 
+do que entregar um sistema funcional, o projeto nos permitiu vivenciar na prática os desaf ios 
+reais de construir um produto de software do zero, passando por todas as etapas — desde a 
+concepção da ideia até a implementação de uma aplicação completa com frontend, backend 
+e banco de dados integrados.  
+Um dos principais aprendizados foi a importância do planejamento e da documentação. No 
+início, a tendência natural era partir direto para o código, mas rapidamente percebemos que 
+definir regras de negócio claras, modelar os dados com cuidado e estruturar a  arquitetura 
+antes de implementar economizou um tempo enorme em retrabalho. A definição do pipeline 
+de coleta de dados e a simulação com 20 participantes no semestre anterior, por exemplo, 
+nos deu embasamento concreto para justificar decisões de design e p riorização de 
+funcionalidades, como o foco inicial em tabagismo e a integração de recursos voltados a 
+gatilhos emocionais.  
+Entre as dificuldades enfrentadas, destacamos a curva de aprendizado com tecnologias que 
+não dominávamos no início do projeto. A transição do protótipo mobile (React 
+Native/Flutter) planejado originalmente para uma aplicação web com React foi uma decisão 
+difícil, mas necessária diante da nossa experiência limitada em desenvolvimento mobile. 
+Essa escolha pragmática nos permitiu entregar um produto funcional e completo, ao invés de 
+um protótipo incompleto em uma tecnologia que ainda não dominávamos. Outro des afio 
+relevante foi a integração entre frontend e backend — configurar corretamente o fluxo de 
+autenticação JWT, o tratamento de CORS e a comunicação assíncrona entre as camadas 
+exigiu bastante depuração e paciência.  
+As decisões mais relevantes do projeto incluem a adoção do Supabase como banco de dados, 
+que nos deu agilidade ao eliminar a necessidade de gerenciar infraestrutura de servidor de 
+banco, e a escolha por um repositório monolítico (monorepo), que facilitou o  
+desenvolvimento simultâneo de frontend e backend sem a complexidade de gerenciar 
+múltiplos repositórios. A implementação do sistema de conquistas (badges) e do cálculo 
+automático de economia financeira foram diferenciais que trouxeram valor real ao produt o, 
+tornando a experiência do usuário mais engajadora e motivadora.  
+Em termos de limitações, reconhecemos que o sistema ainda não possui notificações push 
+em tempo real, funcionalidade que estava prevista no escopo original com Firebase Cloud 
+Messaging. Além disso, a cobertura de testes, embora existente, pode ser ampliada  para 
+cobrir cenários mais complexos de integração e fluxos de erro. O Service Worker 
+implementado oferece suporte offline parcial, mas uma experiência offline completa exigiria 
+estratégias mais avançadas de cache e sincronização de dados.  
+Como possibilidades de evolução futura, enxergamos grande potencial na implementação de 
+um modelo preditivo de recaída baseado nos dados de humor e gatilhos registrados pelos 
+                                
+ 
+Av. Universitária Km 3,5 - Cidade Universitária – Anápolis/GO, CEP 75083 -515 
+Secretaria Setorial – Bloco I  
+Fone: (62) 3310 6658 | FAX: (62) 3310 6607  usuários, conforme descrito no plano de evolução do semestre anterior. A integração com 
+APIs de saúde como Google Fit e Apple Health enriqueceria enormamente a análise de 
+padrões comportamentais. Um módulo de comunidade anônima e moderada poderia 
+endereçar  o problema do isolamento social, e a migração para uma arquitetura de 
+microsserviços com contêineres Docker permitiria escalar o sistema para atender um volume 
+maior de usuários. A gamificação avançada, com níveis e recompensas mais elaborados, 
+também rep resenta uma oportunidade de aumentar o engajamento.  
+ 
+ 
+ 

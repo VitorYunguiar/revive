@@ -1,0 +1,14 @@
+.claude/
+.github/
+.env
+*.log
+*.rar
+node-v*.msi
+node_modules/
+revive-painel/node_modules/
+revive-painel/dist/
+runtime/
+tests/
+docs/**
+!docs/
+!docs/openapi.js

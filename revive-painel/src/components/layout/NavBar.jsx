@@ -1,39 +1,23 @@
-/**
- * @file NavBar.jsx
- * @description Barra de navegacao horizontal com abas para todas as secoes da aplicacao.
- *
- * Renderiza uma barra de navegacao responsiva com botoes-aba para cada pagina
- * do sistema. O item ativo e destacado visualmente com fundo e borda diferenciados.
- * Em telas pequenas, os labels de texto sao ocultados, exibindo apenas os icones.
- *
- * Comportamento dinamico:
- * - Quando um vicio esta selecionado (vicioSelecionado do DataContext),
- *   um item "Detalhes" e inserido dinamicamente na posicao 4 da navegacao
- *   (apos "Metas"), apontando para a rota /vicios/:id.
- * - Um botao "Novo" (com destaque em verde) e sempre exibido ao final
- *   para abrir o fluxo de cadastro de novo vicio.
- *
- * Utiliza Framer Motion para micro-animacoes nos botoes e react-router
- * para navegacao programatica e deteccao da rota ativa.
- *
- * @component
- * @see {@link AppShell} Componente pai que inclui a NavBar no layout
- * @see {@link DataContext} Contexto que fornece o vicio selecionado
- */
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion as Motion } from 'framer-motion';
-import { Heart, PieChart, Target, Plus, BarChart3, Calendar as CalendarIcon, Trophy, FileText, Lightbulb, User } from 'lucide-react';
+import {
+  BarChart3,
+  Calendar as CalendarIcon,
+  FileText,
+  Heart,
+  Lightbulb,
+  Moon,
+  PieChart,
+  Plus,
+  Target,
+  Trophy,
+  User
+} from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useUI } from '../../contexts/UIContext';
-import { glassSurface, navButtonMotion } from '../../utils/constants';
+import { navButtonMotion } from '../../utils/constants';
 
-/**
- * Itens estaticos de navegacao com path, label e icone Lucide.
- * A ordem define a sequencia de exibicao na barra de navegacao.
- * @type {Array<{path: string, label: string, icon: React.ComponentType}>}
- */
 const navItems = [
   { path: '/', label: 'Jornada', icon: Heart },
   { path: '/analytics', label: 'Insights', icon: PieChart },
@@ -45,46 +29,100 @@ const navItems = [
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
-/**
- * Renderiza a barra de navegacao horizontal com abas e botao de novo vicio.
- *
- * Constroi a lista de itens a partir do array estatico navItems e,
- * condicionalmente, insere o item "Detalhes" na posicao 4 quando ha
- * um vicio selecionado no DataContext (via splice no array clonado).
- *
- * @returns {JSX.Element} Barra de navegacao responsiva com estilizacao glassmorphism
- */
-const NavBar = () => {
+const NavBar = ({ variant = 'mobile' }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { selectedAddiction: vicioSelecionado } = useData();
-  const { openNewAddictionWizard } = useUI();
+  const { selectedAddiction } = useData();
+  const { openNewAddictionWizard, toggleTheme } = useUI();
 
-  // Clona navItems e insere dinamicamente o item "Detalhes" se houver vicio selecionado
   const allItems = [...navItems];
-  if (vicioSelecionado) {
+  if (selectedAddiction) {
     allItems.splice(3, 0, {
-      path: `/vicios/${vicioSelecionado.id}`,
-      label: `Detalhes`,
+      path: `/vicios/${selectedAddiction.id}`,
+      label: 'Detalhes',
       icon: BarChart3
     });
   }
 
+  if (variant === 'sidebar') {
+    return (
+      <aside className="revive-sidebar">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="w-[52px] h-[52px] rounded-[18px] bg-[var(--accent)] text-[#121212] grid place-items-center font-black"
+          title="Revive"
+          aria-label="Ir para jornada"
+        >
+          <BarChart3 className="w-6 h-6" />
+        </button>
+
+        <nav className="mt-12 grid gap-3 flex-1" aria-label="Menu principal">
+          {allItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Motion.button
+                key={item.path}
+                {...navButtonMotion}
+                type="button"
+                onClick={() => navigate(item.path)}
+                title={item.label}
+                aria-label={item.label}
+                className={`w-[52px] h-[52px] rounded-[18px] grid place-items-center transition ${
+                  isActive
+                    ? 'bg-[var(--surface)] text-[#121212]'
+                    : 'text-white/55 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+              </Motion.button>
+            );
+          })}
+        </nav>
+
+        <div className="grid gap-3">
+          <Motion.button
+            {...navButtonMotion}
+            type="button"
+            onClick={openNewAddictionWizard}
+            title="Novo habito"
+            aria-label="Novo habito"
+            className="w-[52px] h-[52px] rounded-[18px] grid place-items-center border border-white/15 text-[var(--accent)] hover:bg-white/10 transition"
+          >
+            <Plus className="w-5 h-5" />
+          </Motion.button>
+          <Motion.button
+            {...navButtonMotion}
+            type="button"
+            onClick={toggleTheme}
+            title="Alternar tema"
+            aria-label="Alternar tema"
+            className="w-[52px] h-[52px] rounded-[18px] grid place-items-center border border-white/15 text-white/70 hover:text-white hover:bg-white/10 transition"
+          >
+            <Moon className="w-5 h-5" />
+          </Motion.button>
+        </div>
+      </aside>
+    );
+  }
+
   return (
-    <div className={`${glassSurface} rounded-2xl p-2 mb-6 flex gap-2 overflow-x-auto`}>
+    <nav className="lg:hidden surface-sand rounded-[24px] p-2 mb-5 flex gap-2 overflow-x-auto" aria-label="Menu principal">
       {allItems.map((item) => {
-        const isActive = location.pathname === item.path;
         const Icon = item.icon;
+        const isActive = location.pathname === item.path;
         return (
           <Motion.button
             key={item.path}
             {...navButtonMotion}
+            type="button"
             onClick={() => navigate(item.path)}
             title={item.label}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold transition whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-[16px] font-black transition whitespace-nowrap ${
               isActive
-                ? 'bg-teal-400 text-slate-950 border border-teal-200 shadow-sm'
-                : 'text-muted hover:text-app bg-transparent hover:bg-white/5 border border-transparent'
+                ? 'bg-[#121212] text-[#fbfaf5]'
+                : 'text-muted hover:text-app hover:bg-black/5'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -94,14 +132,15 @@ const NavBar = () => {
       })}
       <Motion.button
         {...navButtonMotion}
+        type="button"
         onClick={openNewAddictionWizard}
-        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold text-teal-200 bg-teal-400/10 hover:bg-teal-400/16 border border-teal-300/25 transition whitespace-nowrap"
-        title="Novo hábito"
+        className="flex items-center gap-2 px-3 py-2 rounded-[16px] font-black text-[#121212] bg-[var(--accent)] transition whitespace-nowrap"
+        title="Novo habito"
       >
         <Plus className="w-4 h-4" />
         <span className="hidden sm:inline">Novo</span>
       </Motion.button>
-    </div>
+    </nav>
   );
 };
 

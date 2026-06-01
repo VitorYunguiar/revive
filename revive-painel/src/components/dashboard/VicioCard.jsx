@@ -78,7 +78,7 @@ export default function VicioCard({
   }, [vicio, recaidas, metas]);
 
   return (
-    <div className={`${glassSurface} rounded-3xl p-6 flex flex-col relative overflow-hidden group transition hover:-translate-y-0.5`}>
+    <div className={`${glassSurface} rounded-[34px] p-6 flex flex-col relative overflow-hidden group transition hover:-translate-y-0.5`}>
       {/* Icone de chama exibido como badge quando usuario atinge 7+ dias de abstinencia */}
       {vicio.dias_abstinencia >= 7 && (
         <div className="absolute top-3 right-3">
@@ -92,20 +92,20 @@ export default function VicioCard({
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="eyebrow">Em progresso</p>
-            <h3 className="text-xl font-semibold text-app">{vicio.nome_vicio}</h3>
+            <h3 className="text-2xl font-black tracking-[-0.055em] text-app">{vicio.nome_vicio}</h3>
             <p className="text-sm text-muted mt-1">{vicio.tempo_formatado}</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={onViewDetails}
-              className="p-2 text-muted hover:text-app hover:bg-white/10 rounded-lg transition hairline border"
+              className="p-2 text-muted hover:text-app hover:bg-black/5 rounded-xl transition hairline border"
               title="Ver detalhes"
             >
               <BarChart3 className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-rose-300/90 hover:bg-rose-500/15 rounded-lg transition border border-rose-300/30"
+              className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition border border-rose-300/30"
               title="Excluir"
             >
               <Trash2 className="w-5 h-5" />
@@ -120,10 +120,10 @@ export default function VicioCard({
               <span>Meta: {meta.descricao_meta}</span>
               <span>{Math.round(progresso)}%</span>
             </div>
-            <div className="w-full bg-slate-700/30 rounded-full h-1.5">
+            <div className="w-full bg-black/10 rounded-full h-2">
               <div
                 style={{ width: `${progresso}%` }}
-                className={`h-full rounded-full ${progresso >= 100 ? 'bg-[#35D3FF]' : 'bg-[#7CF6C4]'}`}
+                className="h-full rounded-full bg-[var(--accent)]"
               />
             </div>
           </div>
@@ -133,22 +133,22 @@ export default function VicioCard({
           <div className="p-3 rounded-2xl surface-muted">
             <div className="flex flex-col items-center text-center gap-2">
               <Calendar className="w-4 h-4 text-teal-300" />
-              <p className="text-[10px] uppercase font-semibold text-muted">Dias</p>
-              <p className="text-lg font-semibold text-app tabular-nums">{vicio.dias_abstinencia}</p>
+              <p className="text-[10px] uppercase font-black tracking-[0.14em] text-muted">Dias</p>
+              <p className="text-lg font-black text-app tabular-nums">{vicio.dias_abstinencia}</p>
             </div>
           </div>
           <div className="p-3 rounded-2xl surface-muted">
             <div className="flex flex-col items-center text-center gap-2">
               <DollarSign className="w-4 h-4 text-sky-300" />
-              <p className="text-[10px] uppercase font-semibold text-muted">R$</p>
-              <p className="text-lg font-semibold text-app tabular-nums">{Number(vicio.valor_economizado).toFixed(0)}</p>
+              <p className="text-[10px] uppercase font-black tracking-[0.14em] text-muted">R$</p>
+              <p className="text-lg font-black text-app tabular-nums">{Number(vicio.valor_economizado).toFixed(0)}</p>
             </div>
           </div>
           <div className="p-3 rounded-2xl surface-muted">
             <div className="flex flex-col items-center text-center gap-2">
               <Repeat className="w-4 h-4 text-amber-300" />
-              <p className="text-[10px] uppercase font-semibold text-muted">30d</p>
-              <p className="text-lg font-semibold text-app tabular-nums">{recaidasVicio30dias}</p>
+              <p className="text-[10px] uppercase font-black tracking-[0.14em] text-muted">30d</p>
+              <p className="text-lg font-black text-app tabular-nums">{recaidasVicio30dias}</p>
             </div>
           </div>
         </div>

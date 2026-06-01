@@ -53,7 +53,7 @@ export function UIProvider({ children }) {
   /** @type {[Array<Object>, Function]} Fila de notificacoes toast */
   const [toasts, setToasts] = useState([]);
   /** @type {[string, Function]} Tema atual ('dark'|'light') — lazy init do localStorage */
-  const [theme, setTheme] = useState(() => localStorage.getItem('revive_theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('revive_theme') || 'light');
   const [isNewAddictionOpen, setIsNewAddictionOpen] = useState(false);
 
   useEffect(() => {

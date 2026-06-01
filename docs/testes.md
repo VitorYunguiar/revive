@@ -1,0 +1,183 @@
+# Tutorial de Testes do REVIVE
+
+Este guia mostra como executar a suite de testes do projeto e explica o objetivo de cada camada.
+
+## 1. Pre-requisitos
+
+Antes de rodar os testes, garanta que:
+
+- o Node.js esteja instalado;
+- as dependencias da raiz estejam instaladas com `npm install`;
+- as dependencias do painel estejam instaladas com `cd revive-painel` e `npm install`.
+
+## 2. Estrutura da suite
+
+O projeto foi dividido em quatro grupos principais:
+
+1. Testes unitarios da API
+2. Testes de integracao da API
+3. Testes unitarios do painel
+4. Testes de integracao do painel
+
+Essa separacao existe para dar feedback rapido primeiro e deixar os testes com mais contexto para a camada seguinte.
+
+## 3. Como rodar tudo de uma vez
+
+Na raiz do projeto:
+
+```powershell
+npm run validate
+```
+
+Esse comando executa, nesta ordem:
+
+1. testes unitarios da API;
+2. testes de integracao da API;
+3. testes unitarios do painel;
+4. testes de integracao do painel;
+5. build de producao do painel.
+
+Use esse comando antes de abrir PR, subir branch ou entregar uma alteracao maior.
+
+## 4. Como rodar apenas a API
+
+Na raiz do projeto:
+
+```powershell
+npm run test:api
+```
+
+Se quiser separar por camada:
+
+```powershell
+npm run test:api:unit
+npm run test:api:integration
+```
+
+### O que os testes unitarios da API fazem
+
+Eles validam funcoes puras e regras pequenas, sem depender de HTTP externo ou banco.
+
+Exemplos atuais:
+
+- sanitizacao de texto;
+- formatacao de duracao;
+- calculo de estatisticas de abstinencia.
+
+Arquivo principal:
+
+- `tests/unit/helpers.test.js`
+
+### Por que eles sao importantes
+
+- sao os testes mais rapidos da suite;
+- isolam bugs de regra de negocio;
+- ajudam a refatorar com seguranca.
+
+### O que os testes de integracao da API fazem
+
+Eles exercitam a aplicacao Express de verdade usando `supertest`, sem precisar subir um servidor manualmente.
+
+Exemplos atuais:
+
+- `GET /api/health`;
+- validacao do payload em `POST /api/auth/login`;
+- validacao do payload em `POST /api/auth/cadastro`.
+
+Arquivo principal:
+
+- `tests/integration/routes.test.js`
+
+### Por que eles sao importantes
+
+- verificam rotas, status code e JSON retornado;
+- pegam regressao em middleware, validacao e contrato HTTP;
+- custam pouco e entregam alta confianca para backend Express.
+
+## 5. Como rodar apenas o painel
+
+Na raiz do projeto:
+
+```powershell
+npm run test:web
+```
+
+Ou dentro de `revive-painel`:
+
+```powershell
+npm test
+```
+
+Se quiser separar por camada:
+
+```powershell
+cd revive-painel
+npm run test:unit
+npm run test:integration
+```
+
+### O que os testes unitarios do painel fazem
+
+Eles validam funcoes puras do frontend, sem depender de renderizacao complexa.
+
+Exemplo atual:
+
+- formatacao de tempo decorrido em `src/utils/formatters.test.js`.
+
+### Por que eles sao importantes
+
+- detectam erro de regra visual rapidamente;
+- evitam quebrar textos, datas e transformacoes de dados;
+- sao baratos de manter.
+
+### O que os testes de integracao do painel fazem
+
+Eles montam contextos, paginas e componentes com Testing Library para validar comportamento real da interface.
+
+Exemplos atuais:
+
+- fluxo de login e armazenamento de token no `AuthContext`;
+- tratamento de erro de carregamento no `DataContext`;
+- renderizacao de resumo na tela de relatorios.
+
+Arquivos atuais:
+
+- `revive-painel/src/contexts/AuthContext.test.jsx`
+- `revive-painel/src/contexts/DataContext.test.jsx`
+- `revive-painel/src/pages/ReportsPage.test.jsx`
+
+### Por que eles sao importantes
+
+- cobrem integracao entre estado, hooks e UI;
+- simulam o uso real melhor do que um teste puramente unitario;
+- pegam regressao onde apps React normalmente quebram.
+
+## 6. Build de producao
+
+Para validar apenas a compilacao do painel:
+
+```powershell
+npm run build:web
+```
+
+Esse passo garante que:
+
+- o frontend ainda compila;
+- imports, bundling e configuracao do Vite continuam validos;
+- a aplicacao segue pronta para deploy.
+
+## 7. Quando usar cada comando
+
+- `npm run test:api:unit`: durante alteracoes pequenas em regras de negocio da API.
+- `npm run test:api:integration`: ao mexer em rotas, validacoes, middlewares ou respostas HTTP.
+- `npm run test:web:unit`: ao alterar utilitarios, formatadores ou servicos puros do painel.
+- `npm run test:web:integration`: ao alterar contexto, pagina, fluxo de login ou comportamento visual.
+- `npm run validate`: antes de concluir uma tarefa.
+
+## 8. Ordem recomendada no dia a dia
+
+1. rode a camada mais barata relacionada ao que voce alterou;
+2. depois rode a camada de integracao correspondente;
+3. antes de finalizar, rode `npm run validate`.
+
+Essa ordem reduz tempo de feedback e evita esperar build completo para descobrir erro simples.

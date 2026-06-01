@@ -1,23 +1,6 @@
-/**
- * @file DashboardPage.jsx
- * @description Pagina principal (Dashboard) da aplicacao REVIVE.
- *
- * Exibe visao geral do progresso do usuario: KPIs resumidos (dias limpos,
- * economia, maior streak, metas concluidas, tendencia de humor), heatmap de
- * atividade dos ultimos 28 dias, cards de vicios cadastrados e timeline de
- * atividades recentes.
- *
- * Utiliza os hooks {@link useData} e {@link useUI} para acessar dados globais
- * e estado de carregamento. Diversos calculos sao memorizados com
- * {@link React.useMemo} para evitar recomputacoes desnecessarias.
- *
- * @component
- * @see {@link useData} Hook de acesso ao contexto de dados (vicios, metas, registros)
- * @see {@link useUI} Hook de acesso ao contexto de interface (loading, tema)
- */
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Heart, Plus, Repeat, Target, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, BookOpen, CheckCircle2, Heart, Plus, Repeat, Sparkles, Target } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useUI } from '../contexts/UIContext';
 import RecaidaModal from '../components/modals/RecaidaModal';
@@ -27,19 +10,10 @@ import ActivityHeatmap from '../components/dashboard/ActivityHeatmap';
 import VicioCard from '../components/dashboard/VicioCard';
 import RecentTimeline from '../components/dashboard/RecentTimeline';
 import SelectHumor from '../components/ui/SelectHumor';
-import PageHeader from '../components/ui/PageHeader';
+import { SelectField } from '../components/ui/Field';
 import Button from '../components/ui/Button';
-import { fieldBase, glassSurface, moodOptions } from '../utils/constants';
+import { glassSurface, moodOptions } from '../utils/constants';
 
-/**
- * Componente da pagina Dashboard.
- *
- * Gerencia estados locais para o modal de recaida e o wizard de novo vicio.
- * Calcula metricas derivadas (totalDiasLimpos, totalEconomizado, maiorStreak,
- * metasConcluidas, heatmapData, recentActivity, moodTrend) por meio de useMemo.
- *
- * @returns {JSX.Element} Layout completo do dashboard com KPIs, heatmap, cards e timeline
- */
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { loading, openNewAddictionWizard } = useUI();
@@ -55,41 +29,29 @@ export default function DashboardPage() {
     loadAddictionDetails
   } = useData();
 
-  /** @type {Object|null} Vicio selecionado para registro de recaida (abre RecaidaModal) */
   const [recaidaVicio, setRecaidaVicio] = useState(null);
-  /** @type {{ humor: string, vicio_id: string }} Estado do registro rapido de humor */
   const [moodCheckIn, setMoodCheckIn] = useState({ humor: '', vicio_id: '' });
 
-  // Soma total de dias de abstinencia de todos os vicios - O(n) onde n = numero de vicios
   const totalDiasLimpos = useMemo(
     () => addictions.reduce((acc, v) => acc + (v.dias_abstinencia || 0), 0),
     [addictions]
   );
 
-  // Calcula total economizado somando todos os vicios - O(n) onde n = numero de vicios
   const totalEconomizado = useMemo(
     () => addictions.reduce((acc, v) => acc + (Number(v.valor_economizado) || 0), 0),
     [addictions]
   );
 
-  // Encontra o maior streak (dias consecutivos) entre todos os vicios - O(n)
   const maiorStreak = useMemo(
     () => addictions.reduce((max, v) => Math.max(max, v.dias_abstinencia || 0), 0),
     [addictions]
   );
 
-  // Conta metas concluidas filtrando pelo campo booleano 'concluida' - O(n)
   const metasConcluidas = useMemo(
     () => goals.filter(m => m.concluida).length,
     [goals]
   );
 
-  /**
-   * Gera dados do heatmap para os ultimos 28 dias.
-   * Para cada dia, conta registros e verifica se houve recaida.
-   * Complexidade: O(28 * (r + s)) onde r = registros e s = recaidas.
-   * @type {Array<{date: string, count: number, hasRelapse: boolean, day: number}>}
-   */
   const heatmapData = useMemo(() => {
     const days = [];
     const today = new Date();
@@ -106,12 +68,6 @@ export default function DashboardPage() {
     return days;
   }, [allRecords, relapses]);
 
-  /**
-   * Monta lista de atividades recentes combinando registros, recaidas e metas concluidas.
-   * Ordena por data decrescente e limita a 8 eventos.
-   * Complexidade: O(r + s + m + k*log(k)) onde k = total de eventos combinados.
-   * @type {Array<{id: string, type: string, date: Date, text: string, icon: React.Component}>}
-   */
   const recentActivity = useMemo(() => {
     const events = [];
 
@@ -148,14 +104,8 @@ export default function DashboardPage() {
     return events.sort((a, b) => b.date - a.date).slice(0, 8);
   }, [allRecords, relapses, goals]);
 
-  /**
-   * Calcula a media de humor dos ultimos 7 dias usando escala numerica (1-5).
-   * Retorna null se nao houver registros no periodo.
-   * Complexidade: O(n) onde n = total de registros.
-   * @type {number|null}
-   */
   const moodTrend = useMemo(() => {
-    const moodScore = { excelente: 5, bom: 4, neutro: 3, ruim: 2, pessimo: 1, 'péssimo': 1, [`p${'\u00c3\u00a9'}ssimo`]: 1 };
+    const moodScore = { excelente: 5, bom: 4, neutro: 3, ruim: 2, pessimo: 1, 'pÃ©ssimo': 1, [`p${'\u00c3\u00a9'}ssimo`]: 1 };
     const last7 = new Date();
     last7.setDate(last7.getDate() - 7);
     const recent = allRecords.filter(r => new Date(r.data_registro) >= last7 && r.humor);
@@ -172,6 +122,18 @@ export default function DashboardPage() {
     [allRecords, todayStr]
   );
   const todayMoodOption = moodOptions.find(option => option.value === todayMoodRecord?.humor);
+  const featuredGoals = useMemo(() => goals.slice(0, 3), [goals]);
+  const addictionOptions = useMemo(
+    () => addictions.map(vicio => ({ value: String(vicio.id), label: vicio.nome_vicio })),
+    [addictions]
+  );
+
+  const getGoalProgress = (meta) => {
+    if (meta.concluida) return 100;
+    const targetDays = Number(meta.dias_objetivo) || 0;
+    if (targetDays > 0) return Math.max(12, Math.min(96, Math.round((maiorStreak / targetDays) * 100)));
+    return 42;
+  };
 
   const handleMoodCheckIn = async (event) => {
     event.preventDefault();
@@ -179,28 +141,18 @@ export default function DashboardPage() {
     if (success) setMoodCheckIn(prev => ({ ...prev, humor: '' }));
   };
 
-  /**
-   * Handler para opcao "Refletir" no modal de recaida.
-   * Registra a recaida sem resetar o contador de dias.
-   * @param {Object} vicio - Objeto do vicio em que ocorreu a recaida
-   */
   const handleRefletir = async (vicio) => {
     await registerRelapse(vicio);
     setRecaidaVicio(null);
   };
 
-  /**
-   * Handler para opcao "Resetar" no modal de recaida.
-   * Registra a recaida e reseta o contador de abstinencia.
-   * @param {Object} vicio - Objeto do vicio em que ocorreu a recaida
-   */
   const handleResetar = async (vicio) => {
     await registerRelapse(vicio, { resetCounter: true });
     setRecaidaVicio(null);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <RecaidaModal
         isOpen={recaidaVicio !== null}
         onClose={() => setRecaidaVicio(null)}
@@ -210,119 +162,168 @@ export default function DashboardPage() {
         loading={loading}
       />
 
-      <PageHeader
-        eyebrow="Visão geral"
-        title="Sua jornada, em tempo real"
-        description="Acompanhe progresso, humor, metas e atividade recente em uma visão única."
-        actions={(
-          <Button type="button" variant="primary" onClick={openNewAddictionWizard}>
-            <Plus className="w-4 h-4" />
-            Novo hábito
-          </Button>
-        )}
-      />
-
-      <HeroKpis
-        totalDiasLimpos={totalDiasLimpos}
-        totalEconomizado={totalEconomizado}
-        maiorStreak={maiorStreak}
-        metasConcluidas={metasConcluidas}
-        moodTrend={moodTrend}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className={`${glassSurface} rounded-3xl p-6`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 icon-tile text-teal-300">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="eyebrow">Mensagem do dia</p>
-                  <h3 className="text-xl font-semibold text-app mb-1">Respire, avance, celebre</h3>
-                  <p className="text-lg font-medium text-muted">{motivationalMessage}</p>
-                </div>
-              </div>
+      <section className="grid grid-cols-1 xl:grid-cols-[1.25fr_.75fr] gap-5">
+        <article className="revive-hero min-h-[430px] p-7 sm:p-10">
+          <div className="relative z-[1] min-h-[360px] flex flex-col justify-between gap-10">
+            <div className="flex items-center justify-between gap-4">
+              <span className="revive-tag">Jornada em tempo real</span>
+              <button
+                type="button"
+                onClick={() => navigate('/analytics')}
+                className="revive-round-icon"
+                aria-label="Abrir insights"
+                title="Abrir insights"
+              >
+                <ArrowUpRight className="w-6 h-6" />
+              </button>
             </div>
-          </div>
 
-          <div className={`${glassSurface} rounded-3xl p-6`}>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div>
-                  <p className="eyebrow">Registro de humor</p>
-                  <h3 className="text-xl font-semibold text-app mb-1">Como você está se sentindo hoje?</h3>
-                  <p className="text-sm text-muted">Esse registro entra na atividade dos últimos 28 dias.</p>
+            <div>
+              <h2 className="max-w-4xl text-[clamp(3rem,7vw,5.75rem)] font-black leading-[0.88] tracking-[-0.085em] text-white">
+                Respire, avance, celebre.
+              </h2>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-white/60">
+                Seu autocuidado organizado como um painel vivo: habitos, humor, economia, metas e conquistas em uma unica narrativa visual.
+              </p>
+            </div>
+
+            <HeroKpis
+              totalDiasLimpos={totalDiasLimpos}
+              totalEconomizado={totalEconomizado}
+              maiorStreak={maiorStreak}
+              metasConcluidas={metasConcluidas}
+              moodTrend={moodTrend}
+            />
+          </div>
+        </article>
+
+        <div className="grid gap-5">
+          <article className="surface-accent rounded-[34px] p-7 min-h-[220px] flex flex-col justify-between">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow !text-black/50">Mensagem do dia</p>
+                <h3 className="mt-4 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-[#121212]">
+                  Voce nao esta sozinho.
+                </h3>
+              </div>
+              <Sparkles className="w-7 h-7 text-[#121212]" />
+            </div>
+            <p className="mt-6 text-base font-bold leading-7 text-black/65">{motivationalMessage}</p>
+          </article>
+
+          <ActivityHeatmap heatmapData={heatmapData} />
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-[.85fr_1.15fr] gap-5">
+        <article className={`${glassSurface} rounded-[34px] p-6`}>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div>
+                <p className="eyebrow">Registro de humor</p>
+                <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-app">Como voce esta hoje?</h3>
+                <p className="mt-2 text-sm text-muted">Esse registro entra na atividade dos ultimos 28 dias.</p>
+              </div>
+              {todayMoodRecord && (
+                <span className="self-start rounded-full bg-[#121212] px-3 py-1 text-xs font-black text-[#fbfaf5]">
+                  Hoje: {todayMoodOption?.label || todayMoodRecord.humor}
+                </span>
+              )}
+            </div>
+
+            <form onSubmit={handleMoodCheckIn} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <span className="text-sm font-black text-app">Humor</span>
+                  <SelectHumor
+                    value={moodCheckIn.humor}
+                    onChange={(valor) => setMoodCheckIn(prev => ({ ...prev, humor: valor }))}
+                    label="Selecione como voce esta..."
+                  />
                 </div>
-                {todayMoodRecord && (
-                  <span className="self-start px-3 py-1 rounded-full bg-teal-400/12 text-teal-300 border border-teal-300/25 text-xs font-semibold">
-                    Hoje: {todayMoodOption?.label || todayMoodRecord.humor}
-                  </span>
+
+                {addictions.length > 1 ? (
+                  <SelectField
+                    label="Habito"
+                    value={selectedMoodAddictionId}
+                    onChange={(nextValue) => setMoodCheckIn(prev => ({ ...prev, vicio_id: nextValue }))}
+                    options={addictionOptions}
+                    placeholder="Selecione um habito"
+                  />
+                ) : (
+                  <div className="rounded-[22px] surface-muted p-4">
+                    <span className="text-sm font-black text-app">Habito</span>
+                    <p className="text-sm text-muted mt-1">
+                      {addictions[0]?.nome_vicio || 'Cadastre um habito para salvar registros de humor.'}
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <form onSubmit={handleMoodCheckIn} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <span className="text-sm font-semibold text-app">Humor</span>
-                    <SelectHumor
-                      value={moodCheckIn.humor}
-                      onChange={(valor) => setMoodCheckIn(prev => ({ ...prev, humor: valor }))}
-                      label="Selecione como você está..."
-                    />
-                  </div>
-
-                  {addictions.length > 1 ? (
-                    <label className="block space-y-2">
-                      <span className="text-sm font-semibold text-app">Hábito</span>
-                      <select
-                        value={selectedMoodAddictionId}
-                        onChange={(event) => setMoodCheckIn(prev => ({ ...prev, vicio_id: event.target.value }))}
-                        className={fieldBase}
-                      >
-                        {addictions.map(vicio => (
-                          <option key={vicio.id} value={String(vicio.id)}>{vicio.nome_vicio}</option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : (
-                    <div className="rounded-2xl surface-muted p-4">
-                      <span className="text-sm font-semibold text-app">Hábito</span>
-                      <p className="text-sm text-muted mt-1">
-                        {addictions[0]?.nome_vicio || 'Cadastre um hábito para salvar registros de humor.'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading || !moodCheckIn.humor || !selectedMoodAddictionId}
-                  variant="primary"
-                  size="lg"
-                  className="w-full sm:w-auto"
-                >
-                  Salvar humor de hoje
-                </Button>
-              </form>
-            </div>
+              <Button
+                type="submit"
+                disabled={loading || !moodCheckIn.humor || !selectedMoodAddictionId}
+                variant="accent"
+                size="lg"
+                className="w-full"
+              >
+                Salvar humor de hoje
+              </Button>
+            </form>
           </div>
-        </div>
+        </article>
 
-        <ActivityHeatmap heatmapData={heatmapData} />
-      </div>
+        <article className="surface-dark rounded-[34px] p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="eyebrow !text-white/40">Metas em progresso</p>
+              <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-white">
+                Marcos que sustentam a evolucao
+              </h3>
+            </div>
+            <Button type="button" variant="accent" size="sm" onClick={() => navigate('/metas')}>
+              <Plus className="w-4 h-4" />
+              Nova meta
+            </Button>
+          </div>
+
+          <div className="mt-7 grid gap-3">
+            {featuredGoals.length > 0 ? featuredGoals.map((meta) => {
+              const progress = getGoalProgress(meta);
+              return (
+                <div key={meta.id} className="rounded-[26px] border border-white/10 bg-white/[0.055] p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="font-black text-white">{meta.descricao_meta}</h4>
+                      <p className="mt-1 text-sm text-white/45">{meta.concluida ? 'Meta concluida' : 'Em andamento'}</p>
+                    </div>
+                    <strong className="text-white">{progress}%</strong>
+                  </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                    <span className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-5 text-white/55">
+                <CheckCircle2 className="mb-3 w-6 h-6 text-[var(--accent)]" />
+                Crie uma meta para acompanhar os proximos marcos.
+              </div>
+            )}
+          </div>
+        </article>
+      </section>
 
       {addictions.length === 0 && !loading ? (
         <EmptyState
           icon={Heart}
-          title="Nenhum hábito cadastrado"
-          description="Comece sua jornada adicionando o primeiro hábito que deseja controlar."
+          title="Nenhum habito cadastrado"
+          description="Comece sua jornada adicionando o primeiro habito que deseja controlar."
           action={openNewAddictionWizard}
-          actionLabel="Cadastrar primeiro hábito"
+          actionLabel="Cadastrar primeiro habito"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
           {addictions.map(vicio => (
             <VicioCard
               key={vicio.id}
@@ -339,30 +340,17 @@ export default function DashboardPage() {
           ))}
 
           <button
+            type="button"
             onClick={openNewAddictionWizard}
-            className={`${glassSurface} border-dashed border-teal-300/20 rounded-3xl hover:border-teal-300/60 hover:bg-teal-400/5 transition p-6 flex flex-col items-center justify-center gap-3 min-h-[300px]`}
+            className={`${glassSurface} border-dashed border-[var(--line-strong)] rounded-[34px] hover:border-[var(--accent)] hover:bg-black/5 transition p-6 flex flex-col items-center justify-center gap-3 min-h-[300px]`}
           >
-            <Plus className="w-12 h-12 text-teal-300" />
-            <span className="text-lg font-semibold text-muted hover:text-app">Adicionar novo hábito</span>
+            <Plus className="w-12 h-12 text-[var(--accent-strong)]" />
+            <span className="text-lg font-black text-muted hover:text-app">Adicionar novo habito</span>
           </button>
         </div>
       )}
 
       <RecentTimeline recentActivity={recentActivity} />
-
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 sm:hidden">
-        <div className={`${glassSurface} rounded-2xl p-2 flex gap-2 backdrop-blur-xl`}>
-          <button onClick={openNewAddictionWizard} className="p-3 rounded-xl bg-teal-400/20 text-teal-300" title="Novo hábito">
-            <Plus className="w-5 h-5" />
-          </button>
-          <button onClick={() => navigate('/metas')} className="p-3 rounded-xl bg-cyan-500/20 text-cyan-400">
-            <Target className="w-5 h-5" />
-          </button>
-          <button onClick={() => navigate('/analytics')} className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
-            <BarChart3 className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

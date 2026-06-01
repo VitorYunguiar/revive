@@ -10,14 +10,14 @@ export default function StatTile({ icon, label, value, tone = 'emerald', classNa
   };
 
   return (
-    <div className={`surface-muted rounded-2xl p-4 ${className}`}>
+    <div className={`surface-muted rounded-[24px] p-4 ${className}`}>
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 icon-tile ${tones[tone] || tones.emerald}`}>
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase text-muted">{label}</p>
-          <p className="text-2xl font-bold text-app tabular-nums truncate">{value}</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</p>
+          <p className="text-2xl font-black tracking-[-0.05em] text-app tabular-nums truncate">{value}</p>
         </div>
       </div>
     </div>
