@@ -28,10 +28,10 @@ import { MS_PER_DAY } from '../utils/formatters';
  */
 const tips = [
   { category: 'coping', icon: Brain, title: 'Tecnica de respiracao 4-7-8', text: 'Inspire por 4 segundos, segure por 7, expire por 8. Repita 3 vezes. Isso ativa o sistema nervoso parassimpatico e reduz a ansiedade.', color: '#8b5cf6' },
-  { category: 'coping', icon: Brain, title: 'Ancoragem sensorial', text: 'Quando sentir vontade, observe 5 coisas que ve, 4 que toca, 3 que ouve, 2 que cheira e 1 que saboreia. Isso traz voce ao presente.', color: '#8b5cf6' },
+  { category: 'coping', icon: Brain, title: 'Ancoragem sensorial', text: 'Quando sentir vontade, observe 5 coisas que vê, 4 que toca, 3 que ouve, 2 que cheira e 1 que saboreia. Isso traz você ao presente.', color: '#8b5cf6' },
   { category: 'coping', icon: Brain, title: 'Diario de gatilhos', text: 'Anote situacoes que despertam vontade. Identificar padroes e o primeiro passo para criar estrategias de enfrentamento eficazes.', color: '#8b5cf6' },
   { category: 'coping', icon: Brain, title: 'Regra dos 10 minutos', text: 'Quando sentir vontade, espere 10 minutos antes de agir. A maioria dos impulsos diminui significativamente nesse tempo.', color: '#8b5cf6' },
-  { category: 'exercise', icon: Dumbbell, title: 'Caminhada de 15 minutos', text: 'Uma caminhada rapida libera endorfinas e reduz o estresse. Substitua o habito negativo por movimento fisico.', color: '#10b981' },
+  { category: 'exercise', icon: Dumbbell, title: 'Caminhada de 15 minutos', text: 'Uma caminhada rápida libera endorfinas e reduz o estresse. Substitua o hábito negativo por movimento físico.', color: '#10b981' },
   { category: 'exercise', icon: Dumbbell, title: 'Yoga para iniciantes', text: '10 minutos de yoga pela manha pode reduzir ansiedade em ate 30%. Comece com posturas simples como postura da montanha.', color: '#10b981' },
   { category: 'exercise', icon: Dumbbell, title: 'Exercicios de forca', text: 'Treinos de forca 3x por semana aumentam a autoestima e a disciplina, habilidades cruciais para a recuperacao.', color: '#10b981' },
   { category: 'mindfulness', icon: Heart, title: 'Meditacao guiada', text: 'Comece com 5 minutos diarios de meditacao. Use apps gratuitos como Insight Timer. A pratica regular fortalece o autocontrole.', color: '#ec4899' },

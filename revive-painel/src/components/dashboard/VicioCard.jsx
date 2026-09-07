@@ -20,6 +20,7 @@ import { BarChart3, Calendar, DollarSign, Flame, Repeat, Trash2 } from 'lucide-r
 import {
   glassSurface,
 } from '../../utils/constants';
+import { calculateGoalProgress } from '../../utils/goalProgress';
 
 /**
  * Renderiza card com informacoes e acoes de um vicio individual.
@@ -65,10 +66,7 @@ export default function VicioCard({
       r => r.vicio_id === vicio.id && new Date(r.data_recaida) >= dataLimite
     ).length;
     const activeGoal = metas.find(m => m.vicio_id === vicio.id && !m.concluida);
-    // Progresso limitado a 100% via Math.min para evitar overflow na barra visual
-    const progress = activeGoal?.dias_objetivo
-      ? Math.min((vicio.dias_abstinencia / parseInt(activeGoal.dias_objetivo, 10)) * 100, 100)
-      : null;
+    const progress = activeGoal ? calculateGoalProgress(activeGoal, vicio) : null;
 
     return {
       recaidasVicio30dias: totalRecaidas,

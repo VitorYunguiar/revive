@@ -1,0 +1,8 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Volte para sua jornada"
+- tapOn: "Entrar"
+- assertVisible: "Informe um e-mail válido."
+- assertVisible: "Informe a senha."

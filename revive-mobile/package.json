@@ -1,0 +1,73 @@
+{
+  "name": "revive-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "validate": "npm run typecheck && npm run lint && npm test"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "5.9.1",
+    "@react-native-community/netinfo": "12.0.1",
+    "@tanstack/react-query": "5.102.8",
+    "expo": "~57.0.20",
+    "expo-build-properties": "~57.0.17",
+    "expo-constants": "~57.0.16",
+    "expo-crypto": "~57.0.2",
+    "expo-file-system": "~57.0.6",
+    "expo-haptics": "~57.0.2",
+    "expo-linking": "~57.0.9",
+    "expo-localization": "~57.0.1",
+    "expo-notifications": "~57.0.17",
+    "expo-print": "~57.0.1",
+    "expo-router": "~57.0.19",
+    "expo-secure-store": "~57.0.3",
+    "expo-sharing": "~57.0.18",
+    "expo-splash-screen": "~57.0.8",
+    "expo-sqlite": "~57.0.2",
+    "expo-status-bar": "~57.0.1",
+    "lucide-react-native": "1.35.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.86.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "~0.21.0",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.2"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "14.0.1",
+    "@types/jest": "29.5.14",
+    "@types/react": "~19.2.2",
+    "eslint": "9.39.5",
+    "eslint-config-expo": "57.0.2",
+    "eslint-import-resolver-typescript": "3.10.1",
+    "jest": "~29.7.0",
+    "jest-expo": "57.0.5",
+    "typescript": "~6.0.3"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/test/setup.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/revive/",
+      "/e2e/"
+    ]
+  }
+}

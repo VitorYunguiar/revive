@@ -13,6 +13,7 @@ import SelectHumor from '../components/ui/SelectHumor';
 import { SelectField } from '../components/ui/Field';
 import Button from '../components/ui/Button';
 import { glassSurface, moodOptions } from '../utils/constants';
+import { calculateGoalProgress } from '../utils/goalProgress';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ export default function DashboardPage() {
         id: `rec-${r.id}`,
         type: 'recaida',
         date: new Date(r.data_recaida),
-        text: 'Recaida registrada',
+        text: 'Recaída registrada',
         icon: Repeat
       });
     });
@@ -96,7 +97,7 @@ export default function DashboardPage() {
         id: `meta-${m.id}`,
         type: 'meta',
         date: new Date(m.data_criacao),
-        text: `Meta concluida: ${m.descricao_meta}`,
+        text: `Meta concluída: ${m.descricao_meta}`,
         icon: Target
       });
     });
@@ -130,9 +131,8 @@ export default function DashboardPage() {
 
   const getGoalProgress = (meta) => {
     if (meta.concluida) return 100;
-    const targetDays = Number(meta.dias_objetivo) || 0;
-    if (targetDays > 0) return Math.max(12, Math.min(96, Math.round((maiorStreak / targetDays) * 100)));
-    return 42;
+    const vicio = addictions.find(item => item.id === meta.vicio_id);
+    return calculateGoalProgress(meta, vicio);
   };
 
   const handleMoodCheckIn = async (event) => {
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 Respire, avance, celebre.
               </h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-white/60">
-                Seu autocuidado organizado como um painel vivo: habitos, humor, economia, metas e conquistas em uma unica narrativa visual.
+                Seu autocuidado organizado como um painel vivo: hábitos, humor, economia, metas e conquistas em uma única narrativa visual.
               </p>
             </div>
 
@@ -203,7 +203,7 @@ export default function DashboardPage() {
               <div>
                 <p className="eyebrow !text-black/50">Mensagem do dia</p>
                 <h3 className="mt-4 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-[#121212]">
-                  Voce nao esta sozinho.
+                  Você não está sozinho.
                 </h3>
               </div>
               <Sparkles className="w-7 h-7 text-[#121212]" />
@@ -221,8 +221,8 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
                 <p className="eyebrow">Registro de humor</p>
-                <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-app">Como voce esta hoje?</h3>
-                <p className="mt-2 text-sm text-muted">Esse registro entra na atividade dos ultimos 28 dias.</p>
+                <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-app">Como você está hoje?</h3>
+                <p className="mt-2 text-sm text-muted">Esse registro entra na atividade dos últimos 28 dias.</p>
               </div>
               {todayMoodRecord && (
                 <span className="self-start rounded-full bg-[#121212] px-3 py-1 text-xs font-black text-[#fbfaf5]">
@@ -238,23 +238,23 @@ export default function DashboardPage() {
                   <SelectHumor
                     value={moodCheckIn.humor}
                     onChange={(valor) => setMoodCheckIn(prev => ({ ...prev, humor: valor }))}
-                    label="Selecione como voce esta..."
+                    label="Selecione como você está..."
                   />
                 </div>
 
                 {addictions.length > 1 ? (
                   <SelectField
-                    label="Habito"
+                    label="Hábito"
                     value={selectedMoodAddictionId}
                     onChange={(nextValue) => setMoodCheckIn(prev => ({ ...prev, vicio_id: nextValue }))}
                     options={addictionOptions}
-                    placeholder="Selecione um habito"
+                    placeholder="Selecione um hábito"
                   />
                 ) : (
                   <div className="rounded-[22px] surface-muted p-4">
-                    <span className="text-sm font-black text-app">Habito</span>
+                    <span className="text-sm font-black text-app">Hábito</span>
                     <p className="text-sm text-muted mt-1">
-                      {addictions[0]?.nome_vicio || 'Cadastre um habito para salvar registros de humor.'}
+                      {addictions[0]?.nome_vicio || 'Cadastre um hábito para salvar registros de humor.'}
                     </p>
                   </div>
                 )}
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             <div>
               <p className="eyebrow !text-white/40">Metas em progresso</p>
               <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-white">
-                Marcos que sustentam a evolucao
+                Marcos que sustentam a evolução
               </h3>
             </div>
             <Button type="button" variant="accent" size="sm" onClick={() => navigate('/metas')}>
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h4 className="font-black text-white">{meta.descricao_meta}</h4>
-                      <p className="mt-1 text-sm text-white/45">{meta.concluida ? 'Meta concluida' : 'Em andamento'}</p>
+                      <p className="mt-1 text-sm text-white/45">{meta.concluida ? 'Meta concluída' : 'Em andamento'}</p>
                     </div>
                     <strong className="text-white">{progress}%</strong>
                   </div>
@@ -307,7 +307,7 @@ export default function DashboardPage() {
             }) : (
               <div className="rounded-[26px] border border-white/10 bg-white/[0.055] p-5 text-white/55">
                 <CheckCircle2 className="mb-3 w-6 h-6 text-[var(--accent)]" />
-                Crie uma meta para acompanhar os proximos marcos.
+                Crie uma meta para acompanhar os próximos marcos.
               </div>
             )}
           </div>
@@ -317,10 +317,10 @@ export default function DashboardPage() {
       {addictions.length === 0 && !loading ? (
         <EmptyState
           icon={Heart}
-          title="Nenhum habito cadastrado"
-          description="Comece sua jornada adicionando o primeiro habito que deseja controlar."
+          title="Nenhum hábito cadastrado"
+          description="Comece sua jornada adicionando o primeiro hábito que deseja controlar."
           action={openNewAddictionWizard}
-          actionLabel="Cadastrar primeiro habito"
+          actionLabel="Cadastrar primeiro hábito"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
@@ -345,7 +345,7 @@ export default function DashboardPage() {
             className={`${glassSurface} border-dashed border-[var(--line-strong)] rounded-[34px] hover:border-[var(--accent)] hover:bg-black/5 transition p-6 flex flex-col items-center justify-center gap-3 min-h-[300px]`}
           >
             <Plus className="w-12 h-12 text-[var(--accent-strong)]" />
-            <span className="text-lg font-black text-muted hover:text-app">Adicionar novo habito</span>
+            <span className="text-lg font-black text-muted hover:text-app">Adicionar novo hábito</span>
           </button>
         </div>
       )}

@@ -93,6 +93,97 @@
 
 /**
  * @openapi
+ * /api/v2/auth/login:
+ *   post:
+ *     tags: [Mobile Auth v2]
+ *     summary: Autentica uma conta existente e cria uma sessao mobile revogavel
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Access token de 15 minutos e refresh token rotativo
+ *       401:
+ *         description: Credenciais invalidas
+ * /api/v2/auth/refresh:
+ *   post:
+ *     tags: [Mobile Auth v2]
+ *     summary: Rotaciona o refresh token e emite novo access token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refresh_token]
+ *             properties:
+ *               refresh_token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Sessao renovada
+ *       401:
+ *         description: Token expirado, invalido ou reutilizado
+ * /api/v2/auth/logout:
+ *   post:
+ *     tags: [Mobile Auth v2]
+ *     summary: Revoga a sessao mobile
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Sessao encerrada
+ */
+
+/**
+ * @openapi
+ * /api/v2/bootstrap:
+ *   get:
+ *     tags: [Mobile v2]
+ *     summary: Carrega em uma chamada o snapshot inicial do usuario
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Usuario, vicios, registros, recaidas, metas e mensagem
+ * /api/v2/account:
+ *   delete:
+ *     tags: [Mobile v2]
+ *     summary: Exclui de forma transacional a conta autenticada e seus dados
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Conta excluida
+ */
+
+/**
+ * @openapi
+ * /api/v2/registros:
+ *   post:
+ *     tags: [Mobile Offline v2]
+ *     summary: Cria um registro diario idempotente
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Idempotency-Key
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       201:
+ *         description: Registro criado ou resposta original repetida
+ *       409:
+ *         description: Chave usada com outro payload ou ainda em processamento
+ */
+
+/**
+ * @openapi
  * /api/health:
  *   get:
  *     tags: [Health]

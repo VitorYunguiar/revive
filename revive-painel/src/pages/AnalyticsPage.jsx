@@ -212,16 +212,16 @@ export default function AnalyticsPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard icon={<Heart className="text-emerald-400 w-8 h-8" />} title="Vicios Ativos" value={viciosAtivos} border="emerald" />
+        <KpiCard icon={<Heart className="text-emerald-400 w-8 h-8" />} title="Vícios ativos" value={viciosAtivos} border="emerald" />
         <KpiCard icon={<DollarSign className="text-cyan-400 w-8 h-8" />} title="Total Economizado" value={`R$ ${totalEconomizado.toFixed(2)}`} border="cyan" />
-        <KpiCard icon={<CheckCircle className="text-yellow-400 w-8 h-8" />} title="Metas Concluidas" value={metasConcluidas} border="yellow" />
-        <KpiCard icon={<Repeat className="text-red-400 w-8 h-8" />} title="Taxa de Recaida" value={taxaRecaida} trend={tendenciaRecaidas} border="red" />
+        <KpiCard icon={<CheckCircle className="text-yellow-400 w-8 h-8" />} title="Metas concluídas" value={metasConcluidas} border="yellow" />
+        <KpiCard icon={<Repeat className="text-red-400 w-8 h-8" />} title="Taxa de recaída" value={taxaRecaida} trend={tendenciaRecaidas} border="red" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Distribuicao de Humor (Ultimos 30 dias)"><DonutChart data={dadosHumor} /></Card>
+        <Card title="Distribuição de humor (últimos 30 dias)"><DonutChart data={dadosHumor} /></Card>
         <div className="space-y-6">
-          <Card title="Ultimo Registro">
+          <Card title="Último registro">
             <div className="flex items-center justify-center h-full">
               <p className="text-4xl font-bold text-[#7CF6C4] flex items-center gap-3">
                 <Clock className="w-8 h-8" />
@@ -229,7 +229,7 @@ export default function AnalyticsPage() {
               </p>
             </div>
           </Card>
-          <Card title="Tempo Medio Entre Recaidas">
+          <Card title="Tempo médio entre recaídas">
             <div className="flex items-center justify-center h-full">
               <p className="text-3xl font-bold text-purple-300 flex items-center gap-3">
                 <Flame className="w-6 h-6" />
@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Top 5 Gatilhos Correlacionados com Recaidas">
+        <Card title="Top 5 gatilhos correlacionados com recaídas">
           {topGatilhosRecaidas.length > 0 ? (
             <ul className="space-y-2">
               {topGatilhosRecaidas.map(([gatilho, freq], index) => (
@@ -272,14 +272,14 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <Card title="Insights e Recomendacoes">
+        <Card title="Insights e recomendações">
           <div className="space-y-3">
             {diasUltimoRegistro !== '-' && !diasUltimoRegistro.includes('Hoje') && (
               <div className="flex items-start gap-3 p-4 bg-yellow-500/20 border border-yellow-400/30 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-yellow-300 font-semibold">Aumente seu Engajamento</p>
-                  <p className="text-sm text-yellow-200/80">Voce nao registra ha {diasUltimoRegistro}. Reflexoes diarias fortalecem a recuperacao!</p>
+                  <p className="text-sm text-yellow-200/80">Você não registra há {diasUltimoRegistro}. Reflexões diárias fortalecem a recuperação!</p>
                 </div>
               </div>
             )}
@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-red-300 font-semibold">Aumento de Risco Detectado</p>
-                  <p className="text-sm text-red-200/80">Recaidas aumentaram {tendenciaRecaidas.toFixed(0)}% nos ultimos 30 dias. Identifique gatilhos e procure apoio.</p>
+                  <p className="text-sm text-red-200/80">Recaídas aumentaram {tendenciaRecaidas.toFixed(0)}% nos últimos 30 dias. Identifique gatilhos e procure apoio.</p>
                 </div>
               </div>
             )}
@@ -296,8 +296,8 @@ export default function AnalyticsPage() {
               <div className="flex items-start gap-3 p-4 bg-emerald-500/20 border border-emerald-400/30 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-emerald-300 font-semibold">Voce Esta Melhorando!</p>
-                  <p className="text-sm text-emerald-200/80">Recaidas diminuiram {Math.abs(tendenciaRecaidas).toFixed(0)}% nos ultimos 30 dias. Continue assim!</p>
+                  <p className="text-emerald-300 font-semibold">Você está melhorando!</p>
+                  <p className="text-sm text-emerald-200/80">Recaídas diminuíram {Math.abs(tendenciaRecaidas).toFixed(0)}% nos últimos 30 dias. Continue assim!</p>
                 </div>
               </div>
             )}
@@ -306,7 +306,7 @@ export default function AnalyticsPage() {
                 <BookOpen className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-blue-300 font-semibold">Foco em Gatilhos</p>
-                  <p className="text-sm text-blue-200/80">O gatilho "{topGatilhosRecaidas[0][0]}" aparece antes de recaidas. Desenvolva estrategias para lidar com isso.</p>
+                  <p className="text-sm text-blue-200/80">O gatilho "{topGatilhosRecaidas[0][0]}" aparece antes de recaídas. Desenvolva estratégias para lidar com isso.</p>
                 </div>
               </div>
             )}
@@ -315,7 +315,7 @@ export default function AnalyticsPage() {
                 <Heart className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-purple-300 font-semibold">Sua Jornada</p>
-                  <p className="text-sm text-purple-200/80">Voce ja investiu <strong>R$ {totalEconomizado.toFixed(2)}</strong> em sua saude. Cada dia e uma vitoria!</p>
+                  <p className="text-sm text-purple-200/80">Você já investiu <strong>R$ {totalEconomizado.toFixed(2)}</strong> em sua saúde. Cada dia é uma vitória!</p>
                 </div>
               </div>
             )}

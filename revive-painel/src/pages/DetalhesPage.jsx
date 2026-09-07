@@ -26,6 +26,7 @@ import { InputField } from '../components/ui/Field';
 import PageHeader from '../components/ui/PageHeader';
 import Button from '../components/ui/Button';
 import { glassSurface, fieldBase, screenTransition } from '../utils/constants';
+import { getLocalDateString } from '../utils/goalProgress';
 
 /**
  * Componente da pagina de detalhes de um vicio.
@@ -52,7 +53,12 @@ export default function DetalhesPage() {
   /** @type {Object} Estado controlado do formulario de registro diario */
   const [formRegistro, setFormRegistro] = useState({ humor: '', gatilhos: '', conquistas: '', observacoes: '' });
   /** @type {Object} Estado controlado do formulario de nova meta */
-  const [formMeta, setFormMeta] = useState({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
+  const [formMeta, setFormMeta] = useState({
+    descricao_meta: '',
+    dias_objetivo: '',
+    valor_objetivo: '',
+    iniciar_hoje: true
+  });
 
   // Carrega detalhes do vicio quando o parametro de rota (id) muda
   useEffect(() => {
@@ -85,8 +91,14 @@ export default function DetalhesPage() {
    */
   const handleSubmitMeta = async (e) => {
     e.preventDefault();
-    await createGoal({ ...formMeta, vicio_id: selectedAddiction.id });
-    setFormMeta({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '' });
+    await createGoal({
+      ...formMeta,
+      vicio_id: selectedAddiction.id,
+      data_inicio_meta: formMeta.iniciar_hoje ? getLocalDateString() : null,
+      dias_abstinencia_inicio: formMeta.iniciar_hoje ? selectedAddiction.dias_abstinencia || 0 : 0,
+      valor_economizado_inicio: formMeta.iniciar_hoje ? Number(selectedAddiction.valor_economizado) || 0 : 0
+    });
+    setFormMeta({ descricao_meta: '', dias_objetivo: '', valor_objetivo: '', iniciar_hoje: true });
   };
 
   /**
@@ -161,7 +173,7 @@ export default function DetalhesPage() {
           </div>
         </div>
         <button onClick={() => setRecaidaVicio(selectedAddiction)} className="w-full mt-6 px-6 py-3 bg-rose-500/15 text-rose-100 rounded-xl hover:bg-rose-500/25 transition font-semibold border border-rose-300/30">
-          Registrar Recaida
+          Registrar Recaída
         </button>
       </div>
 
@@ -171,11 +183,23 @@ export default function DetalhesPage() {
           <div className={`${glassSurface} rounded-3xl p-6 border border-white/10`}>
             <h3 className="text-xl font-bold text-app mb-4 flex items-center gap-2"><Target className="w-6 h-6 text-teal-300" />Nova meta para "{selectedAddiction.nome_vicio}"</h3>
             <form onSubmit={handleSubmitMeta} className="space-y-4">
-              <InputField type="text" value={formMeta.descricao_meta} onChange={(e) => setFormMeta({ ...formMeta, descricao_meta: e.target.value })} required label="Descricao da meta" placeholder="Algo que motive voce" />
+              <InputField type="text" value={formMeta.descricao_meta} onChange={(e) => setFormMeta({ ...formMeta, descricao_meta: e.target.value })} required label="Descrição da meta" placeholder="Algo que motive você" />
               <div className="grid grid-cols-2 gap-3">
                 <InputField type="number" min="1" value={formMeta.dias_objetivo} onChange={(e) => setFormMeta({ ...formMeta, dias_objetivo: e.target.value })} label="Dias objetivo" placeholder="Ex: 30" />
                 <InputField type="number" step="0.01" min="0" value={formMeta.valor_objetivo} onChange={(e) => setFormMeta({ ...formMeta, valor_objetivo: e.target.value })} label="Valor objetivo (R$)" placeholder="Ex: 150.00" />
               </div>
+              <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 cursor-pointer transition hover:bg-white/10">
+                <input
+                  type="checkbox"
+                  checked={formMeta.iniciar_hoje}
+                  onChange={(event) => setFormMeta({ ...formMeta, iniciar_hoje: event.target.checked })}
+                  className="mt-1 h-5 w-5 rounded accent-teal-400"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-app">Iniciar contagem hoje</span>
+                  <span className="block text-xs text-muted">A meta começa em 0 para este hábito.</span>
+                </span>
+              </label>
               <Button type="submit" disabled={loading} variant="primary" size="lg" className="w-full">Criar meta</Button>
             </form>
           </div>
@@ -189,7 +213,7 @@ export default function DetalhesPage() {
                     <div className="flex items-start justify-between mb-2">
                       <p className="font-semibold text-white">{meta.descricao_meta}</p>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${meta.concluida ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30'}`}>
-                        {meta.concluida ? 'Concluida' : 'Em Progresso'}
+                        {meta.concluida ? 'Concluída' : 'Em progresso'}
                       </span>
                     </div>
                     <div className="flex gap-4 text-sm text-white/70">
@@ -212,9 +236,9 @@ export default function DetalhesPage() {
               onChange={(valor) => setFormRegistro({ ...formRegistro, humor: valor })}
               label="Selecione seu humor..."
             />
-            <input type="text" value={formRegistro.gatilhos} onChange={(e) => setFormRegistro({ ...formRegistro, gatilhos: e.target.value })} className={fieldBase} placeholder="Gatilhos (separados por virgula)" />
+            <input type="text" value={formRegistro.gatilhos} onChange={(e) => setFormRegistro({ ...formRegistro, gatilhos: e.target.value })} className={fieldBase} placeholder="Gatilhos (separados por vírgula)" />
             <textarea value={formRegistro.conquistas} onChange={(e) => setFormRegistro({ ...formRegistro, conquistas: e.target.value })} className={fieldBase} placeholder="Conquistas do dia..." rows="2" />
-            <textarea value={formRegistro.observacoes} onChange={(e) => setFormRegistro({ ...formRegistro, observacoes: e.target.value })} className={fieldBase} placeholder="Observacoes..." rows="2" />
+            <textarea value={formRegistro.observacoes} onChange={(e) => setFormRegistro({ ...formRegistro, observacoes: e.target.value })} className={fieldBase} placeholder="Observações..." rows="2" />
             <Button type="submit" disabled={loading} variant="primary" size="lg" className="w-full">Salvar registro</Button>
           </form>
         </div>
@@ -233,7 +257,7 @@ export default function DetalhesPage() {
                 </div>
                 {registro.gatilhos && <p className="text-sm text-white/70 mb-1"><strong className="text-white">Gatilhos:</strong> {registro.gatilhos}</p>}
                 {registro.conquistas && <p className="text-sm text-white/70 mb-1"><strong className="text-white">Conquistas:</strong> {registro.conquistas}</p>}
-                {registro.observacoes && <p className="text-sm text-white/70"><strong className="text-white">Observacoes:</strong> {registro.observacoes}</p>}
+                {registro.observacoes && <p className="text-sm text-white/70"><strong className="text-white">Observações:</strong> {registro.observacoes}</p>}
               </div>
             ))}
           </div>

@@ -51,6 +51,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const { createMobileApi } = require('./mobile-api');
 
 /** Instância principal do Express */
 const app = express();
@@ -230,12 +231,21 @@ const apiLimiter = rateLimit({
 /** Aplica rate limiter mais restritivo nas rotas de autenticação */
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/cadastro', cadastroLimiter);
+app.use('/api/v2/auth/login', loginLimiter);
+app.use('/api/v2/auth/cadastro', cadastroLimiter);
+app.use('/api/v2/auth/refresh', loginLimiter);
 
 /** Aplica rate limiter geral em todas as rotas /api */
 app.use('/api', (req, res, next) => {
     if (req.path.startsWith('/auth/')) return next();
     return apiLimiter(req, res, next);
 });
+
+app.use('/api/v2', createMobileApi({
+    supabase,
+    bcrypt,
+    jwtSecret: process.env.JWT_SECRET
+}));
 
 /* =========================================================================
  * MIDDLEWARE DE AUTENTICAÇÃO JWT
@@ -356,6 +366,24 @@ function isSupabaseUniqueViolation(error) {
 function isSupabasePermissionError(error) {
     return error?.code === '42501'
         || /row-level security|permission denied|rls/i.test(error?.message || '');
+}
+
+function isMissingGoalBaselineColumnError(error) {
+    const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
+    return error?.code === 'PGRST204'
+        || error?.code === '42703'
+        || /data_inicio_meta|dias_abstinencia_inicio|valor_economizado_inicio|iniciar_hoje/i.test(message)
+        || /schema cache|column/i.test(message);
+}
+
+function parseBoolean(value) {
+    return value === true || value === 'true';
+}
+
+function parseOptionalNumber(value) {
+    if (value === '' || value === null || value === undefined) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
 }
 
 function sendCadastroDatabaseError(res, error) {
@@ -1130,23 +1158,69 @@ app.get('/api/mensagens/diaria', authMiddleware, async (req, res) => {
 app.post('/api/metas', authMiddleware, async (req, res) => {
     try {
         const descricao_meta = sanitize(req.body.descricao_meta);
-        const { vicio_id, dias_objetivo, valor_objetivo } = req.body;
+        const { vicio_id } = req.body;
+        const dias_objetivo = parseOptionalNumber(req.body.dias_objetivo);
+        const valor_objetivo = parseOptionalNumber(req.body.valor_objetivo);
+        const iniciar_hoje = parseBoolean(req.body.iniciar_hoje);
 
         if (!descricao_meta) {
             return res.status(400).json({ erro: 'Descricao da meta e obrigatoria' });
         }
 
-        const { data, error } = await supabase
+        let baseline = {
+            iniciar_hoje: false,
+            data_inicio_meta: null,
+            dias_abstinencia_inicio: 0,
+            valor_economizado_inicio: 0
+        };
+
+        if (iniciar_hoje && vicio_id) {
+            const { data: vicio, error: vicioError } = await supabase
+                .from('vicios')
+                .select('*')
+                .eq('id', vicio_id)
+                .eq('usuario_id', req.usuarioId)
+                .single();
+
+            if (vicioError || !vicio) {
+                return res.status(404).json({ erro: 'Vicio nao encontrado' });
+            }
+
+            const stats = calculateAddictionStats(vicio);
+            baseline = {
+                iniciar_hoje: true,
+                data_inicio_meta: sanitize(req.body.data_inicio_meta) || new Date().toISOString().split('T')[0],
+                dias_abstinencia_inicio: stats.abstinenceDays,
+                valor_economizado_inicio: Number(stats.savedAmount.toFixed(2))
+            };
+        }
+
+        const basePayload = {
+            usuario_id: req.usuarioId,
+            vicio_id,
+            descricao_meta,
+            dias_objetivo,
+            valor_objetivo
+        };
+
+        const insertPayload = iniciar_hoje ? { ...basePayload, ...baseline } : basePayload;
+
+        let { data, error } = await supabase
             .from('metas')
-            .insert([{
-                usuario_id: req.usuarioId,
-                vicio_id,
-                descricao_meta,
-                dias_objetivo,
-                valor_objetivo
-            }])
+            .insert([insertPayload])
             .select()
             .single();
+
+        if (error && iniciar_hoje && isMissingGoalBaselineColumnError(error)) {
+            const fallbackResult = await supabase
+                .from('metas')
+                .insert([basePayload])
+                .select()
+                .single();
+
+            data = fallbackResult.data ? { ...fallbackResult.data, ...baseline } : fallbackResult.data;
+            error = fallbackResult.error;
+        }
 
         if (error) throw error;
 

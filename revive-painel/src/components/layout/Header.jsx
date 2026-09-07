@@ -23,14 +23,14 @@ const Header = () => {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <button type="button" className="revive-pill max-w-[220px]" title={user?.nome || user?.email || 'Usuario'}>
+        <button type="button" className="revive-pill max-w-[220px]" title={user?.nome || user?.email || 'Usuário'}>
           <User className="w-4 h-4 shrink-0" />
-          <span className="truncate">{user?.nome || user?.email || 'Usuario'}</span>
+          <span className="truncate">{user?.nome || user?.email || 'Usuário'}</span>
         </button>
 
         <Button type="button" variant="primary" size="md" onClick={openNewAddictionWizard}>
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Novo habito</span>
+          <span className="hidden sm:inline">Novo hábito</span>
         </Button>
 
         <Motion.button

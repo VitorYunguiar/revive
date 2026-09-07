@@ -412,9 +412,13 @@ export function DataProvider({ children }) {
    */
   const createGoal = useCallback(async (goalForm) => {
     await withLoading(async () => {
-      await metasService.criarMeta(goalForm, token);
+      const response = await metasService.criarMeta(goalForm, token);
       showToast('success', 'Meta criada com sucesso!');
-      await loadGoals();
+      if (response?.meta) {
+        setGoals(prev => [response.meta, ...prev.filter(goal => goal.id !== response.meta.id)]);
+      } else {
+        await loadGoals();
+      }
     }, 'Nao foi possivel criar a meta.');
   }, [token, showToast, loadGoals, withLoading]);
 

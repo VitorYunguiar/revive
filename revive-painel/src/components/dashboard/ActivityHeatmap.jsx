@@ -42,7 +42,7 @@ export default function ActivityHeatmap({ heatmapData }) {
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <p className="eyebrow">Atividade</p>
-          <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-app">Ultimos 28 dias</h3>
+          <h3 className="mt-2 text-3xl font-black leading-none tracking-[-0.055em] text-app">Últimos 28 dias</h3>
         </div>
         <span className="rounded-full bg-[#121212] px-3 py-2 text-sm font-black text-[#fbfaf5]">{activeDays}/28</span>
       </div>

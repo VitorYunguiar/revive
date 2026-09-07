@@ -72,7 +72,7 @@ export default function ReportsPage() {
    * Complexidade: O(n) onde n = registros no periodo.
    */
   const exportCSV = () => {
-    const headers = ['Data', 'Vicio ID', 'Humor', 'Gatilhos', 'Conquistas', 'Observacoes'];
+    const headers = ['Data', 'Vício ID', 'Humor', 'Gatilhos', 'Conquistas', 'Observações'];
     const rows = allRecords
       .filter(r => new Date(r.data_registro) >= dataLimite)
       .map(r => [r.data_registro, r.vicio_id, r.humor || '', r.gatilhos || '', r.conquistas || '', r.observacoes || '']);
@@ -137,7 +137,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Mood Distribution */}
-      <Card title={`Distribuicao de Humor (${periodo} dias)`}>
+      <Card title={`Distribuição de humor (${periodo} dias)`}>
         {stats.humorDistribuicao.length > 0 ? (
           <div className="space-y-3">
             {stats.humorDistribuicao.map(([humor, count]) => {

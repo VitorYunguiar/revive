@@ -22,9 +22,9 @@ const navItems = [
   { path: '/', label: 'Jornada', icon: Heart },
   { path: '/analytics', label: 'Insights', icon: PieChart },
   { path: '/metas', label: 'Metas', icon: Target },
-  { path: '/calendario', label: 'Calendario', icon: CalendarIcon },
+  { path: '/calendario', label: 'Calendário', icon: CalendarIcon },
   { path: '/conquistas', label: 'Conquistas', icon: Trophy },
-  { path: '/relatorios', label: 'Relatorios', icon: FileText },
+  { path: '/relatorios', label: 'Relatórios', icon: FileText },
   { path: '/dicas', label: 'Dicas', icon: Lightbulb },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
@@ -86,8 +86,8 @@ const NavBar = ({ variant = 'mobile' }) => {
             {...navButtonMotion}
             type="button"
             onClick={openNewAddictionWizard}
-            title="Novo habito"
-            aria-label="Novo habito"
+            title="Novo hábito"
+            aria-label="Novo hábito"
             className="w-[52px] h-[52px] rounded-[18px] grid place-items-center border border-white/15 text-[var(--accent)] hover:bg-white/10 transition"
           >
             <Plus className="w-5 h-5" />
@@ -135,7 +135,7 @@ const NavBar = ({ variant = 'mobile' }) => {
         type="button"
         onClick={openNewAddictionWizard}
         className="flex items-center gap-2 px-3 py-2 rounded-[16px] font-black text-[#121212] bg-[var(--accent)] transition whitespace-nowrap"
-        title="Novo habito"
+        title="Novo hábito"
       >
         <Plus className="w-4 h-4" />
         <span className="hidden sm:inline">Novo</span>

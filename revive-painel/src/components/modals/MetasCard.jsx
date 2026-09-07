@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { CheckCircle, Plus, Target, Trash2, Trophy } from 'lucide-react';
+import { CalendarDays, CheckCircle, Plus, Target, Trash2, Trophy } from 'lucide-react';
 import Button from '../ui/Button';
 import { SelectField } from '../ui/Field';
 import { fieldBase } from '../../utils/constants';
+import { calculateGoalProgress, getLocalDateString, goalUsesTodayBaseline } from '../../utils/goalProgress';
 
-const initialForm = { vicio_id: '', descricao_meta: '', dias_objetivo: '', valor_objetivo: '' };
+const initialForm = {
+  vicio_id: '',
+  descricao_meta: '',
+  dias_objetivo: '',
+  valor_objetivo: '',
+  iniciar_hoje: true
+};
 
 const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loading }) => {
   const [showForm, setShowForm] = useState(false);
@@ -16,29 +23,27 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
 
   const getVicioNome = (vicioId) => {
     const vicio = vicios.find(item => item.id === vicioId);
-    return vicio ? vicio.nome_vicio : 'Habito nao encontrado';
+    return vicio ? vicio.nome_vicio : 'Hábito não encontrado';
   };
 
   const calcularProgresso = (meta) => {
     const vicio = vicios.find(item => item.id === meta.vicio_id);
-    if (!vicio) return 0;
-
-    if (meta.dias_objetivo) {
-      return Math.round(Math.min((vicio.dias_abstinencia / parseInt(meta.dias_objetivo, 10)) * 100, 100));
-    }
-
-    if (meta.valor_objetivo) {
-      return Math.round(Math.min((Number(vicio.valor_economizado) / parseFloat(meta.valor_objetivo)) * 100, 100));
-    }
-
-    return 0;
+    return calculateGoalProgress(meta, vicio);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formMeta.vicio_id || !formMeta.descricao_meta) return;
 
-    await onAddMeta(formMeta);
+    const selectedVicio = vicios.find(item => String(item.id) === String(formMeta.vicio_id));
+    const payload = {
+      ...formMeta,
+      data_inicio_meta: formMeta.iniciar_hoje ? getLocalDateString() : null,
+      dias_abstinencia_inicio: formMeta.iniciar_hoje ? selectedVicio?.dias_abstinencia || 0 : 0,
+      valor_economizado_inicio: formMeta.iniciar_hoje ? Number(selectedVicio?.valor_economizado) || 0 : 0
+    };
+
+    await onAddMeta(payload);
     setFormMeta(initialForm);
     setShowForm(false);
   };
@@ -55,7 +60,7 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-4xl sm:text-5xl font-black leading-[0.95] tracking-[-0.07em] text-app">Metas</h2>
-            <p className="text-muted mt-2">Organize marcos claros para sustentar sua evolucao.</p>
+            <p className="text-muted mt-2">Organize marcos claros para sustentar sua evolução.</p>
           </div>
           <Button type="button" variant="primary" onClick={() => setShowForm(true)}>
             <Plus className="w-4 h-4" />
@@ -77,7 +82,7 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
         <div className="surface-card rounded-[30px] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-black text-muted">Metas concluidas</p>
+              <p className="text-sm font-black text-muted">Metas concluídas</p>
               <p className="text-5xl font-black tracking-[-0.07em] text-sky-300 mt-2">{metasCompletadas}</p>
             </div>
             <Trophy className="w-8 h-8 text-sky-300 opacity-70" />
@@ -92,14 +97,14 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
               value={formMeta.vicio_id}
               onChange={(nextValue) => setFormMeta({ ...formMeta, vicio_id: nextValue })}
               options={vicioOptions}
-              placeholder="Selecione um habito"
+              placeholder="Selecione um hábito"
             />
 
             <input
               type="text"
               value={formMeta.descricao_meta}
               onChange={(event) => setFormMeta({ ...formMeta, descricao_meta: event.target.value })}
-              placeholder="Descricao da meta..."
+              placeholder="Descrição da meta..."
               className={fieldBase}
             />
           </div>
@@ -109,18 +114,34 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
               type="number"
               value={formMeta.dias_objetivo}
               onChange={(event) => setFormMeta({ ...formMeta, dias_objetivo: event.target.value })}
+              min="1"
               placeholder="Dias objetivo"
               className={fieldBase}
             />
             <input
               type="number"
               step="0.01"
+              min="0"
               value={formMeta.valor_objetivo}
               onChange={(event) => setFormMeta({ ...formMeta, valor_objetivo: event.target.value })}
               placeholder="Valor objetivo (R$)"
               className={fieldBase}
             />
           </div>
+
+          <label className="flex items-start gap-3 rounded-[22px] border border-[var(--line)] bg-black/5 px-4 py-3 cursor-pointer transition hover:bg-black/10">
+            <input
+              type="checkbox"
+              checked={formMeta.iniciar_hoje}
+              onChange={(event) => setFormMeta({ ...formMeta, iniciar_hoje: event.target.checked })}
+              className="mt-1 h-5 w-5 rounded accent-teal-400"
+            />
+            <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
+            <span className="min-w-0">
+              <span className="block text-sm font-black text-app">Iniciar contagem hoje</span>
+              <span className="block text-xs text-muted">A meta começa em 0 para este hábito.</span>
+            </span>
+          </label>
 
           <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <Button
@@ -155,8 +176,9 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
                         {getVicioNome(meta.vicio_id)}
                       </span>
                     </div>
-                    {meta.dias_objetivo && <p className="text-sm text-muted">Objetivo: {meta.dias_objetivo} dias de abstinencia</p>}
+                    {meta.dias_objetivo && <p className="text-sm text-muted">Objetivo: {meta.dias_objetivo} dias de abstinência</p>}
                     {meta.valor_objetivo && <p className="text-sm text-muted">Objetivo: R$ {parseFloat(meta.valor_objetivo).toFixed(2)} economizados</p>}
+                    {goalUsesTodayBaseline(meta) && <p className="text-xs font-black text-teal-300 mt-1">Contando desde hoje</p>}
                   </div>
                   <button
                     type="button"
@@ -182,7 +204,7 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
                   {isCompleted && !meta.concluida && (
                     <Button type="button" variant="secondary" disabled={loading} onClick={() => onCompleteMeta(meta.id)} className="w-full">
                       <CheckCircle className="w-4 h-4" />
-                      Marcar como concluida
+                      Marcar como concluída
                     </Button>
                   )}
                 </div>
@@ -194,14 +216,14 @@ const MetasCard = ({ metas, vicios, onAddMeta, onCompleteMeta, onDeleteMeta, loa
         <div className="surface-card rounded-[34px] p-8 text-center">
           <Target className="w-10 h-10 text-teal-300 mx-auto mb-3" />
           <h3 className="text-lg font-black text-app">Nenhuma meta ativa</h3>
-          <p className="text-muted mt-1">Crie uma meta para transformar intencao em acompanhamento concreto.</p>
+          <p className="text-muted mt-1">Crie uma meta para transformar intenção em acompanhamento concreto.</p>
         </div>
       )}
 
       {metasCompletadas > 0 && (
         <details className="group surface-muted rounded-[24px] p-4">
           <summary className="cursor-pointer text-sm font-black text-muted hover:text-app transition">
-            Metas concluidas ({metasCompletadas})
+            Metas concluídas ({metasCompletadas})
           </summary>
           <div className="space-y-2 mt-3">
             {metas.filter(meta => meta.concluida).map(meta => (
