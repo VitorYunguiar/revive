@@ -21,7 +21,7 @@
 - Migrations de metas, sessões e autor aplicadas no desenvolvimento `upqlaeqdaobzrepamnvs`; demais ambientes pendentes.
 - Chave de servidor validada no backend local e restrição das tabelas aplicada no desenvolvimento. Configurar essa chave também no servidor de cada ambiente antes de promover as migrations.
 - Identificadores Android/iOS configurados como `com.reviveapp.revive`; API de desenvolvimento publicada em `https://revive-beryl.vercel.app/api`. Proprietário Expo/EAS: `reviveapp`.
-- Criar development build e executar testes em aparelhos Android/iOS reais.
+- APK Android preview gerado no EAS (build `2a7c9894-bfa6-4f2a-8a0b-a631a33c403c`, FINISHED). Executar testes em aparelho real; build e testes iOS ainda pendentes.
 - Publicar a página web de solicitação de exclusão e a política de privacidade.
 - Configurar FCM/APNs, projeto EAS e um worker de envio/receipts antes de habilitar push remoto.
 
@@ -38,7 +38,7 @@
 ## Verificação local e bloqueios de distribuição
 
 - Testes automatizados usam mocks; não equivalem a validação no banco ou em dispositivo.
-- SQL remoto aplicado no desenvolvimento em 06/09/2026 (07/09 UTC). API e painel publicados na Vercel e validados por HTTPS; APK Android em preparação. Evidências em `supabase-development-validation.md` e `deployment-validation.md`.
+- SQL remoto aplicado no desenvolvimento em 06/09/2026 (07/09 UTC). API e painel publicados na Vercel e validados por HTTPS; APK Android gerado e disponível para instalação interna. Evidências em `supabase-development-validation.md` e `deployment-validation.md`.
 - Acesso ao projeto Revive confirmado pelo conector Supabase. O servidor MCP configurado pelo CLI ainda indicava ausência de login; são conexões distintas.
 - EAS CLI autenticado e projeto `@reviveapp/revive-mobile` vinculado em `app.config.ts`, ID `f1c60685-d082-4a4c-ba54-4bc1fda44c05`. Vínculo verificado com `eas project:info`.
 - Controle de navegador e máquina falhou na inicialização do runtime; isso impede concluir login por essa ferramenta nesta sessão.

@@ -6,4 +6,5 @@ nul
 .vercel
 .claude/
 runtime/
+supabase/.temp/
 *.rar
