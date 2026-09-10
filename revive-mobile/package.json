@@ -5,14 +5,18 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android-local.ps1 -Action dev",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
-    "validate": "npm run typecheck && npm run lint && npm test"
+    "validate": "npm run typecheck && npm run lint && npm test",
+    "android:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android-local.ps1 -Action setup",
+    "android:studio": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android-local.ps1 -Action studio",
+    "android:apk": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android-local.ps1 -Action apk",
+    "android:bundle": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android-local.ps1 -Action bundle"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

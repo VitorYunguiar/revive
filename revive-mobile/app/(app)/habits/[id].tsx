@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { z } from 'zod';
@@ -7,13 +7,14 @@ import { bootstrapKey, useBootstrap } from '@/features/bootstrap/use-bootstrap';
 import { useReviveMutations } from '@/features/mutations/use-revive-mutations';
 import { AppButton, EmptyState, Field, LoadingState, Screen, textStyles } from '@/ui/components';
 import { colors, radius, spacing } from '@/ui/theme';
+import { displayDate } from '@/domain/formats';
 import { formatCurrency } from '@/domain/metrics';
 import { reviveApi } from '@/core/api/repositories';
 import { queryClient } from '@/core/query/client';
 import { useSession } from '@/features/auth/session-context';
 
 const recordSchema = z.object({
-  humor: z.string().min(1, 'Selecione ou descreva seu humor.'),
+  humor: z.string().trim().min(1, 'Selecione ou descreva seu humor.'),
   gatilhos: z.string().max(500).optional(),
   conquistas: z.string().max(500).optional(),
   observacoes: z.string().max(1000).optional(),
@@ -103,16 +104,19 @@ export default function HabitDetailScreen() {
       </View>
 
       <Text style={textStyles.heading}>Check-in de hoje</Text>
-      <Field label="Humor" value={humor} onChangeText={setHumor} placeholder="Ex.: bem, ansioso, confiante" />
-      <Field label="Gatilhos" value={gatilhos} onChangeText={setGatilhos} multiline />
-      <Field label="Conquistas" value={conquistas} onChangeText={setConquistas} multiline />
-      <Field label="Observações" value={observacoes} onChangeText={setObservacoes} multiline />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+        {['Bem', 'Confiante', 'Ansioso', 'Desanimado'].map((mood) => <Pressable key={mood} accessibilityRole="button" accessibilityState={{ selected: humor === mood }} onPress={() => setHumor(mood)} style={[styles.mood, humor === mood && { borderColor: colors.primary, backgroundColor: colors.surfaceRaised }]}><Text style={textStyles.body}>{mood}</Text></Pressable>)}
+      </View>
+      <Field maxLength={100} label="Humor" value={humor} onChangeText={setHumor} placeholder="Ou descreva como está se sentindo" />
+      <Field maxLength={500} label="Gatilhos" value={gatilhos} onChangeText={setGatilhos} multiline />
+      <Field maxLength={500} label="Conquistas" value={conquistas} onChangeText={setConquistas} multiline />
+      <Field maxLength={1000} label="Observações" value={observacoes} onChangeText={setObservacoes} multiline />
       <AppButton title="Salvar check-in" onPress={submitRecord} loading={saving} />
 
       <View style={styles.divider} />
       <Text style={textStyles.heading}>Registrar recaída</Text>
       <Text style={textStyles.muted}>Este registro é privado e existe para ajudar na reflexão, sem julgamentos.</Text>
-      <Field label="O que aconteceu? (opcional)" value={motivo} onChangeText={setMotivo} multiline />
+      <Field maxLength={1000} label="O que aconteceu? (opcional)" value={motivo} onChangeText={setMotivo} multiline />
       <AppButton title="Registrar e reiniciar contador" variant="danger" onPress={() => submitRelapse(true)} loading={saving} />
       <AppButton title="Registrar sem reiniciar" variant="secondary" onPress={() => submitRelapse(false)} disabled={saving} />
 
@@ -121,7 +125,7 @@ export default function HabitDetailScreen() {
       {!recentRecords.length ? <Text style={textStyles.muted}>Nenhum registro ainda.</Text> : recentRecords.map((record) => (
         <View key={record.id} style={styles.record}>
           <Text style={textStyles.body}>{record.humor || 'Sem humor informado'}</Text>
-          <Text style={textStyles.muted}>{record.data_registro}{record.pending ? ' · aguardando sincronização' : ''}</Text>
+          <Text style={textStyles.muted}>{displayDate(record.data_registro)}{record.pending ? ' · aguardando sincronização' : ''}</Text>
         </View>
       ))}
       <View style={styles.divider} />
@@ -131,6 +135,7 @@ export default function HabitDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  mood: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
   summary: { borderRadius: radius.lg, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, padding: spacing.lg, gap: spacing.sm },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
   record: { borderRadius: radius.md, backgroundColor: colors.surface, padding: spacing.md, gap: spacing.xs },

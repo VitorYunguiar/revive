@@ -1,0 +1,38 @@
+// Reapplied by the Expo config plugin when the native project is regenerated.
+android.defaultConfig.manifestPlaceholders.reviveAppLabel = "Revive"
+android.buildTypes.debug {
+    applicationIdSuffix ".dev"
+    versionNameSuffix "-dev"
+    manifestPlaceholders.reviveAppLabel = "Revive Dev"
+}
+
+// EAS configures its own signing. Local builds read the downloaded credentials,
+// which are ignored by Git and never embedded in the APK.
+if (System.getenv("EAS_BUILD") != "true") {
+    project.extensions.getByName("react").extraPackagerArgs.set(["--max-workers", "2"])
+    def credentialsFile = new File(rootDir, "../credentials.json")
+    android.buildTypes.release.signingConfig = null
+    if (credentialsFile.exists()) {
+        def credentials = new groovy.json.JsonSlurper().parse(credentialsFile).android.keystore
+        def keyFile = new File(credentials.keystorePath)
+        if (!keyFile.isAbsolute()) keyFile = new File(rootDir.parentFile, credentials.keystorePath)
+        android.signingConfigs.create("reviveRelease") {
+            storeFile keyFile
+            storePassword credentials.keystorePassword
+            keyAlias credentials.keyAlias
+            keyPassword credentials.keyPassword ?: credentials.keystorePassword
+        }
+        android.buildTypes.release.signingConfig = android.signingConfigs.reviveRelease
+    }
+    // Android Studio debug/sync work without release credentials. A release must
+    // never silently fall back to the public Android debug signing key.
+    tasks.configureEach { task ->
+        if (task.name == "preReleaseBuild") {
+            task.doFirst {
+                if (!credentialsFile.exists()) {
+                    throw new GradleException("Falta credentials.json: baixe a assinatura existente com eas credentials -p android.")
+                }
+            }
+        }
+    }
+}

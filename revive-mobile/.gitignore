@@ -16,3 +16,7 @@ npm-debug.log*
 *.p12
 *.key
 *.pem
+credentials.json
+credentials/
+android/
+ios/

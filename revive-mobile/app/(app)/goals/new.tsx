@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,24 +8,32 @@ import { useBootstrap } from '@/features/bootstrap/use-bootstrap';
 import { useReviveMutations } from '@/features/mutations/use-revive-mutations';
 import { toUserMessage } from '@/core/api/errors';
 import { AppButton, Card, Field, PageTitle, Screen, textStyles } from '@/ui/components';
+import { localDateKey, parseMoney, formatMoneyInput } from '@/domain/formats';
 import { colors, radius, spacing } from '@/ui/theme';
 
-const schema = z.object({ description: z.string().trim().min(2, 'Descreva a meta.'), days: z.string(), value: z.string(), startToday: z.boolean() });
+const schema = z.object({
+  description: z.string().trim().min(2, 'Descreva a meta.'),
+  days: z.string().trim().refine((v) => !v || (/^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 36500), 'Informe de 1 a 36.500 dias inteiros.'),
+  value: z.string().trim().refine((v) => !v || (parseMoney(v) ?? 0) > 0, 'Informe um valor maior que zero, com até 2 casas decimais.'),
+  startToday: z.boolean(),
+}).refine((v) => !!v.days || !!v.value, { path: ['days'], message: 'Preencha um objetivo em dias ou em dinheiro.' });
 type Form = z.infer<typeof schema>;
-const todayLocal = () => new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
 
 export default function NewGoalScreen() {
   const router = useRouter();
   const { data } = useBootstrap();
   const { createGoal } = useReviveMutations();
-  const [habitId, setHabitId] = useState(data?.vicios[0]?.id || '');
+  const [chosenHabit, setHabitId] = useState('');
+  const habitId = chosenHabit || data?.vicios[0]?.id || '';
   const [error, setError] = useState('');
   const { control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: { description: '', days: '', value: '', startToday: true } });
   const startToday = useWatch({ control, name: 'startToday' });
   const submit = handleSubmit(async (values) => {
     if (!habitId) return setError('Selecione um hábito.');
     try {
-      await createGoal({ vicio_id: habitId, descricao_meta: values.description, dias_objetivo: values.days ? Number(values.days) : undefined, valor_objetivo: values.value ? Number(values.value.replace(',', '.')) : undefined, iniciar_hoje: values.startToday, data_inicio_meta: values.startToday ? todayLocal() : null });
+      setError('');
+      await createGoal({ vicio_id: habitId, descricao_meta: values.description, dias_objetivo: values.days ? Number(values.days) : undefined, valor_objetivo: values.value ? parseMoney(values.value) : undefined, iniciar_hoje: values.startToday, data_inicio_meta: values.startToday ? localDateKey() : null });
       router.back();
     } catch (caught) { setError(toUserMessage(caught)); }
   });
@@ -34,14 +42,15 @@ export default function NewGoalScreen() {
       <PageTitle title="Nova meta" subtitle="Escolha a jornada e um objetivo em dias ou valor." />
       <Card>
         <Text style={textStyles.body}>Hábito</Text>
-        {data?.vicios.map((habit) => <Pressable key={habit.id} onPress={() => setHabitId(habit.id)} style={[styles.choice, habitId === habit.id && styles.choiceActive]}><Text style={textStyles.body}>{habit.nome_vicio}</Text></Pressable>)}
-        <Controller control={control} name="description" render={({ field }) => <Field label="Descrição" value={field.value} onChangeText={field.onChange} error={errors.description?.message} />} />
-        <Controller control={control} name="days" render={({ field }) => <Field label="Objetivo em dias (opcional)" keyboardType="number-pad" value={field.value} onChangeText={field.onChange} />} />
-        <Controller control={control} name="value" render={({ field }) => <Field label="Objetivo em valor (opcional)" keyboardType="decimal-pad" value={field.value} onChangeText={field.onChange} />} />
-        <Pressable style={styles.switchRow} onPress={() => setValue('startToday', !startToday)}><Text style={textStyles.body}>Contar progresso a partir de hoje</Text><Switch value={startToday} onValueChange={(value) => setValue('startToday', value)} /></Pressable>
+        {data?.vicios.map((habit) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: habitId === habit.id }} key={habit.id} onPress={() => setHabitId(habit.id)} style={[styles.choice, habitId === habit.id && styles.choiceActive]}><Text style={textStyles.body}>{habit.nome_vicio}</Text></Pressable>)}
+        {data && !data.vicios.length ? <><Text style={textStyles.muted}>Crie um hábito antes de definir sua primeira meta.</Text><AppButton title="Criar hábito" variant="secondary" onPress={() => router.push('/habits/new')} /></> : null}
+        <Controller control={control} name="description" render={({ field }) => <Field ref={field.ref} onBlur={field.onBlur} maxLength={240} placeholder="Ex.: completar meu primeiro mês" label="Descrição" value={field.value} onChangeText={field.onChange} error={errors.description?.message} />} />
+        <Controller control={control} name="days" render={({ field }) => <Field ref={field.ref} onBlur={field.onBlur} error={errors.days?.message} maxLength={5} placeholder="Ex.: 30" label="Objetivo em dias (opcional)" keyboardType="number-pad" value={field.value} onChangeText={field.onChange} />} />
+        <Controller control={control} name="value" render={({ field }) => <Field ref={field.ref} onBlur={() => { field.onChange(formatMoneyInput(field.value)); field.onBlur(); }} error={errors.value?.message} maxLength={16} placeholder="0,00" label="Objetivo em dinheiro (R$, opcional)" keyboardType="decimal-pad" value={field.value} onChangeText={field.onChange} />} />
+        <View style={styles.switchRow}><Text style={[textStyles.body, { flex: 1 }]}>Contar progresso a partir de hoje</Text><Switch accessibilityLabel="Contar progresso a partir de hoje" trackColor={{ false: colors.border, true: colors.primary }} value={startToday} onValueChange={(value) => setValue('startToday', value)} /></View>
         {error ? <Text style={{ color: colors.danger }}>{error}</Text> : null}
-        <AppButton title={isSubmitting ? 'Salvando...' : 'Criar meta'} disabled={isSubmitting} onPress={submit} />
-        <AppButton title="Cancelar" variant="secondary" onPress={() => router.back()} />
+        <AppButton title="Criar meta" loading={isSubmitting} disabled={!habitId} onPress={submit} />
+        <AppButton title="Cancelar" disabled={isSubmitting} variant="secondary" onPress={() => router.back()} />
       </Card>
     </Screen>
   );

@@ -12,7 +12,7 @@ import { colors } from '@/ui/theme';
 export default function LoginScreen() {
   const { signIn } = useSession();
   const [error, setError] = useState('');
-  const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
+  const { control, handleSubmit, setFocus, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
@@ -31,10 +31,10 @@ export default function LoginScreen() {
       <PageTitle title="Volte para sua jornada" subtitle="Entre para acompanhar seu progresso com privacidade." />
       <Card>
         <Controller control={control} name="email" render={({ field }) => (
-          <Field label="E-mail" autoCapitalize="none" keyboardType="email-address" value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} error={errors.email?.message} />
+          <Field ref={field.ref} autoComplete="email" autoCorrect={false} returnKeyType="next" onSubmitEditing={() => setFocus('password')} label="E-mail" autoCapitalize="none" keyboardType="email-address" value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} error={errors.email?.message} />
         )} />
         <Controller control={control} name="password" render={({ field }) => (
-          <Field label="Senha" secureTextEntry value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} error={errors.password?.message} />
+          <Field ref={field.ref} autoCapitalize="none" autoCorrect={false} autoComplete="current-password" returnKeyType="go" onSubmitEditing={() => { if (!isSubmitting) void submit(); }} label="Senha" secureTextEntry value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} error={errors.password?.message} />
         )} />
         {error ? <Text style={{ color: colors.danger }}>{error}</Text> : null}
         <AppButton title={isSubmitting ? 'Entrando...' : 'Entrar'} disabled={isSubmitting} onPress={submit} />

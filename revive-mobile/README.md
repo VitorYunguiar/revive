@@ -4,6 +4,12 @@ Aplicativo Expo/React Native do Revive. O cliente se comunica exclusivamente com
 
 API de desenvolvimento publicada: `https://revive-beryl.vercel.app/api`.
 
+## Android Studio e APK local
+
+Use **Gerar APK.cmd** para gerar `output/revive-local.apk` neste computador, sem fila do Expo. **Testar no Android.cmd** instala o Revive Dev com atualização rápida de telas. **Abrir Android Studio.cmd** abre o projeto Android preparado.
+
+Comandos equivalentes: `npm run android:apk`, `npm run android` e `npm run android:studio`. [Configuração, assinatura e instruções completas](docs/android-local.md).
+
 ## APK de teste
 
 [Baixar APK Android](https://expo.dev/artifacts/eas/mZSPfKgPRqC0dgrm5hFNJUZwZwVJEFyWKg6H-dHcHDQ.apk) — build concluído em 07/09/2026. Abra no celular Android para baixar e instalar. Se solicitado, permita que o navegador instale este aplicativo.

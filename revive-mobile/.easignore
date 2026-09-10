@@ -16,3 +16,7 @@ coverage/
 *.pem
 output/
 revive/
+credentials.json
+credentials/
+android/
+ios/

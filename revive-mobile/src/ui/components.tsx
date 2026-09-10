@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { forwardRef, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,15 +13,16 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { colors, radius, spacing } from './theme';
 
 export function Screen({ children, scroll = true }: React.PropsWithChildren<{ scroll?: boolean }>) {
   const content = scroll ? (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">{children}</ScrollView>
   ) : (
     <View style={styles.content}>{children}</View>
   );
-  return <SafeAreaView style={styles.screen}>{content}</SafeAreaView>;
+  return <SafeAreaView style={styles.screen}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>{content}</KeyboardAvoidingView></SafeAreaView>;
 }
 
 export function Card({ children, style }: React.PropsWithChildren<{ style?: object }>) {
@@ -30,6 +33,7 @@ export function AppButton({ title, variant = 'primary', loading = false, ...prop
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: props.disabled || loading, busy: loading }}
       {...props}
       style={({ pressed }) => [
         styles.button,
@@ -45,19 +49,32 @@ export function AppButton({ title, variant = 'primary', loading = false, ...prop
   );
 }
 
-export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string }) {
+export const Field = forwardRef<TextInput, TextInputProps & { label: string; error?: string; hint?: string; trailing?: React.ReactNode }>(function Field({ label, error, hint, trailing, secureTextEntry, ...props }, ref) {
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const action = trailing || (secureTextEntry ? <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Ocultar senha' : 'Mostrar senha'} onPress={() => setVisible(!visible)} style={styles.inputAction}>{visible ? <EyeOff size={21} color={colors.primary} /> : <Eye size={21} color={colors.primary} />}</Pressable> : null);
   return (
     <View style={styles.fieldWrap}>
       <Text style={styles.label}>{label}</Text>
+      <View style={[styles.inputRow, focused && styles.inputFocused, error && styles.inputError]}>
       <TextInput
+        ref={ref}
+        accessibilityLabel={label}
         placeholderTextColor={colors.muted}
+        selectionColor={colors.primary}
         {...props}
-        style={[styles.input, props.multiline && styles.inputMultiline, error && styles.inputError, props.style]}
+        secureTextEntry={secureTextEntry && !visible}
+        onFocus={(event) => { setFocused(true); props.onFocus?.(event); }}
+        onBlur={(event) => { setFocused(false); props.onBlur?.(event); }}
+        style={[styles.input, props.multiline && styles.inputMultiline, props.style]}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {action}
+      </View>
+      {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      {props.multiline && props.maxLength ? <Text style={styles.counter}>{props.value?.length || 0}/{props.maxLength}</Text> : null}
     </View>
   );
-}
+});
 
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -106,7 +123,12 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.45 },
   fieldWrap: { gap: spacing.xs },
   label: { color: colors.text, fontSize: 14, fontWeight: '700' },
-  input: { minHeight: 50, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, color: colors.text, paddingHorizontal: spacing.md, fontSize: 16 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md },
+  input: { flex: 1, minWidth: 0, minHeight: 50, color: colors.text, paddingHorizontal: spacing.md, fontSize: 16 },
+  inputFocused: { borderColor: colors.primary },
+  inputAction: { width: 48, minHeight: 50, alignItems: 'center', justifyContent: 'center' },
+  hint: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  counter: { color: colors.muted, fontSize: 12, textAlign: 'right' },
   inputMultiline: { minHeight: 96, paddingTop: spacing.md, textAlignVertical: 'top' },
   inputError: { borderColor: colors.danger },
   error: { color: colors.danger, fontSize: 13 },

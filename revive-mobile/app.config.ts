@@ -11,7 +11,7 @@ const config: ExpoConfig = {
   name: 'Revive',
   slug: 'revive-mobile',
   owner: 'reviveapp',
-  version: '0.1.0',
+  version: '0.1.1',
   orientation: 'portrait',
   scheme: 'revive',
   userInterfaceStyle: 'automatic',
@@ -21,6 +21,7 @@ const config: ExpoConfig = {
     config: { usesNonExemptEncryption: false },
   },
   android: {
+    versionCode: 2,
     package: 'com.reviveapp.revive',
     adaptiveIcon: { backgroundColor: '#07111F' },
     predictiveBackGestureEnabled: true,
@@ -31,6 +32,7 @@ const config: ExpoConfig = {
   },
   web: { bundler: 'metro' },
   plugins: [
+    './plugins/with-local-android.cjs',
     'expo-router',
     'expo-secure-store',
     'expo-sqlite',
