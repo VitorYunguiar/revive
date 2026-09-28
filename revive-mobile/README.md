@@ -59,7 +59,8 @@ O comando verifica tipos TypeScript, lint e testes Jest. Também é possível ex
 - Cache SQLite e fila offline separados por usuário.
 - Mutações duráveis, idempotência e recuperação: [sincronização mobile](../docs/mobile-sync.md).
 - Migração e recuperação do banco local: [guia SQLite](docs/sqlite-migrations.md).
-- A atomicidade das mutações e respostas idempotentes ainda precisa ser concluída ([Issue #8](https://github.com/VitorYunguiar/revive/issues/8)).
+- A atomicidade das mutações e respostas idempotentes foi integrada no [PR #34](https://github.com/vitoradriao/revive/pull/34); a homologação física continua na [Issue #7](https://github.com/vitoradriao/revive/issues/7).
+- Exportação seletiva: [dependências, contratos e testes preparatórios](docs/exportacao-seletiva-plano.md); o recurso completo ainda depende da [Issue #27](https://github.com/vitoradriao/revive/issues/27).
 - Testes automatizados não substituem a validação em aparelho ou banco real.
 
 Veja o [estado da implementação](docs/implementation-status.md) e siga o [fluxo de contribuição](../CONTRIBUTING.md).
