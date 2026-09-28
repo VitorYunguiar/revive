@@ -1,17 +1,17 @@
 import { beforeEach, expect, it, jest } from '@jest/globals';
 import { ApiError } from '@/core/api/errors';
 import { reviveApi } from '@/core/api/repositories';
-import { getPendingMutations, markMutationFailed, removeMutation } from '@/core/storage/database';
+import { getPendingMutations, markMutationFailed, reconcileMutations } from '@/core/storage/database';
 import { tokenStore } from '@/core/auth/token-store';
 import type { QueuedMutation } from '@/domain/types';
 import { syncPendingMutations } from './sync-engine';
 
-jest.mock('@/core/api/repositories', () => ({ reviveApi: { createRecord: jest.fn(), createRelapse: jest.fn() } }));
+jest.mock('@/core/api/repositories', () => ({ reviveApi: { createRecord: jest.fn(), createRelapse: jest.fn(), bootstrap: jest.fn() } }));
 jest.mock('@/core/storage/database', () => ({
   getPendingMutations: jest.fn(), markMutationSyncing: jest.fn(),
-  markMutationFailed: jest.fn(), removeMutation: jest.fn(),
+  markMutationFailed: jest.fn(), reconcileMutations: jest.fn(),
 }));
-jest.mock('@/core/auth/token-store', () => ({ tokenStore: { getGeneration: jest.fn(), isCurrent: jest.fn() } }));
+jest.mock('@/core/auth/token-store', () => ({ tokenStore: { getUser: jest.fn(), getGeneration: jest.fn(), isCurrent: jest.fn() } }));
 
 const event = (id: string): QueuedMutation => ({
   id, userId: 'user-a', type: 'record.create', payload: { vicio_id: 'habit' },
@@ -22,8 +22,10 @@ let generation = 1;
 beforeEach(() => {
   jest.resetAllMocks();
   generation = 1;
+  jest.mocked(tokenStore.getUser).mockResolvedValue({ id: 'user-a' } as never);
   jest.mocked(tokenStore.getGeneration).mockImplementation(() => generation);
   jest.mocked(tokenStore.isCurrent).mockImplementation(expected => generation === expected);
+  jest.mocked(reviveApi.bootstrap).mockResolvedValue({ usuario: { id: 'user-a' } } as never);
 });
 
 it('does not overtake an earlier event waiting for retry', async () => {
@@ -36,7 +38,7 @@ it('does not send an incompatible event or overtake it', async () => {
   jest.mocked(getPendingMutations).mockResolvedValue([{ ...event('unknown'), needsRecovery: true }, event('second')]);
   expect(await syncPendingMutations('user-a')).toBe(0);
   expect(reviveApi.createRecord).not.toHaveBeenCalled();
-  expect(removeMutation).not.toHaveBeenCalled();
+  expect(reconcileMutations).not.toHaveBeenCalled();
 });
 
 it('stops on a network failure without deleting or sending subsequent events', async () => {
@@ -44,7 +46,7 @@ it('stops on a network failure without deleting or sending subsequent events', a
   jest.mocked(reviveApi.createRecord).mockRejectedValue(new ApiError('Offline', 0));
   expect(await syncPendingMutations('user-a')).toBe(0);
   expect(reviveApi.createRecord).toHaveBeenCalledTimes(1);
-  expect(removeMutation).not.toHaveBeenCalled();
+  expect(reconcileMutations).not.toHaveBeenCalled();
   expect(markMutationFailed).toHaveBeenCalled();
 });
 
@@ -54,21 +56,57 @@ it('replays relapse with its original key and without the route id in the body',
   }]);
   expect(await syncPendingMutations('user-a')).toBe(1);
   expect(reviveApi.createRelapse).toHaveBeenCalledWith('habit', { motivo: 'reflection' }, 'original-key');
-  expect(removeMutation).toHaveBeenCalledWith('original-key');
+  expect(reconcileMutations).toHaveBeenCalledWith('user-a', ['original-key'], { usuario: { id: 'user-a' } });
+});
+
+it('keeps the original key queued when the server accepted a mutation but canonical reconciliation failed', async () => {
+  jest.mocked(getPendingMutations).mockResolvedValue([event('committed-awaiting-snapshot')]);
+  jest.mocked(reviveApi.createRecord).mockResolvedValue({} as never);
+  jest.mocked(reviveApi.bootstrap).mockRejectedValue(new ApiError('Temporariamente indisponível', 503));
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  expect(markMutationFailed).toHaveBeenCalledWith(
+    'committed-awaiting-snapshot', 1, 'Temporariamente indisponível', true,
+  );
+  expect(reconcileMutations).not.toHaveBeenCalled();
 });
 
 it('keeps a mutation pending when the account changes during its request', async () => {
   jest.mocked(getPendingMutations).mockResolvedValue([event('switch-race')]);
   let resolveReplay!: (value: unknown) => void;
-  jest.mocked(reviveApi.createRecord).mockImplementationOnce(() => new Promise(resolve => { resolveReplay = resolve; }));
+  let replayStarted!: () => void;
+  const started = new Promise<void>(resolve => { replayStarted = resolve; });
+  jest.mocked(reviveApi.createRecord).mockImplementationOnce(() => new Promise(resolve => {
+    resolveReplay = resolve;
+    replayStarted();
+  }));
   const sync = syncPendingMutations('user-a');
-  await Promise.resolve();
-  await Promise.resolve();
+  await started;
   generation = 2;
   resolveReplay({});
   expect(await sync).toBe(0);
-  expect(removeMutation).not.toHaveBeenCalled();
+  expect(reconcileMutations).not.toHaveBeenCalled();
   expect(markMutationFailed).toHaveBeenCalledWith(
     'switch-race', 1, 'A sessão mudou antes da confirmação da sincronização.', true,
   );
+});
+
+it('does not replay the previous account queue under a new session', async () => {
+  jest.mocked(tokenStore.getUser).mockResolvedValue({ id: 'user-b' } as never);
+  jest.mocked(getPendingMutations).mockResolvedValue([event('old-account')]);
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  expect(getPendingMutations).not.toHaveBeenCalled();
+  expect(reviveApi.createRecord).not.toHaveBeenCalled();
+  expect(markMutationFailed).not.toHaveBeenCalled();
+});
+
+it('does not replay after logout or a session change during account lookup', async () => {
+  jest.mocked(tokenStore.getUser).mockResolvedValueOnce(null);
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  jest.mocked(tokenStore.getUser).mockImplementationOnce(async () => {
+    generation += 1;
+    return { id: 'user-a' } as never;
+  });
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  expect(getPendingMutations).not.toHaveBeenCalled();
+  expect(reviveApi.createRecord).not.toHaveBeenCalled();
 });

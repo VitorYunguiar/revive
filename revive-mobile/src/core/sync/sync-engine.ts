@@ -4,7 +4,7 @@ import {
   getPendingMutations,
   markMutationFailed,
   markMutationSyncing,
-  removeMutation,
+  reconcileMutations,
 } from '@/core/storage/database';
 import type { CreateGoalInput, CreateRecordInput, CreateRelapseInput, QueuedMutation } from '@/domain/types';
 import { tokenStore } from '@/core/auth/token-store';
@@ -32,8 +32,13 @@ export const syncPendingMutations = (userId: string) => {
   const running = activeSync.get(key);
   if (running) return running;
   const promise = (async () => {
+    // A delayed caller can still hold the previous account after login changed.
+    // Generation checks alone cannot detect a sync started with that stale ID.
+    const user = await tokenStore.getUser();
+    if (user?.id !== userId || !tokenStore.isCurrent(generation)) return 0;
     const mutations = await getPendingMutations(userId);
     let synced = 0;
+    const committed: QueuedMutation[] = [];
     for (const mutation of mutations) {
       if (!tokenStore.isCurrent(generation)) break;
       if (mutation.needsRecovery) break;
@@ -50,12 +55,28 @@ export const syncPendingMutations = (userId: string) => {
           await markMutationFailed(mutation.id, mutation.attempts + 1, 'A sessão mudou antes da confirmação da sincronização.', true);
           break;
         }
-        await removeMutation(mutation.id);
-        synced += 1;
+        committed.push(mutation);
       } catch (error) {
         const retryable = error instanceof ApiError ? error.isRetryable : false;
         await markMutationFailed(mutation.id, mutation.attempts + 1, toUserMessage(error), retryable);
         break;
+      }
+    }
+    if (committed.length) {
+      try {
+        if (!tokenStore.isCurrent(generation)) throw new Error('A sessão mudou antes da reconciliação local.');
+        const snapshot = await reviveApi.bootstrap();
+        if (snapshot.usuario.id !== userId || !tokenStore.isCurrent(generation)) {
+          throw new Error('A sessão mudou antes da reconciliação local.');
+        }
+        await reconcileMutations(userId, committed.map(mutation => mutation.id), snapshot);
+        synced = committed.length;
+      } catch (error) {
+        // A server commit without its canonical local snapshot stays queued;
+        // replay uses the same keys and cannot duplicate the business writes.
+        for (const mutation of committed) {
+          await markMutationFailed(mutation.id, mutation.attempts + 1, toUserMessage(error), true);
+        }
       }
     }
     return synced;
