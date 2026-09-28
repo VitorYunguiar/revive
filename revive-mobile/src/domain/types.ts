@@ -19,7 +19,7 @@ export type Addiction = {
   data_ultima_recaida?: string | null;
   valor_economizado_por_dia?: number | string | null;
   dias_abstinencia?: number;
-  valor_economizado?: number | string;
+  valor_economizado?: number | string | null;
   tempo_formatado?: string;
   ativo?: boolean;
   progresso?: ProgressSnapshot;
@@ -29,6 +29,7 @@ export type ProgressCoverage = 'confirmed' | 'inferred' | 'unknown';
 
 export type PermanentMilestone = {
   id: string;
+  vicio_id?: string | null;
   categoria: 'streak' | 'savings' | 'goals' | 'consistency';
   valor_alvo: number;
   awarded_at: string;
@@ -45,6 +46,7 @@ export type ProgressSnapshot = {
   economia_sequencia: { valor_estimado: number | null; cobertura: ProgressCoverage };
   economia_acumulada: { valor_estimado: number | null; cobertura: ProgressCoverage };
   marcos: PermanentMilestone[];
+  pendente?: boolean;
 };
 
 export type DailyRecord = {

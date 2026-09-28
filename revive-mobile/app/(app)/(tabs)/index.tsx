@@ -4,13 +4,16 @@ import { Link } from 'expo-router';
 import { RefreshCw } from 'lucide-react-native';
 import { useBootstrap } from '@/features/bootstrap/use-bootstrap';
 import { useSession } from '@/features/auth/session-context';
-import { completedGoals, formatCurrency, maxStreak, totalSavings } from '@/domain/metrics';
+import { accountAccumulatedSavings, accountRecordHolder, completedGoals, coverageLabel, currentStreak, distinctCheckinDays, formatCurrency } from '@/domain/metrics';
 import { Card, EmptyState, LoadingState, PageTitle, Screen, textStyles } from '@/ui/components';
 import { colors, radius, spacing } from '@/ui/theme';
 
 export default function DashboardScreen() {
   const { user } = useSession();
   const { data, isLoading, error, refetch, isFetching } = useBootstrap();
+  const recordHolder = accountRecordHolder(data?.vicios || []);
+  const savings = accountAccumulatedSavings(data?.vicios || []);
+  const hasPendingProgress = Boolean(data?.vicios.some((habit) => habit.progresso?.pendente));
   if (isLoading && !data) return <Screen scroll={false}><LoadingState label="Preparando sua jornada..." /></Screen>;
   return (
     <Screen>
@@ -20,18 +23,31 @@ export default function DashboardScreen() {
       </View>
       {error && !data ? <Card><Text style={{ color: colors.danger }}>{error.message}</Text></Card> : null}
       {data?.mensagem ? <Card><Text style={textStyles.body}>“{data.mensagem.mensagem}”</Text></Card> : null}
+      {hasPendingProgress ? <Card><Text accessibilityLiveRegion="polite" style={textStyles.body}>Há uma atualização de progresso aguardando sincronização. Recordes e conquistas mostram apenas dados já salvos.</Text></Card> : null}
       <View style={styles.kpis}>
-        <Card style={styles.kpi}><Text style={textStyles.value}>{maxStreak(data?.vicios || [])}</Text><Text style={textStyles.muted}>maior sequência</Text></Card>
-        <Card style={styles.kpi}><Text style={textStyles.value}>{formatCurrency(totalSavings(data?.vicios || []))}</Text><Text style={textStyles.muted}>economizados</Text></Card>
+        <Card style={styles.kpi}>
+          <Text accessibilityLabel={recordHolder?.progresso?.recorde_dias == null ? 'Recorde histórico indisponível' : `Recorde histórico: ${recordHolder.progresso.recorde_dias} dias`} style={textStyles.value}>{recordHolder?.progresso?.recorde_dias ?? '—'}</Text>
+          <Text style={textStyles.muted}>dias de recorde</Text>
+          <Text style={textStyles.muted}>{recordHolder?.nome_vicio || 'Histórico parcial ou sem hábitos'}</Text>
+        </Card>
+        <Card style={styles.kpi}>
+          <Text accessibilityLabel={savings.value == null ? 'Economia acumulada indisponível' : `Economia estimada acumulada: ${formatCurrency(savings.value)}`} style={textStyles.value}>{savings.value == null ? '—' : formatCurrency(savings.value)}</Text>
+          <Text style={textStyles.muted}>economia estimada acumulada</Text>
+          <Text style={textStyles.muted}>{coverageLabel(savings.coverage)}</Text>
+        </Card>
         <Card style={styles.kpi}><Text style={textStyles.value}>{completedGoals(data?.metas || [])}</Text><Text style={textStyles.muted}>metas concluídas</Text></Card>
-        <Card style={styles.kpi}><Text style={textStyles.value}>{data?.registros.length || 0}</Text><Text style={textStyles.muted}>registros</Text></Card>
+        <Card style={styles.kpi}><Text style={textStyles.value}>{distinctCheckinDays(data?.registros || [])}</Text><Text style={textStyles.muted}>dias distintos com check-in</Text></Card>
       </View>
       <View style={styles.sectionHeader}><Text style={textStyles.heading}>Seus hábitos</Text><Link href="/(app)/habits/new" style={styles.link}>Adicionar</Link></View>
       {!data?.vicios.length ? <EmptyState title="Nenhum hábito cadastrado" body="Adicione o primeiro para acompanhar sua evolução." /> : data.vicios.slice(0, 3).map((habit) => (
         <Link key={habit.id} href={{ pathname: '/(app)/habits/[id]', params: { id: habit.id } }} asChild>
           <Pressable style={styles.habit}>
-            <View><Text style={textStyles.heading}>{habit.nome_vicio}</Text><Text style={textStyles.muted}>{habit.tempo_formatado || 'Jornada em andamento'}</Text></View>
-            <Text style={textStyles.value}>{habit.dias_abstinencia || 0}d</Text>
+            <View style={{ flex: 1, gap: spacing.xs }}>
+              <Text style={textStyles.heading}>{habit.nome_vicio}</Text>
+              <Text style={textStyles.muted}>Atual: {currentStreak(habit).value == null ? 'indisponível' : `${currentStreak(habit).value} dias`}{habit.progresso?.pendente ? ' · pendente de sincronização' : currentStreak(habit).legacy ? ' · dado legado' : ''}</Text>
+              <Text style={textStyles.muted}>Recorde: {habit.progresso?.recorde_dias == null || habit.progresso.recorde_cobertura === 'unknown' ? 'indisponível' : `${habit.progresso.recorde_dias} dias (${coverageLabel(habit.progresso.recorde_cobertura)})`}</Text>
+            </View>
+            <Text accessibilityLabel={`Sequência atual: ${currentStreak(habit).value == null ? 'indisponível' : `${currentStreak(habit).value} dias`}`} style={textStyles.value}>{currentStreak(habit).value ?? '—'}d</Text>
           </Pressable>
         </Link>
       ))}

@@ -8,7 +8,7 @@ import { useReviveMutations } from '@/features/mutations/use-revive-mutations';
 import { AppButton, EmptyState, Field, LoadingState, Screen, textStyles } from '@/ui/components';
 import { colors, radius, spacing } from '@/ui/theme';
 import { displayDate } from '@/domain/formats';
-import { formatCurrency } from '@/domain/metrics';
+import { coverageLabel, currentStreak, distinctCheckinDays, formatCurrency, milestoneCategoryLabel, sequenceSavings } from '@/domain/metrics';
 import { reviveApi } from '@/core/api/repositories';
 import { queryClient } from '@/core/query/client';
 import { useSession } from '@/features/auth/session-context';
@@ -35,6 +35,9 @@ export default function HabitDetailScreen() {
   const [motivo, setMotivo] = useState('');
   const [saving, setSaving] = useState(false);
   const habit = data?.vicios.find((item) => item.id === id);
+  const streak = habit ? currentStreak(habit) : null;
+  const savings = habit ? sequenceSavings(habit) : null;
+  const checkinDays = habit ? habit.progresso?.dias_checkin ?? distinctCheckinDays(data?.registros || [], habit.id) : 0;
   const recentRecords = useMemo(
     () => data?.registros.filter((item) => item.vicio_id === id).slice(0, 5) || [],
     [data?.registros, id],
@@ -98,9 +101,34 @@ export default function HabitDetailScreen() {
     <Screen>
       <Stack.Screen options={{ title: habit.nome_vicio }} />
       <View style={styles.summary}>
-        <Text style={textStyles.heading}>{habit.dias_abstinencia || 0} dias</Text>
-        <Text style={textStyles.body}>{formatCurrency(habit.valor_economizado)} economizados</Text>
-        <Text style={textStyles.muted}>{habit.tempo_formatado}</Text>
+        <Text accessibilityRole="header" style={textStyles.heading}>Progresso de {habit.nome_vicio}</Text>
+        <Text style={textStyles.muted}>Sequência atual</Text>
+        <Text accessibilityLabel={`Sequência atual: ${streak?.value == null ? 'histórico indisponível' : `${streak.value} dias`}`} style={textStyles.value}>
+          {streak?.value == null ? 'Indisponível' : `${streak.value} dias`}
+        </Text>
+        <Text style={textStyles.muted}>{streak?.legacy ? `Contador legado do servidor · ${coverageLabel('unknown')}` : coverageLabel(streak?.coverage || 'unknown')}</Text>
+        <Text style={textStyles.muted}>Recorde histórico</Text>
+        <Text accessibilityLabel={`Recorde histórico: ${habit.progresso?.recorde_dias == null || habit.progresso.recorde_cobertura === 'unknown' ? 'histórico indisponível' : `${habit.progresso.recorde_dias} dias`}`} style={textStyles.body}>
+          {habit.progresso?.recorde_dias == null || habit.progresso.recorde_cobertura === 'unknown'
+            ? 'Indisponível: o histórico não permite confirmar um recorde.'
+            : `${habit.progresso.recorde_dias} dias`}
+        </Text>
+        {habit.progresso?.pendente ? <Text accessibilityLiveRegion="polite" style={textStyles.muted}>Recaída pendente de sincronização; o recorde salvo não foi alterado.</Text> : null}
+        <Text style={textStyles.muted}>Dias distintos com check-in</Text>
+        <Text accessibilityLabel={`${checkinDays} dias distintos com check-in`} style={textStyles.body}>{checkinDays} dias</Text>
+        <Text style={textStyles.muted}>Economia estimada da sequência atual</Text>
+        <Text accessibilityLabel={savings?.value == null ? 'Economia estimada da sequência indisponível' : `Economia estimada da sequência: ${formatCurrency(savings.value)}`} style={textStyles.body}>
+          {savings?.value == null ? 'Indisponível: cobertura insuficiente' : `${formatCurrency(savings.value)} · ${coverageLabel(savings.coverage)}`}
+        </Text>
+        {habit.progresso?.economia_acumulada.valor_estimado != null ? <Text style={textStyles.muted}>
+          Economia estimada acumulada: {formatCurrency(habit.progresso.economia_acumulada.valor_estimado)} · {coverageLabel(habit.progresso.economia_acumulada.cobertura)}.
+        </Text> : null}
+        {habit.progresso?.marcos.length ? <View style={styles.milestones}>
+          <Text style={textStyles.muted}>Marcos permanentes</Text>
+          {habit.progresso.marcos.map((award) => <Text key={award.id} accessibilityLabel={`${award.valor_alvo} ${milestoneCategoryLabel(award.categoria)}, marco permanente, ${coverageLabel(award.cobertura)}`} style={textStyles.body}>
+            {award.valor_alvo} {milestoneCategoryLabel(award.categoria)} · {coverageLabel(award.cobertura)}
+          </Text>)}
+        </View> : null}
       </View>
 
       <Text style={textStyles.heading}>Check-in de hoje</Text>
@@ -137,6 +165,7 @@ export default function HabitDetailScreen() {
 const styles = StyleSheet.create({
   mood: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
   summary: { borderRadius: radius.lg, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, padding: spacing.lg, gap: spacing.sm },
+  milestones: { gap: spacing.xs },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
   record: { borderRadius: radius.md, backgroundColor: colors.surface, padding: spacing.md, gap: spacing.xs },
 });
