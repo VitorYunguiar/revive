@@ -22,6 +22,29 @@ export type Addiction = {
   valor_economizado?: number | string;
   tempo_formatado?: string;
   ativo?: boolean;
+  progresso?: ProgressSnapshot;
+};
+
+export type ProgressCoverage = 'confirmed' | 'inferred' | 'unknown';
+
+export type PermanentMilestone = {
+  id: string;
+  categoria: 'streak' | 'savings' | 'goals' | 'consistency';
+  valor_alvo: number;
+  awarded_at: string;
+  origem: 'legacy' | 'period_threshold' | 'snapshot_observation';
+  cobertura: ProgressCoverage;
+};
+
+export type ProgressSnapshot = {
+  sequencia_atual_dias: number | null;
+  sequencia_atual_cobertura: ProgressCoverage;
+  recorde_dias: number | null;
+  recorde_cobertura: ProgressCoverage;
+  dias_checkin: number;
+  economia_sequencia: { valor_estimado: number | null; cobertura: ProgressCoverage };
+  economia_acumulada: { valor_estimado: number | null; cobertura: ProgressCoverage };
+  marcos: PermanentMilestone[];
 };
 
 export type DailyRecord = {
@@ -41,6 +64,7 @@ export type Relapse = {
   data_recaida: string;
   motivo?: string | null;
   dias_abstinencia_perdidos?: number;
+  resetar_contador?: boolean | null;
   pending?: boolean;
 };
 
@@ -74,6 +98,7 @@ export type BootstrapData = {
   registros: DailyRecord[];
   recaidas: Relapse[];
   metas: Goal[];
+  conquistas?: PermanentMilestone[];
   mensagem: MotivationalMessage | null;
 };
 

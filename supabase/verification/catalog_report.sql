@@ -9,7 +9,9 @@ where n.nspname = 'public'
   and c.relname in (
     'usuarios', 'vicios', 'registros_diarios', 'historico_recaidas',
     'metas', 'mensagens_motivacionais', 'marcos',
-    'app_sessions', 'api_idempotency', 'device_push_tokens'
+    'app_sessions', 'api_idempotency', 'device_push_tokens',
+    'progresso_ancoras', 'progresso_periodos', 'segmentos_economia',
+    'conquistas_permanentes'
   )
 order by c.relname;
 
@@ -26,7 +28,9 @@ where schemaname = 'public'
   and tablename in (
     'usuarios', 'vicios', 'registros_diarios', 'historico_recaidas',
     'metas', 'mensagens_motivacionais', 'marcos',
-    'app_sessions', 'api_idempotency', 'device_push_tokens'
+    'app_sessions', 'api_idempotency', 'device_push_tokens',
+    'progresso_ancoras', 'progresso_periodos', 'segmentos_economia',
+    'conquistas_permanentes'
   )
 order by tablename, indexname;
 
@@ -36,5 +40,9 @@ select proname, prosecdef as security_definer, proconfig,
        has_function_privilege('service_role', oid, 'EXECUTE') as service_execute
 from pg_proc
 where pronamespace = 'public'::regnamespace
-  and proname in ('atualizar_data_modificacao', 'delete_revive_account')
+  and proname in (
+    'atualizar_data_modificacao', 'delete_revive_account',
+    'rebuild_vicio_progress_periods', 'capture_vicio_progress_period',
+    'initialize_vicio_progress_history', 'record_prospective_economy_change'
+  )
 order by proname;

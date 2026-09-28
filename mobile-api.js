@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const { buildProgressSnapshot, observedAccountAwards, observedAwards } = require('./progress-metrics');
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -237,25 +238,73 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
 
     router.get('/bootstrap', authenticate, async (req, res) => {
         try {
-            const [userResult, addictionsResult, recordsResult, relapsesResult, goalsResult, messagesResult] = await Promise.all([
+            const [userResult, addictionsResult, recordsResult, relapsesResult, goalsResult, messagesResult,
+                periodsResult, economyResult, awardsResult] = await Promise.all([
                 supabase.from('usuarios').select('id, nome, email').eq('id', req.usuarioId).single(),
                 supabase.from('vicios').select('*').eq('usuario_id', req.usuarioId).order('data_criacao', { ascending: false }),
                 supabase.from('registros_diarios').select('*, vicios!inner(usuario_id)').eq('vicios.usuario_id', req.usuarioId).order('data_registro', { ascending: false }),
                 supabase.from('historico_recaidas').select('*, vicios!inner(usuario_id)').eq('vicios.usuario_id', req.usuarioId).order('data_recaida', { ascending: false }),
                 supabase.from('metas').select('*, vicios(nome_vicio)').eq('usuario_id', req.usuarioId).order('data_criacao', { ascending: false }),
-                supabase.from('mensagens_motivacionais').select('id, mensagem, autor, tipo_vicio').eq('ativa', true).limit(50)
+                supabase.from('mensagens_motivacionais').select('id, mensagem, autor, tipo_vicio').eq('ativa', true).limit(50),
+                supabase.from('progresso_periodos').select('id, vicio_id, started_at, ended_at, source, cobertura, vicios!inner(usuario_id)').eq('vicios.usuario_id', req.usuarioId),
+                supabase.from('segmentos_economia').select('id, vicio_id, effective_from, effective_to, valor_diario, cobertura, origem, vicios!inner(usuario_id)').eq('vicios.usuario_id', req.usuarioId),
+                supabase.from('conquistas_permanentes').select('id, usuario_id, vicio_id, categoria, valor_alvo, awarded_at, origem, cobertura').eq('usuario_id', req.usuarioId)
             ]);
-            const failed = [userResult, addictionsResult, recordsResult, relapsesResult, goalsResult, messagesResult].find(result => result.error);
+            const failed = [userResult, addictionsResult, recordsResult, relapsesResult, goalsResult,
+                messagesResult, periodsResult, economyResult, awardsResult].find(result => result.error);
             if (failed) throw failed.error;
             if (!userResult.data) return apiError(res, 404, 'USUARIO_NAO_ENCONTRADO', 'Usuario nao encontrado.');
             const messages = messagesResult.data || [];
+            const periods = (periodsResult.data || []).map(({ vicios, ...period }) => period);
+            const economySegments = (economyResult.data || []).map(({ vicios, ...segment }) => segment);
+            const recordRows = recordsResult.data || [];
+            const now = new Date();
+            const addictions = addictionsResult.data || [];
+            const observed = addictions.flatMap(addiction => observedAwards({
+                usuarioId: req.usuarioId,
+                vicioId: addiction.id,
+                periods: periods.filter(period => period.vicio_id === addiction.id),
+                economySegments: economySegments.filter(segment => segment.vicio_id === addiction.id),
+                now,
+            }));
+            observed.push(...observedAccountAwards({
+                usuarioId: req.usuarioId,
+                periods,
+                economySegments,
+                records: recordRows,
+                goals: goalsResult.data || [],
+                now,
+            }));
+            let newlyObservedAwards = [];
+            if (observed.length) {
+                const persisted = await supabase.from('conquistas_permanentes')
+                    .upsert(observed, {
+                        onConflict: 'usuario_id,vicio_id,categoria,valor_alvo',
+                        ignoreDuplicates: true,
+                    })
+                    .select('id, usuario_id, vicio_id, categoria, valor_alvo, awarded_at, origem, cobertura');
+                if (persisted.error) throw persisted.error;
+                newlyObservedAwards = persisted.data || [];
+            }
+            const awards = [...(awardsResult.data || []), ...newlyObservedAwards];
+            const enrichedAddictions = addictions.map(addiction => ({
+                ...calculateStats(addiction),
+                progresso: buildProgressSnapshot({
+                    periods: periods.filter(period => period.vicio_id === addiction.id),
+                    economySegments: economySegments.filter(segment => segment.vicio_id === addiction.id),
+                    records: recordRows.filter(record => record.vicio_id === addiction.id),
+                    awards: awards.filter(award => award.vicio_id === addiction.id),
+                    now,
+                }),
+            }));
             return res.json({
-                server_time: new Date().toISOString(),
+                server_time: now.toISOString(),
                 usuario: userResult.data,
-                vicios: (addictionsResult.data || []).map(calculateStats),
-                registros: recordsResult.data || [],
+                vicios: enrichedAddictions,
+                registros: recordRows,
                 recaidas: relapsesResult.data || [],
                 metas: goalsResult.data || [],
+                conquistas: awards,
                 mensagem: messages.length ? messages[Math.floor(Math.random() * messages.length)] : null
             });
         } catch (error) {
