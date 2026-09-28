@@ -6,7 +6,11 @@ import type {
   CreateGoalInput,
   CreateRecordInput,
   CreateRelapseInput,
+  CreateUrgeEventInput,
   Goal,
+  ListUrgeEventsInput,
+  UrgeEvent,
+  UrgeEventPage,
 } from '@/domain/types';
 
 export const reviveApi = {
@@ -24,6 +28,23 @@ export const reviveApi = {
       body: JSON.stringify(input),
       idempotencyKey,
     }),
+  createUrgeEvent: (input: CreateUrgeEventInput, idempotencyKey?: string) =>
+    apiFetch<{ vontade: UrgeEvent }>('/vontades', {
+      method: 'POST',
+      body: JSON.stringify(input),
+      idempotencyKey,
+    }),
+  listUrgeEvents: (input: ListUrgeEventsInput) => {
+    const params = new URLSearchParams({
+      vicio_id: input.vicio_id,
+      inicio: input.inicio,
+      fim: input.fim,
+      timezone: input.timezone,
+      limit: String(input.limit ?? 50),
+    });
+    if (input.cursor) params.set('cursor', input.cursor);
+    return apiFetch<UrgeEventPage>(`/vontades?${params.toString()}`);
+  },
   createGoal: (input: CreateGoalInput, idempotencyKey?: string) =>
     apiFetch<{ meta: Goal }>('/v2/metas', {
       method: 'POST',

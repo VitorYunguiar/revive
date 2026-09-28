@@ -6,7 +6,7 @@ import {
   markMutationSyncing,
   reconcileMutations,
 } from '@/core/storage/database';
-import type { CreateGoalInput, CreateRecordInput, CreateRelapseInput, QueuedMutation } from '@/domain/types';
+import type { CreateGoalInput, CreateRecordInput, CreateRelapseInput, CreateUrgeEventInput, QueuedMutation } from '@/domain/types';
 import { tokenStore } from '@/core/auth/token-store';
 
 const activeSync = new Map<string, Promise<number>>();
@@ -19,6 +19,8 @@ const replay = async (mutation: QueuedMutation) => {
       const { addictionId, ...payload } = mutation.payload as CreateRelapseInput & { addictionId: string };
       return reviveApi.createRelapse(addictionId, payload, mutation.id);
     }
+    case 'urge.create':
+      return reviveApi.createUrgeEvent(mutation.payload as CreateUrgeEventInput, mutation.id);
     case 'goal.create':
       return reviveApi.createGoal(mutation.payload as CreateGoalInput, mutation.id);
     case 'goal.complete':

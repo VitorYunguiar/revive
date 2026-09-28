@@ -70,6 +70,35 @@ export type Relapse = {
   pending?: boolean;
 };
 
+export type UrgeEvent = {
+  id: string;
+  usuario_id: string;
+  vicio_id: string;
+  occurred_at: string;
+  timezone: string;
+  intensidade: number;
+  gatilhos: string[];
+  nota: string | null;
+  acao_realizada: string | null;
+  resultado: string | null;
+  created_at: string;
+  updated_at: string;
+  pending?: boolean;
+};
+
+export type UrgeEventCoverage = {
+  total: number;
+  retornados: number;
+  tem_mais: boolean;
+};
+
+export type UrgeEventPage = {
+  vontades: UrgeEvent[];
+  next_cursor: string | null;
+  cobertura: UrgeEventCoverage;
+  atualizado_em: string;
+};
+
 export type Goal = {
   id: string;
   usuario_id: string;
@@ -99,6 +128,8 @@ export type BootstrapData = {
   vicios: Addiction[];
   registros: DailyRecord[];
   recaidas: Relapse[];
+  /** Only locally projected/paged events. The server bootstrap does not return unlimited history. */
+  vontades?: UrgeEvent[];
   metas: Goal[];
   conquistas?: PermanentMilestone[];
   mensagem: MotivationalMessage | null;
@@ -127,6 +158,26 @@ export type CreateRelapseInput = {
   timezone?: string;
 };
 
+export type CreateUrgeEventInput = {
+  vicio_id: string;
+  occurred_at: string;
+  timezone: string;
+  intensidade: number;
+  gatilhos?: string[];
+  nota?: string | null;
+  acao_realizada?: string | null;
+  resultado?: string | null;
+};
+
+export type ListUrgeEventsInput = {
+  vicio_id: string;
+  inicio: string;
+  fim: string;
+  timezone: string;
+  limit?: number;
+  cursor?: string | null;
+};
+
 export type CreateGoalInput = {
   vicio_id: string;
   descricao_meta: string;
@@ -139,6 +190,7 @@ export type CreateGoalInput = {
 export type QueueOperationType =
   | 'record.create'
   | 'relapse.create'
+  | 'urge.create'
   | 'goal.create'
   | 'goal.complete';
 
