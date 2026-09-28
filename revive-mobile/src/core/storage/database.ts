@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import * as Crypto from 'expo-crypto';
-import type { BootstrapData, QueueOperationType } from '@/domain/types';
-import { decodePayload, encodePayload, validBootstrap } from './envelopes';
+import type { BootstrapData, QueueOperationType, UrgeEventPage } from '@/domain/types';
+import { decodePayload, encodePayload, validBootstrap, validUrgeEventPage } from './envelopes';
 import { migrateDatabase } from './migrations';
 import { mapQueueRow } from './queue-row';
 
@@ -36,6 +36,39 @@ export const cacheBootstrap = async (userId: string, data: BootstrapData) => {
     encodePayload(data),
     new Date().toISOString(),
   );
+};
+
+export const cacheUrgeEventPage = async (userId: string, queryKey: string, page: UrgeEventPage) => {
+  if (!queryKey || queryKey.length > 500 || !validUrgeEventPage(page, userId)) {
+    throw new Error('Resposta local de vontades inválida.');
+  }
+  const db = await getDatabase();
+  await db.runAsync(
+    `INSERT INTO urge_event_pages_v1(user_id, query_key, payload, updated_at, payload_version)
+     VALUES (?, ?, ?, ?, 1)
+     ON CONFLICT(user_id, query_key) DO UPDATE SET
+       payload = excluded.payload, updated_at = excluded.updated_at, payload_version = 1`,
+    userId,
+    queryKey,
+    encodePayload(page),
+    new Date().toISOString(),
+  );
+};
+
+export const getCachedUrgeEventPage = async (userId: string, queryKey: string) => {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ payload: string; payload_version: number; updated_at: string }>(
+    'SELECT payload, payload_version, updated_at FROM urge_event_pages_v1 WHERE user_id = ? AND query_key = ?',
+    userId,
+    queryKey,
+  );
+  if (!row) return null;
+  try {
+    const page = decodePayload(row.payload, row.payload_version);
+    return validUrgeEventPage(page, userId) ? { page, updatedAt: row.updated_at } : null;
+  } catch {
+    return null;
+  }
 };
 
 export const getCachedBootstrap = async (userId: string) => {
@@ -150,6 +183,7 @@ export const discardUserMutation = async (userId: string, id: string) => {
 export const clearUserData = async (userId: string) => {
   const db = await getDatabase();
   await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM urge_event_pages_v1 WHERE user_id = ?', userId);
     await db.runAsync('DELETE FROM bootstrap_cache_v1 WHERE user_id = ?', userId);
     await db.runAsync('DELETE FROM mutation_queue_v1 WHERE user_id = ?', userId);
   });

@@ -6,6 +6,8 @@ const { buildProgressSnapshot, observedAccountAwards, observedAwards } = require
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MS_PER_DAY = 86_400_000;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const clean = value => value == null ? value : String(value).trim();
 const tokenHash = token => crypto.createHash('sha256').update(token).digest('hex');
@@ -23,6 +25,38 @@ const requestHashes = req => {
         legacy: crypto.createHash('sha256').update(prefix + JSON.stringify(req.body || {})).digest('hex'),
     };
 };
+
+function isValidLocalDate(value) {
+    if (typeof value !== 'string' || !LOCAL_DATE_PATTERN.test(value)) return false;
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function isValidTimezone(value) {
+    if (typeof value !== 'string' || value.length < 1 || value.length > 100) return false;
+    try {
+        new Intl.DateTimeFormat('en', { timeZone: value }).format(0);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function parseUrgeCursor(value) {
+    if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,512}$/.test(value)) return undefined;
+    try {
+        const decoded = Buffer.from(value, 'base64url').toString('utf8');
+        const cursor = JSON.parse(decoded);
+        const time = new Date(cursor.occurred_at);
+        if (Buffer.from(decoded).toString('base64url') !== value
+            || !Number.isFinite(time.getTime())
+            || time.toISOString() !== cursor.occurred_at
+            || !UUID_PATTERN.test(cursor.id)) return undefined;
+        return { occurredAt: cursor.occurred_at, id: cursor.id };
+    } catch {
+        return undefined;
+    }
+}
 
 function formatDuration(totalDays) {
     const years = Math.floor(totalDays / 365);
@@ -215,13 +249,13 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
         }
     });
 
-    const executeIdempotent = async (req, res, operation, payload) => {
+    const executeIdempotent = async (req, res, operation, payload, rpcFunction = 'execute_mobile_mutation') => {
         const key = clean(req.get('Idempotency-Key'));
         if (!key || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key)) {
             return apiError(res, 422, 'IDEMPOTENCY_KEY_INVALIDA', 'Idempotency-Key UUID e obrigatoria.');
         }
         const hashes = requestHashes(req);
-        const { data, error } = await supabase.rpc('execute_mobile_mutation', {
+        const { data, error } = await supabase.rpc(rpcFunction, {
             p_usuario_id: req.usuarioId,
             p_idempotency_key: key,
             p_request_hash: hashes.stable,
@@ -371,6 +405,117 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
         } catch (error) {
             console.error('mobile record failed', { code: error?.code, message: error?.message });
             return apiError(res, 500, 'ERRO_INTERNO', 'Nao foi possivel criar o registro.');
+        }
+    });
+
+    router.post('/vontades', authenticate, async (req, res) => {
+        try {
+            const input = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+            const allowed = new Set(['vicio_id', 'occurred_at', 'timezone', 'intensidade', 'gatilhos', 'nota', 'acao_realizada', 'resultado']);
+            const unknown = Object.keys(input).some(key => !allowed.has(key));
+            const habitId = clean(input.vicio_id);
+            const occurredAt = clean(input.occurred_at) || new Date().toISOString();
+            const parsedTime = new Date(occurredAt);
+            const timezone = clean(input.timezone);
+            const triggers = input.gatilhos === undefined ? [] : input.gatilhos;
+            const textFields = ['nota', 'acao_realizada', 'resultado'];
+            const invalidText = textFields.some(key => input[key] !== undefined
+                && input[key] !== null
+                && (typeof input[key] !== 'string' || input[key].trim().length > 1000));
+            const fields = {};
+            if (unknown) fields.dados = 'Remova campos que nao fazem parte do contrato.';
+            if (!UUID_PATTERN.test(habitId || '')) fields.vicio_id = 'Informe um habito valido.';
+            if (!Number.isFinite(parsedTime.getTime()) || !/(Z|[+-]\d{2}:\d{2})$/i.test(occurredAt)) {
+                fields.occurred_at = 'Informe data e hora ISO 8601 com fuso.';
+            } else if (parsedTime.getTime() > Date.now() + 5 * 60_000) {
+                fields.occurred_at = 'O momento nao pode estar mais de cinco minutos no futuro.';
+            }
+            if (!isValidTimezone(timezone)) fields.timezone = 'Informe um fuso IANA valido.';
+            if (!Number.isInteger(input.intensidade) || input.intensidade < 0 || input.intensidade > 10) {
+                fields.intensidade = 'Use um numero inteiro de 0 a 10.';
+            }
+            if (!Array.isArray(triggers) || triggers.length > 10
+                || triggers.some(code => typeof code !== 'string' || !/^[a-z][a-z0-9_]{0,39}$/.test(code))
+                || new Set(triggers).size !== triggers.length) {
+                fields.gatilhos = 'Informe ate dez codigos de gatilho, sem repeticoes.';
+            }
+            if (invalidText) fields.texto = 'Cada campo livre pode conter ate 1000 caracteres.';
+            if (Object.keys(fields).length) return apiError(res, 422, 'DADOS_INVALIDOS', 'Revise os campos informados.', fields);
+
+            const payload = {
+                vicio_id: habitId,
+                occurred_at: parsedTime.toISOString(),
+                timezone,
+                intensidade: input.intensidade,
+                gatilhos: triggers,
+                nota: typeof input.nota === 'string' ? input.nota.trim() || null : null,
+                acao_realizada: typeof input.acao_realizada === 'string' ? input.acao_realizada.trim() || null : null,
+                resultado: typeof input.resultado === 'string' ? input.resultado.trim() || null : null,
+            };
+            return await executeIdempotent(req, res, 'urge.create', payload, 'execute_mobile_urge_mutation');
+        } catch (error) {
+            console.error('mobile urge event failed', { code: error?.code, message: error?.message });
+            return apiError(res, 500, 'ERRO_INTERNO', 'Nao foi possivel registrar a vontade.');
+        }
+    });
+
+    router.get('/vontades', authenticate, async (req, res) => {
+        const query = req.query || {};
+        const allowed = new Set(['vicio_id', 'inicio', 'fim', 'timezone', 'limit', 'cursor']);
+        const habitId = typeof query.vicio_id === 'string' ? query.vicio_id : '';
+        const start = typeof query.inicio === 'string' ? query.inicio : '';
+        const end = typeof query.fim === 'string' ? query.fim : '';
+        const timezone = typeof query.timezone === 'string' ? query.timezone : '';
+        const limitText = query.limit === undefined ? '50' : typeof query.limit === 'string' ? query.limit : '';
+        const limit = /^\d{1,3}$/.test(limitText) ? Number(limitText) : NaN;
+        const cursor = query.cursor === undefined ? null : parseUrgeCursor(query.cursor);
+        const startTime = isValidLocalDate(start) ? Date.parse(`${start}T00:00:00.000Z`) : NaN;
+        const endTime = isValidLocalDate(end) ? Date.parse(`${end}T00:00:00.000Z`) : NaN;
+        const fields = {};
+        if (Object.keys(query).some(key => !allowed.has(key))) fields.filtros = 'Remova filtros desconhecidos.';
+        if (!UUID_PATTERN.test(habitId)) fields.vicio_id = 'Informe um habito valido.';
+        if (!isValidLocalDate(start)) fields.inicio = 'Use uma data local YYYY-MM-DD valida.';
+        if (!isValidLocalDate(end) || endTime < startTime || endTime - startTime > 3660 * MS_PER_DAY) {
+            fields.fim = 'Informe um intervalo local de ate dez anos.';
+        }
+        if (!isValidTimezone(timezone)) fields.timezone = 'Informe um fuso IANA valido.';
+        if (!Number.isInteger(limit) || limit < 1 || limit > 100) fields.limit = 'Use um limite de 1 a 100.';
+        if (query.cursor !== undefined && !cursor) fields.cursor = 'Cursor de pagina invalido.';
+        if (Object.keys(fields).length) return apiError(res, 422, 'DADOS_INVALIDOS', 'Revise os filtros informados.', fields);
+
+        try {
+            const { data, error } = await supabase.rpc('list_urge_events', {
+                p_usuario_id: req.usuarioId,
+                p_vicio_id: habitId,
+                p_inicio: start,
+                p_fim: end,
+                p_timezone: timezone,
+                p_limit: limit + 1,
+                p_cursor_time: cursor?.occurredAt ?? null,
+                p_cursor_id: cursor?.id ?? null,
+            });
+            if (error) throw error;
+            const rows = Array.isArray(data) ? data : [];
+            if (!rows[0]?.habit_found) return apiError(res, 404, 'VICIO_NAO_ENCONTRADO', 'Vicio nao encontrado.');
+            const hasMore = rows.length > limit;
+            const events = rows.filter(row => row.id).slice(0, limit).map(({ habit_found, total_count, ...event }) => event);
+            const last = events.at(-1);
+            const nextCursor = hasMore && last
+                ? Buffer.from(JSON.stringify({ occurred_at: new Date(last.occurred_at).toISOString(), id: last.id })).toString('base64url')
+                : null;
+            return res.json({
+                vontades: events,
+                next_cursor: nextCursor,
+                cobertura: {
+                    total: Number(rows[0].total_count || 0),
+                    retornados: events.length,
+                    tem_mais: hasMore,
+                },
+                atualizado_em: new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('mobile urge events query failed', { code: error?.code, message: error?.message });
+            return apiError(res, 500, 'ERRO_INTERNO', 'Nao foi possivel consultar as vontades.');
         }
     });
 

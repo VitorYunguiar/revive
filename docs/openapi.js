@@ -9,6 +9,16 @@
  *           type: string
  *         detalhes:
  *           type: string
+ *     MobileErrorResponse:
+ *       type: object
+ *       required: [codigo, mensagem, request_id]
+ *       properties:
+ *         codigo: { type: string, example: DADOS_INVALIDOS }
+ *         mensagem: { type: string, example: Revise os campos informados. }
+ *         request_id: { type: string, example: 9f66f49b-2320-4a52-8b0e-378799e6a813 }
+ *         campos:
+ *           type: object
+ *           additionalProperties: { type: string }
  *     LoginRequest:
  *       type: object
  *       required: [email, senha]
@@ -89,6 +99,65 @@
  *           type: string
  *         dias_abstinencia_perdidos:
  *           type: integer
+ *     UrgeEvent:
+ *       type: object
+ *       required: [id, usuario_id, vicio_id, occurred_at, timezone, intensidade, gatilhos]
+ *       properties:
+ *         id: { type: string, format: uuid }
+ *         usuario_id: { type: string, format: uuid }
+ *         vicio_id: { type: string, format: uuid }
+ *         occurred_at: { type: string, format: date-time, description: Instante normalizado em UTC }
+ *         timezone: { type: string, example: America/Sao_Paulo }
+ *         intensidade: { type: integer, minimum: 0, maximum: 10 }
+ *         gatilhos:
+ *           type: array
+ *           maxItems: 10
+ *           uniqueItems: true
+ *           items: { type: string, pattern: '^[a-z][a-z0-9_]{0,39}$' }
+ *           description: Catálogo inicial estresse, tedio, situacao_social, rotina, outro; códigos desconhecidos válidos são preservados.
+ *         nota: { type: string, nullable: true, maxLength: 1000 }
+ *         acao_realizada: { type: string, nullable: true, maxLength: 1000 }
+ *         resultado: { type: string, nullable: true, maxLength: 1000 }
+ *         created_at: { type: string, format: date-time }
+ *         updated_at: { type: string, format: date-time }
+ *     CreateUrgeEventRequest:
+ *       type: object
+ *       required: [vicio_id, occurred_at, timezone, intensidade]
+ *       additionalProperties: false
+ *       example:
+ *         vicio_id: 5c8d8da4-0453-43c8-8ee1-f196ca743052
+ *         occurred_at: '2026-09-27T22:00:00-03:00'
+ *         timezone: America/Sao_Paulo
+ *         intensidade: 4
+ *         gatilhos: [estresse, situacao_social]
+ *         nota: Senti vontade após o trabalho.
+ *       properties:
+ *         vicio_id: { type: string, format: uuid }
+ *         occurred_at: { type: string, format: date-time, description: Não mais de cinco minutos no futuro }
+ *         timezone: { type: string, example: America/Sao_Paulo }
+ *         intensidade: { type: integer, minimum: 0, maximum: 10 }
+ *         gatilhos:
+ *           type: array
+ *           maxItems: 10
+ *           uniqueItems: true
+ *           items: { type: string, pattern: '^[a-z][a-z0-9_]{0,39}$' }
+ *         nota: { type: string, nullable: true, maxLength: 1000 }
+ *         acao_realizada: { type: string, nullable: true, maxLength: 1000 }
+ *         resultado: { type: string, nullable: true, maxLength: 1000 }
+ *     UrgeEventPage:
+ *       type: object
+ *       required: [vontades, next_cursor, cobertura, atualizado_em]
+ *       properties:
+ *         vontades: { type: array, items: { $ref: '#/components/schemas/UrgeEvent' } }
+ *         next_cursor: { type: string, nullable: true }
+ *         cobertura:
+ *           type: object
+ *           required: [total, retornados, tem_mais]
+ *           properties:
+ *             total: { type: integer, minimum: 0 }
+ *             retornados: { type: integer, minimum: 0 }
+ *             tem_mais: { type: boolean }
+ *         atualizado_em: { type: string, format: date-time }
  */
 
 /**
@@ -187,6 +256,128 @@
  *         description: Registro criado ou resposta original repetida
  *       409:
  *         description: Chave usada com outro payload ou ainda em processamento
+ * /api/v2/vontades:
+ *   post:
+ *     tags: [Mobile Offline v2]
+ *     summary: Registra um episódio descritivo de vontade, sem criar recaída
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Idempotency-Key
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/CreateUrgeEventRequest' }
+ *           examples:
+ *             episode:
+ *               summary: Evento retrospectivo com horário local e fuso explícito
+ *               value:
+ *                 vicio_id: 5c8d8da4-0453-43c8-8ee1-f196ca743052
+ *                 occurred_at: '2026-09-27T22:00:00-03:00'
+ *                 timezone: America/Sao_Paulo
+ *                 intensidade: 4
+ *                 gatilhos: [estresse, situacao_social]
+ *                 nota: Senti vontade após o trabalho.
+ *     responses:
+ *       201:
+ *         description: Vontade gravada ou resposta original repetida
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [mensagem, vontade]
+ *               properties:
+ *                 mensagem: { type: string }
+ *                 vontade: { $ref: '#/components/schemas/UrgeEvent' }
+ *             example:
+ *               mensagem: Vontade registrada com sucesso.
+ *               vontade:
+ *                 id: 7d6d299a-306c-4779-aedf-1327812b6593
+ *                 usuario_id: 0a744dd5-9f4f-45a1-bf8e-97a4ecfd90eb
+ *                 vicio_id: 5c8d8da4-0453-43c8-8ee1-f196ca743052
+ *                 occurred_at: '2026-09-28T01:00:00.000Z'
+ *                 timezone: America/Sao_Paulo
+ *                 intensidade: 4
+ *                 gatilhos: [estresse, situacao_social]
+ *                 nota: Senti vontade após o trabalho.
+ *                 acao_realizada: null
+ *                 resultado: null
+ *                 created_at: '2026-09-28T01:05:00.000Z'
+ *                 updated_at: '2026-09-28T01:05:00.000Z'
+ *       404:
+ *         description: Hábito ativo não pertence à conta
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/MobileErrorResponse' }
+ *             example: { codigo: VICIO_NAO_ENCONTRADO, mensagem: Vício ativo não encontrado., request_id: 9f66f49b-2320-4a52-8b0e-378799e6a813 }
+ *       409:
+ *         description: Conteúdo diferente para a chave idempotente
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/MobileErrorResponse' }
+ *             example: { codigo: IDEMPOTENCY_CONFLITO, mensagem: A chave já foi usada com outro conteúdo., request_id: 9f66f49b-2320-4a52-8b0e-378799e6a813 }
+ *       422:
+ *         description: Momento, fuso, intensidade, gatilhos ou campos inválidos
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/MobileErrorResponse' }
+ *             example:
+ *               codigo: DADOS_INVALIDOS
+ *               mensagem: Revise os campos informados.
+ *               request_id: 9f66f49b-2320-4a52-8b0e-378799e6a813
+ *               campos: { intensidade: Use um número inteiro de 0 a 10. }
+ *   get:
+ *     tags: [Mobile v2]
+ *     summary: Consulta eventos por hábito e intervalo de datas locais
+ *     description: Datas inclusivas são interpretadas no timezone IANA informado; ordenação estável por instante e UUID. Retorna total, cursor e cobertura sem carregar todo o histórico.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: vicio_id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: inicio
+ *         required: true
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: fim
+ *         required: true
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: timezone
+ *         required: true
+ *         schema: { type: string, example: America/Sao_Paulo }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+ *       - in: query
+ *         name: cursor
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Página e cobertura exata do intervalo selecionado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/UrgeEventPage' }
+ *             example:
+ *               vontades: []
+ *               next_cursor: null
+ *               cobertura: { total: 0, retornados: 0, tem_mais: false }
+ *               atualizado_em: '2026-09-28T01:05:00.000Z'
+ *       404:
+ *         description: Hábito não pertence à conta
+ *       422:
+ *         description: Filtros ou cursor inválidos
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/MobileErrorResponse' }
+ *             example: { codigo: DADOS_INVALIDOS, mensagem: Revise os filtros informados., request_id: 9f66f49b-2320-4a52-8b0e-378799e6a813 }
  * /api/v2/vicios/{id}/recaida:
  *   post:
  *     tags: [Mobile Offline v2]

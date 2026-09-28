@@ -6,7 +6,9 @@ import { tokenStore } from '@/core/auth/token-store';
 import type { QueuedMutation } from '@/domain/types';
 import { syncPendingMutations } from './sync-engine';
 
-jest.mock('@/core/api/repositories', () => ({ reviveApi: { createRecord: jest.fn(), createRelapse: jest.fn(), bootstrap: jest.fn() } }));
+jest.mock('@/core/api/repositories', () => ({ reviveApi: {
+  createRecord: jest.fn(), createRelapse: jest.fn(), createUrgeEvent: jest.fn(), bootstrap: jest.fn(),
+} }));
 jest.mock('@/core/storage/database', () => ({
   getPendingMutations: jest.fn(), markMutationSyncing: jest.fn(),
   markMutationFailed: jest.fn(), reconcileMutations: jest.fn(),
@@ -57,6 +59,17 @@ it('replays relapse with its original key and without the route id in the body',
   expect(await syncPendingMutations('user-a')).toBe(1);
   expect(reviveApi.createRelapse).toHaveBeenCalledWith('habit', { motivo: 'reflection' }, 'original-key');
   expect(reconcileMutations).toHaveBeenCalledWith('user-a', ['original-key'], { usuario: { id: 'user-a' } });
+});
+
+it('replays a queued urge with its stable idempotency key and independent event type', async () => {
+  const payload = {
+    vicio_id: 'habit', occurred_at: '2026-01-01T00:00:00.000Z', timezone: 'America/Sao_Paulo',
+    intensidade: 4, gatilhos: ['estresse'], nota: null,
+  };
+  jest.mocked(getPendingMutations).mockResolvedValue([{ ...event('urge-key'), type: 'urge.create', payload }]);
+  expect(await syncPendingMutations('user-a')).toBe(1);
+  expect(reviveApi.createUrgeEvent).toHaveBeenCalledWith(payload, 'urge-key');
+  expect(reconcileMutations).toHaveBeenCalledWith('user-a', ['urge-key'], { usuario: { id: 'user-a' } });
 });
 
 it('keeps the original key queued when the server accepted a mutation but canonical reconciliation failed', async () => {

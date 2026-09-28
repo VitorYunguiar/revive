@@ -27,6 +27,21 @@ function createApp() {
         },
         async rpc(name, args) {
             calls.push({ name, args });
+            if (name === 'execute_mobile_urge_mutation') {
+                return { data: [{ status_code: 201, response_body: { vontade: {
+                    id: 'server-urge-1', usuario_id: 'user-1', vicio_id: 'habit-a',
+                    occurred_at: '2026-09-28T01:00:00.000Z', timezone: 'America/Sao_Paulo',
+                    intensidade: 4, gatilhos: ['estresse'], nota: null, acao_realizada: null,
+                    resultado: null, created_at: '2026-09-28T01:00:00.000Z', updated_at: '2026-09-28T01:00:00.000Z',
+                } } }], error: null };
+            }
+            if (name === 'list_urge_events') {
+                const rows = [
+                    { habit_found: true, id: '10000000-0000-4000-8000-000000000002', usuario_id: 'user-1', vicio_id: args.p_vicio_id, occurred_at: '2026-09-28T01:00:00.000Z', timezone: 'America/Sao_Paulo', intensidade: 4, gatilhos: ['estresse'], nota: null, acao_realizada: null, resultado: null, created_at: '2026-09-28T01:00:00.000Z', updated_at: '2026-09-28T01:00:00.000Z', total_count: 2 },
+                    { habit_found: true, id: '10000000-0000-4000-8000-000000000001', usuario_id: 'user-1', vicio_id: args.p_vicio_id, occurred_at: '2026-09-28T01:00:00.000Z', timezone: 'America/Sao_Paulo', intensidade: 3, gatilhos: ['outro'], nota: null, acao_realizada: null, resultado: null, created_at: '2026-09-28T01:00:00.000Z', updated_at: '2026-09-28T01:00:00.000Z', total_count: 2 },
+                ];
+                return { data: args.p_cursor_id ? [rows[1]] : rows, error: null };
+            }
             return { data: [{ status_code: 201, response_body: { registro: { id: 'server-record-1' } } }], error: null };
         },
     };
@@ -67,4 +82,61 @@ it('sends goal completion intent with its target id and explicit completed state
     expect(response.status).toBe(201);
     expect(calls[0].args.p_operation).toBe('goal.complete');
   expect(calls[0].args.p_payload).toEqual({ concluida: true, goalId: '00000000-0000-4000-8000-000000000002' });
+});
+
+it('sends only validated, allowlisted urge fields to the atomic idempotent mutation', async () => {
+    const { app, token, calls } = createApp();
+    const response = await request(app).post('/api/v2/vontades')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', '45763824-3b9e-4ab7-9d13-6cb73fae6106')
+        .send({
+            vicio_id: '10000000-0000-4000-8000-000000000001',
+            occurred_at: '2026-09-27T22:00:00-03:00',
+            timezone: 'America/Sao_Paulo',
+            intensidade: 4,
+            gatilhos: ['estresse'],
+            nota: 'synthetic note',
+        });
+
+    expect(response.status).toBe(201);
+    expect(calls.at(-1).name).toBe('execute_mobile_urge_mutation');
+    expect(calls.at(-1).args.p_operation).toBe('urge.create');
+    expect(calls.at(-1).args.p_payload).toEqual({
+        vicio_id: '10000000-0000-4000-8000-000000000001',
+        occurred_at: '2026-09-28T01:00:00.000Z',
+        timezone: 'America/Sao_Paulo', intensidade: 4, gatilhos: ['estresse'],
+        nota: 'synthetic note', acao_realizada: null, resultado: null,
+    });
+});
+
+it('rejects malformed urge content before reserving an idempotency key', async () => {
+    const { app, token, calls } = createApp();
+    const invalid = await request(app).post('/api/v2/vontades')
+        .set('Authorization', `Bearer ${token}`)
+        .set('Idempotency-Key', '7e9e3789-3ed0-47d0-9c6a-9d1e94cbf2ea')
+        .send({
+            vicio_id: '10000000-0000-4000-8000-000000000001',
+            occurred_at: '2026-09-27T22:00:00-03:00', timezone: 'Not/AZone',
+            intensidade: 11, gatilhos: ['estresse', 'estresse'],
+        });
+    expect(invalid.status).toBe(422);
+    expect(invalid.body.campos).toMatchObject({ timezone: expect.any(String), intensidade: expect.any(String), gatilhos: expect.any(String) });
+    expect(calls).toHaveLength(0);
+});
+
+it('paginates urge events with a validated stable cursor and explicit selection coverage', async () => {
+    const { app, token, calls } = createApp();
+    const query = '/api/v2/vontades?vicio_id=10000000-0000-4000-8000-000000000001&inicio=2026-09-27&fim=2026-09-27&timezone=America%2FSao_Paulo&limit=1';
+    const first = await request(app).get(query).set('Authorization', `Bearer ${token}`);
+    expect(first.status).toBe(200);
+    expect(first.body.vontades).toHaveLength(1);
+    expect(first.body.cobertura).toEqual({ total: 2, retornados: 1, tem_mais: true });
+    expect(first.body.next_cursor).toBeTruthy();
+
+    const second = await request(app).get(`${query}&cursor=${encodeURIComponent(first.body.next_cursor)}`)
+        .set('Authorization', `Bearer ${token}`);
+    expect(second.status).toBe(200);
+    expect(second.body.vontades).toHaveLength(1);
+    expect(second.body.vontades[0].id).not.toBe(first.body.vontades[0].id);
+    expect(calls.at(-1).args.p_cursor_id).toBe(first.body.vontades[0].id);
 });

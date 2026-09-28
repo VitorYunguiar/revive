@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { decodePayload, encodePayload, validBootstrap } from './envelopes';
+import { decodePayload, encodePayload, validBootstrap, validUrgeEventPage } from './envelopes';
 import { mapQueueRow } from './queue-row';
 
 const baseRow = {
@@ -36,5 +36,21 @@ describe('versioned local payloads', () => {
     expect(validBootstrap(snapshot, 'user-b')).toBe(false);
     expect(validBootstrap({ ...snapshot, registros: null }, 'user-a')).toBe(false);
     expect(validBootstrap({ ...snapshot, registros: [null] }, 'user-a')).toBe(false);
+  });
+
+  it('keeps paged urge history versioned and isolated to its owner', () => {
+    const page = {
+      vontades: [{
+        id: 'event-a', usuario_id: 'user-a', vicio_id: 'habit-a', occurred_at: '2026-01-01T12:00:00.000Z',
+        timezone: 'America/Sao_Paulo', intensidade: 4, gatilhos: ['estresse'], nota: null,
+      }],
+      next_cursor: null,
+      cobertura: { total: 1, retornados: 1, tem_mais: false },
+      atualizado_em: '2026-01-01T12:01:00.000Z',
+    };
+    const encoded = encodePayload(page);
+    expect(validUrgeEventPage(decodePayload(encoded, 1), 'user-a')).toBe(true);
+    expect(validUrgeEventPage(decodePayload(encoded, 1), 'user-b')).toBe(false);
+    expect(validUrgeEventPage({ ...page, cobertura: { ...page.cobertura, retornados: 2 } }, 'user-a')).toBe(false);
   });
 });

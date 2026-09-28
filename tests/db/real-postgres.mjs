@@ -262,6 +262,83 @@ async function verifyApi(app, sql) {
     .set('Idempotency-Key', relapseKey).send(relapsePayload), 201, 'relapse replay');
   assert.equal(relapseReplay.recaida.id, relapse.recaida.id, 'relapse replay returns the first event');
 
+  const localDay = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const urgeTime = new Date(Date.now() - 60_000).toISOString();
+  const urgeKey = randomUUID();
+  const urgePayload = {
+    vicio_id: habitId, occurred_at: urgeTime, timezone: 'America/Sao_Paulo',
+    intensidade: 4, gatilhos: ['estresse', 'trigger_future_1'], nota: 'synthetic urge note',
+  };
+  const concurrentUrges = await Promise.all(Array.from({ length: 5 }, () => request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', urgeKey).send(urgePayload)));
+  for (const response of concurrentUrges) bodyAt(response, 201, 'concurrent idempotent urge');
+  assert.equal(new Set(concurrentUrges.map(response => response.body.vontade.id)).size, 1,
+    'concurrent urge retries return one event');
+  const urgeReplay = bodyAt(await request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', urgeKey)
+    .send({ gatilhos: urgePayload.gatilhos, intensidade: urgePayload.intensidade, timezone: urgePayload.timezone,
+      occurred_at: urgePayload.occurred_at, vicio_id: urgePayload.vicio_id, nota: urgePayload.nota }),
+  201, 'reordered urge replay');
+  assert.equal(urgeReplay.vontade.id, concurrentUrges[0].body.vontade.id);
+  const urgeConflict = await request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', urgeKey)
+    .send({ ...urgePayload, intensidade: 5 });
+  bodyAt(urgeConflict, 409, 'urge key payload conflict');
+
+  const secondUrge = bodyAt(await request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID())
+    .send({ ...urgePayload, gatilhos: ['trigger_future_1'], nota: null }),
+  201, 'distinct event in the same minute');
+  assert.notEqual(secondUrge.vontade.id, urgeReplay.vontade.id);
+  assert.deepEqual(urgeReplay.vontade.gatilhos, ['estresse', 'trigger_future_1'],
+    'unknown stable codes are retained for forward compatibility');
+
+  const foreignUrge = await request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${b.mobileToken}`).set('Idempotency-Key', randomUUID()).send(urgePayload);
+  bodyAt(foreignUrge, 404, 'foreign urge habit denied');
+  const invalidUrge = await request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID())
+    .send({ ...urgePayload, intensidade: 11 });
+  bodyAt(invalidUrge, 422, 'invalid urge intensity');
+  const missingIntensity = await first.query(`select * from public.execute_mobile_urge_mutation(
+    $1, $2, 'synthetic-hash', 'synthetic-legacy-hash', 'urge.create', $3::jsonb, 'synthetic-request')`,
+  [a.id, randomUUID(), JSON.stringify({
+    vicio_id: habitId, occurred_at: urgeTime, timezone: 'America/Sao_Paulo', gatilhos: [],
+  })]);
+  assert.equal(missingIntensity.rows[0].status_code, 422,
+    'database validates a missing numeric field without leaking a constraint error');
+  const futureUrge = await request(app).post('/api/v2/vontades')
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID())
+    .send({ ...urgePayload, occurred_at: new Date(Date.now() + 10 * 60_000).toISOString() });
+  bodyAt(futureUrge, 422, 'future urge rejected');
+
+  const urgeQuery = `/api/v2/vontades?vicio_id=${habitId}&inicio=${localDay}&fim=${localDay}`
+    + '&timezone=America%2FSao_Paulo&limit=1';
+  const urgePageOne = bodyAt(await request(app).get(urgeQuery)
+    .set('Authorization', `Bearer ${a.mobileToken}`), 200, 'urge page one');
+  assert.equal(urgePageOne.cobertura.total, 2);
+  assert.equal(urgePageOne.cobertura.tem_mais, true);
+  assert.equal(urgePageOne.vontades.length, 1);
+  const urgePageTwo = bodyAt(await request(app).get(`${urgeQuery}&cursor=${encodeURIComponent(urgePageOne.next_cursor)}`)
+    .set('Authorization', `Bearer ${a.mobileToken}`), 200, 'urge page two');
+  assert.equal(urgePageTwo.cobertura.total, 2);
+  assert.equal(urgePageTwo.vontades.length, 1);
+  assert.notEqual(urgePageOne.vontades[0].id, urgePageTwo.vontades[0].id,
+    'timestamp ties use id as a stable keyset cursor');
+  const emptyUrgePage = bodyAt(await request(app).get(`${urgeQuery.replace(`inicio=${localDay}&fim=${localDay}`, 'inicio=2020-01-01&fim=2020-01-01')}`)
+    .set('Authorization', `Bearer ${a.mobileToken}`), 200, 'empty urge page');
+  assert.deepEqual(emptyUrgePage.vontades, []);
+  assert.equal(emptyUrgePage.cobertura.total, 0);
+  const foreignUrgePage = await request(app).get(urgeQuery).set('Authorization', `Bearer ${b.mobileToken}`);
+  bodyAt(foreignUrgePage, 404, 'foreign urge query denied');
+  const urgeRows = await sql.query('select count(*)::integer as count from public.eventos_vontade where usuario_id=$1 and vicio_id=$2', [a.id, habitId]);
+  assert.equal(urgeRows.rows[0].count, 2, 'urge events do not create or reset relapses');
+  const habitAfterUrges = await sql.query('select data_ultima_recaida from public.vicios where id=$1', [habitId]);
+  assert.equal(habitAfterUrges.rows[0].data_ultima_recaida, null,
+    'recording a desire does not reset the abstinence counter');
+
   bodyAt(await request(app).delete('/api/v2/account')
     .set('Authorization', `Bearer ${a.mobileToken}`), 204, 'account deletion');
   const gone = await sql.query(`select
@@ -275,7 +352,8 @@ async function verifyApi(app, sql) {
     (select count(*) from public.progresso_ancoras where vicio_id = any($3::uuid[])) as progress_anchors,
     (select count(*) from public.progresso_periodos where vicio_id = any($3::uuid[])) as progress_periods,
     (select count(*) from public.segmentos_economia where vicio_id = any($3::uuid[])) as economy_segments,
-    (select count(*) from public.conquistas_permanentes where usuario_id=$1) as permanent_awards`,
+    (select count(*) from public.conquistas_permanentes where usuario_id=$1) as permanent_awards,
+    (select count(*) from public.eventos_vontade where usuario_id=$1) as urge_events`,
   [a.id, habitId, [habitId, progressHabitId, retroHabitId]]);
   for (const [table, count] of Object.entries(gone.rows[0])) {
     assert.equal(Number(count), 0, `${table} must be removed`);

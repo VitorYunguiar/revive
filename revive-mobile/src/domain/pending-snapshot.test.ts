@@ -10,6 +10,15 @@ const pendingRelapse: QueuedMutation = {
   type: 'relapse.create',
   payload: { addictionId: 'habit', occurred_at: '2026-01-30T12:00:00.000Z', resetarContador: true },
 };
+const pendingUrge: QueuedMutation = {
+  ...event,
+  id: 'urge-1',
+  type: 'urge.create',
+  payload: {
+    vicio_id: 'habit', occurred_at: '2026-01-30T12:00:00.000Z', timezone: 'America/Sao_Paulo',
+    intensidade: 4, gatilhos: ['estresse'], nota: null, acao_realizada: null, resultado: null,
+  },
+};
 const knownProgress: ProgressSnapshot = {
   sequencia_atual_dias: 30, sequencia_atual_cobertura: 'confirmed', recorde_dias: 30, recorde_cobertura: 'confirmed',
   dias_checkin: 4, economia_sequencia: { valor_estimado: 300, cobertura: 'confirmed' },
@@ -28,6 +37,25 @@ describe('pending snapshot', () => {
   });
   it('never projects events from another account', () => {
     expect(withPendingMutations(snapshot, [{ ...event, userId: 'other' }]).registros).toHaveLength(0);
+  });
+
+  it('projects a queued urge as its own pending event without creating a relapse', () => {
+    const projected = withPendingMutations(snapshot, [pendingUrge]);
+    expect(projected.vontades).toEqual([expect.objectContaining({
+      id: 'urge-1', usuario_id: 'u', vicio_id: 'habit', intensidade: 4,
+      created_at: pendingUrge.occurredAt, updated_at: pendingUrge.occurredAt, pending: true,
+    })]);
+    expect(projected.recaidas).toHaveLength(0);
+    expect(withPendingMutations(projected, [pendingUrge]).vontades).toHaveLength(1);
+    expect(withPendingMutations(snapshot, [{ ...pendingUrge, userId: 'other' }]).vontades).toHaveLength(0);
+  });
+
+  it('fills optional fields when projecting older queued urge payloads', () => {
+    const olderPayload = { ...pendingUrge, payload: {
+      vicio_id: 'habit', occurred_at: '2026-01-30T12:00:00.000Z', timezone: 'America/Sao_Paulo', intensidade: 2,
+    } };
+    const event = withPendingMutations(snapshot, [olderPayload]).vontades?.[0];
+    expect(event).toMatchObject({ gatilhos: [], nota: null, acao_realizada: null, resultado: null });
   });
 
   it('projects a queued reset locally while preserving the server record and permanent milestone', () => {

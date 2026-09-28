@@ -1,4 +1,4 @@
-import type { BootstrapData, CreateGoalInput, DailyRecord, QueuedMutation } from './types';
+import type { BootstrapData, CreateGoalInput, CreateUrgeEventInput, DailyRecord, QueuedMutation } from './types';
 
 const DAY_MS = 86_400_000;
 
@@ -48,7 +48,14 @@ function projectRelapse(addiction: BootstrapData['vicios'][number], occurredAt: 
 
 /** Project durable queued events onto the server snapshot without mutating it. */
 export function withPendingMutations(snapshot: BootstrapData, mutations: QueuedMutation[]): BootstrapData {
-  const result = { ...snapshot, registros: [...snapshot.registros], recaidas: [...snapshot.recaidas], metas: [...snapshot.metas], vicios: [...snapshot.vicios] };
+  const result = {
+    ...snapshot,
+    registros: [...snapshot.registros],
+    recaidas: [...snapshot.recaidas],
+    vontades: [...(snapshot.vontades ?? [])],
+    metas: [...snapshot.metas],
+    vicios: [...snapshot.vicios],
+  };
   for (const mutation of mutations) {
     if (mutation.userId !== snapshot.usuario.id || mutation.needsRecovery) continue;
     const payload = mutation.payload;
@@ -60,6 +67,21 @@ export function withPendingMutations(snapshot: BootstrapData, mutations: QueuedM
       result.vicios = result.vicios.map((item) => item.id === payload.addictionId
         ? projectRelapse(item, String(payload.occurred_at), payload.resetarContador === true)
         : item);
+    }
+    if (mutation.type === 'urge.create' && !result.vontades?.some((item) => item.id === mutation.id)) {
+      const urge = payload as CreateUrgeEventInput;
+      result.vontades?.unshift({
+        ...urge,
+        gatilhos: urge.gatilhos ?? [],
+        nota: urge.nota ?? null,
+        acao_realizada: urge.acao_realizada ?? null,
+        resultado: urge.resultado ?? null,
+        id: mutation.id,
+        usuario_id: mutation.userId,
+        created_at: mutation.occurredAt,
+        updated_at: mutation.occurredAt,
+        pending: true,
+      });
     }
     if (mutation.type === 'goal.create' && !result.metas.some((item) => item.id === mutation.id)) {
       result.metas.unshift({ ...(payload as CreateGoalInput), id: mutation.id, usuario_id: mutation.userId, pending: true, concluida: false });

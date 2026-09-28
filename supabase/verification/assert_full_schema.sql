@@ -48,7 +48,18 @@ begin
       ('conquistas_permanentes','valor_alvo','numeric(12,2)',true),
       ('conquistas_permanentes','awarded_at','timestamp with time zone',true),
       ('conquistas_permanentes','origem','text',true),
-      ('conquistas_permanentes','cobertura','text',true)
+      ('conquistas_permanentes','cobertura','text',true),
+      ('eventos_vontade','usuario_id','uuid',true),
+      ('eventos_vontade','vicio_id','uuid',true),
+      ('eventos_vontade','occurred_at','timestamp with time zone',true),
+      ('eventos_vontade','timezone','text',true),
+      ('eventos_vontade','intensidade','smallint',true),
+      ('eventos_vontade','gatilhos','text[]',true),
+      ('eventos_vontade','nota','text',false),
+      ('eventos_vontade','acao_realizada','text',false),
+      ('eventos_vontade','resultado','text',false),
+      ('eventos_vontade','created_at','timestamp with time zone',true),
+      ('eventos_vontade','updated_at','timestamp with time zone',true)
     ) as specification(table_name, column_name, data_type, required)
   loop
     actual_type := null;
@@ -73,7 +84,7 @@ begin
       ('historico_recaidas'), ('metas'), ('mensagens_motivacionais'),
       ('marcos'), ('app_sessions'), ('api_idempotency'),
       ('device_push_tokens'), ('progresso_ancoras'), ('progresso_periodos'),
-      ('segmentos_economia'), ('conquistas_permanentes')
+      ('segmentos_economia'), ('conquistas_permanentes'), ('eventos_vontade')
     ) as tables(table_name)
   loop
     relation_oid := to_regclass(format('public.%I', expected.table_name));
@@ -128,6 +139,20 @@ begin
 
   if not exists (
     select 1 from pg_constraint
+    where conrelid = 'public.eventos_vontade'::regclass
+      and contype = 'f'
+      and conkey = array[
+        (select attnum from pg_attribute where attrelid = 'public.eventos_vontade'::regclass and attname = 'vicio_id'),
+        (select attnum from pg_attribute where attrelid = 'public.eventos_vontade'::regclass and attname = 'usuario_id')
+      ]::smallint[]
+      and confrelid = 'public.vicios'::regclass
+      and confdeltype = 'c'
+  ) then
+    raise exception 'Schema drift: urge event must cascade with its owning habit';
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
     where conrelid = 'public.api_idempotency'::regclass
       and contype = 'p'
       and pg_get_constraintdef(oid) = 'PRIMARY KEY (usuario_id, idempotency_key)'
@@ -163,7 +188,7 @@ begin
     'progresso_periodos_one_open_idx', 'progresso_periodos_history_idx',
     'segmentos_economia_one_open_idx', 'segmentos_economia_legacy_backfill_idx',
     'segmentos_economia_period_idx', 'conquistas_permanentes_user_awarded_idx',
-    'conquistas_permanentes_habit_awarded_idx'
+    'conquistas_permanentes_habit_awarded_idx', 'eventos_vontade_user_habit_time_idx'
   ] loop
     if to_regclass(format('public.%s', index_name)) is null then
       raise exception 'Schema drift: missing index %', index_name;
@@ -202,7 +227,9 @@ begin
       ('public.rebuild_vicio_progress_periods(uuid)'),
       ('public.capture_vicio_progress_period()'),
       ('public.initialize_vicio_progress_history()'),
-      ('public.record_prospective_economy_change()')
+      ('public.record_prospective_economy_change()'),
+      ('public.execute_mobile_urge_mutation(uuid,uuid,text,text,text,jsonb,text)'),
+      ('public.list_urge_events(uuid,uuid,date,date,text,integer,timestamp with time zone,uuid)')
     ) as functions(signature)
   loop
     if to_regprocedure(expected.signature) is null
@@ -218,6 +245,13 @@ begin
       raise exception 'Security drift: unsafe progress function %', expected.signature;
     end if;
   end loop;
+
+  if to_regprocedure('public.valid_urge_trigger_codes(text[])') is null
+     or not has_function_privilege('service_role', 'public.valid_urge_trigger_codes(text[])', 'EXECUTE')
+     or has_function_privilege('anon', 'public.valid_urge_trigger_codes(text[])', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.valid_urge_trigger_codes(text[])', 'EXECUTE') then
+    raise exception 'Security drift: urge trigger validator grants are incorrect';
+  end if;
 
   raise notice 'Full schema, cascades, RLS and grants verified; no data was read';
 end;
