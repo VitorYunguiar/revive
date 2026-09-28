@@ -149,12 +149,13 @@
  * /api/v2/bootstrap:
  *   get:
  *     tags: [Mobile v2]
- *     summary: Carrega em uma chamada o snapshot inicial do usuario
+ *     summary: Carrega o snapshot inicial e métricas históricas do usuário
+ *     description: Mantém dias_abstinencia e valor_economizado para clientes antigos; em cada vício, progresso informa sequência atual, recorde, dias distintos com check-in, economia estimada e marcos permanentes com cobertura confirmada, inferida ou desconhecida.
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Usuario, vicios, registros, recaidas, metas e mensagem
+ *         description: Usuario, vicios com progresso aditivo, registros, recaidas, metas e mensagem
  * /api/v2/account:
  *   delete:
  *     tags: [Mobile v2]

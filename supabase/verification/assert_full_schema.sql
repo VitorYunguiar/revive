@@ -7,6 +7,7 @@ declare
   actual_type text;
   actual_not_null boolean;
   privilege_name text;
+  index_name text;
 begin
   for expected in
     select * from (values
@@ -28,7 +29,26 @@ begin
       ('device_push_tokens','usuario_id','uuid',true),
       ('device_push_tokens','expo_push_token','text',true),
       ('device_push_tokens','platform','text',true),
-      ('device_push_tokens','enabled','boolean',true)
+      ('device_push_tokens','enabled','boolean',true),
+      ('historico_recaidas','resetar_contador','boolean',false),
+      ('progresso_ancoras','vicio_id','uuid',true),
+      ('progresso_ancoras','started_at','timestamp with time zone',true),
+      ('progresso_ancoras','cobertura','text',true),
+      ('progresso_periodos','vicio_id','uuid',true),
+      ('progresso_periodos','started_at','timestamp with time zone',true),
+      ('progresso_periodos','ended_at','timestamp with time zone',false),
+      ('progresso_periodos','source_relapse_id','uuid',false),
+      ('segmentos_economia','effective_from','timestamp with time zone',true),
+      ('segmentos_economia','effective_to','timestamp with time zone',false),
+      ('segmentos_economia','valor_diario','numeric(10,2)',false),
+      ('segmentos_economia','cobertura','text',true),
+      ('conquistas_permanentes','usuario_id','uuid',true),
+      ('conquistas_permanentes','vicio_id','uuid',false),
+      ('conquistas_permanentes','categoria','text',true),
+      ('conquistas_permanentes','valor_alvo','numeric(12,2)',true),
+      ('conquistas_permanentes','awarded_at','timestamp with time zone',true),
+      ('conquistas_permanentes','origem','text',true),
+      ('conquistas_permanentes','cobertura','text',true)
     ) as specification(table_name, column_name, data_type, required)
   loop
     actual_type := null;
@@ -52,7 +72,8 @@ begin
       ('usuarios'), ('vicios'), ('registros_diarios'),
       ('historico_recaidas'), ('metas'), ('mensagens_motivacionais'),
       ('marcos'), ('app_sessions'), ('api_idempotency'),
-      ('device_push_tokens')
+      ('device_push_tokens'), ('progresso_ancoras'), ('progresso_periodos'),
+      ('segmentos_economia'), ('conquistas_permanentes')
     ) as tables(table_name)
   loop
     relation_oid := to_regclass(format('public.%I', expected.table_name));
@@ -80,7 +101,13 @@ begin
       ('app_sessions','usuario_id','usuarios','c'),
       ('app_sessions','replaced_by','app_sessions','n'),
       ('api_idempotency','usuario_id','usuarios','c'),
-      ('device_push_tokens','usuario_id','usuarios','c')
+      ('device_push_tokens','usuario_id','usuarios','c'),
+      ('progresso_ancoras','vicio_id','vicios','c'),
+      ('progresso_periodos','vicio_id','vicios','c'),
+      ('progresso_periodos','source_relapse_id','historico_recaidas','c'),
+      ('segmentos_economia','vicio_id','vicios','c'),
+      ('conquistas_permanentes','usuario_id','usuarios','c'),
+      ('conquistas_permanentes','vicio_id','vicios','c')
     ) as foreign_keys(table_name, column_name, referenced_table, delete_action)
   loop
     if not exists (
@@ -123,6 +150,25 @@ begin
   ) then
     raise exception 'Schema drift: missing push token uniqueness';
   end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.conquistas_permanentes'::regclass
+      and conname = 'conquistas_permanentes_scope_unique'
+      and contype = 'u'
+      and pg_get_constraintdef(oid) like 'UNIQUE NULLS NOT DISTINCT%'
+  ) then
+    raise exception 'Schema drift: permanent milestone scope must be unique including null habit IDs';
+  end if;
+  foreach index_name in array array[
+    'progresso_periodos_one_open_idx', 'progresso_periodos_history_idx',
+    'segmentos_economia_one_open_idx', 'segmentos_economia_legacy_backfill_idx',
+    'segmentos_economia_period_idx', 'conquistas_permanentes_user_awarded_idx',
+    'conquistas_permanentes_habit_awarded_idx'
+  ] loop
+    if to_regclass(format('public.%s', index_name)) is null then
+      raise exception 'Schema drift: missing index %', index_name;
+    end if;
+  end loop;
 
   if to_regprocedure('public.delete_revive_account(uuid)') is null then
     raise exception 'Schema drift: missing delete_revive_account(uuid)';
@@ -151,6 +197,27 @@ begin
        'public.atualizar_data_modificacao()', 'EXECUTE') then
     raise exception 'Security drift: incorrect modification trigger EXECUTE grants';
   end if;
+  for expected in
+    select * from (values
+      ('public.rebuild_vicio_progress_periods(uuid)'),
+      ('public.capture_vicio_progress_period()'),
+      ('public.initialize_vicio_progress_history()'),
+      ('public.record_prospective_economy_change()')
+    ) as functions(signature)
+  loop
+    if to_regprocedure(expected.signature) is null
+       or not exists (
+         select 1 from pg_proc
+         where oid = to_regprocedure(expected.signature)
+           and prosecdef
+           and proconfig @> array['search_path=' || chr(34) || chr(34)]
+       )
+       or not has_function_privilege('service_role', expected.signature, 'EXECUTE')
+       or has_function_privilege('anon', expected.signature, 'EXECUTE')
+       or has_function_privilege('authenticated', expected.signature, 'EXECUTE') then
+      raise exception 'Security drift: unsafe progress function %', expected.signature;
+    end if;
+  end loop;
 
   raise notice 'Full schema, cascades, RLS and grants verified; no data was read';
 end;

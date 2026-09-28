@@ -32,8 +32,8 @@ async function startProxy() {
     upstream.on('error', () => { outgoing.writeHead(502); outgoing.end(); });
     incoming.pipe(upstream);
   });
-  await new Promise(resolve => server.listen(55434, '127.0.0.1', resolve));
-  return server;
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  return { server, url: `http://127.0.0.1:${server.address().port}` };
 }
 
 async function verifyConnections(a, b) {
@@ -89,6 +89,72 @@ async function verifyApi(app, sql) {
     .set('Authorization', `Bearer ${a.legacyToken}`)
     .send({ nome_vicio: 'Synthetic habit', data_inicio: '2026-09-01T00:00:00Z' });
   const habitId = bodyAt(habit, 201, 'create habit').vicio.id;
+
+  const dayMs = 86_400_000;
+  const progressHabitId = randomUUID();
+  const progressStartedAt = new Date(Date.now() - 33 * dayMs).toISOString();
+  await sql.query(`insert into public.vicios
+    (id, usuario_id, nome_vicio, data_inicio, valor_economizado_por_dia)
+    values ($1,$2,'Synthetic progress', $3, 12.50)`, [progressHabitId, a.id, progressStartedAt]);
+  const beforeReset = bodyAt(await request(app).get('/api/v2/bootstrap')
+    .set('Authorization', `Bearer ${a.mobileToken}`), 200, 'progress before reset');
+  assert.equal(beforeReset.vicios.find(item => item.id === progressHabitId).progresso.sequencia_atual_dias, 33);
+  const firstResetAt = new Date(Date.now() - 2 * dayMs - 3_000);
+  const resetAtPayload = { occurred_at: firstResetAt.toISOString(), motivo: 'synthetic reset', resetarContador: true };
+  bodyAt(await request(app).post(`/api/v2/vicios/${progressHabitId}/recaida`)
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID()).send(resetAtPayload),
+  201, 'first explicit reset');
+  bodyAt(await request(app).post(`/api/v2/vicios/${progressHabitId}/recaida`)
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID())
+    .send({ ...resetAtPayload, occurred_at: new Date(firstResetAt.getTime() + 1_000).toISOString() }),
+  201, 'second reset on same day');
+  const nonResetAt = new Date().toISOString();
+  bodyAt(await request(app).post(`/api/v2/vicios/${progressHabitId}/recaida`)
+    .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID())
+    .send({ occurred_at: nonResetAt, motivo: 'synthetic reflection', resetarContador: false }),
+  201, 'reflection without a reset');
+  const afterReset = bodyAt(await request(app).get('/api/v2/bootstrap')
+    .set('Authorization', `Bearer ${a.mobileToken}`), 200, 'progress after reset');
+  const resetProgress = afterReset.vicios.find(item => item.id === progressHabitId).progresso;
+  assert.equal(resetProgress.sequencia_atual_dias, 2);
+  assert.ok(resetProgress.recorde_dias >= 30);
+  assert.ok(resetProgress.marcos.some(award => award.categoria === 'streak' && award.valor_alvo === 30),
+    'a persisted 30-day milestone survives later resets');
+  assert.ok(afterReset.conquistas.some(award => award.vicio_id === null
+    && award.categoria === 'streak' && Number(award.valor_alvo) === 30),
+  'the account-level permanent milestone is returned by v2');
+  const progressRows = await sql.query(`select started_at, ended_at from public.progresso_periodos
+    where vicio_id=$1 order by started_at, id`, [progressHabitId]);
+  assert.equal(progressRows.rowCount, 3, 'the non-reset reflection does not create a period');
+  for (let index = 0; index < progressRows.rows.length - 1; index += 1) {
+    assert.equal(new Date(progressRows.rows[index].ended_at).toISOString(),
+      new Date(progressRows.rows[index + 1].started_at).toISOString(), 'periods meet without overlap or gaps');
+  }
+
+  const retroHabitId = randomUUID();
+  await sql.query(`insert into public.vicios
+    (id, usuario_id, nome_vicio, data_inicio, valor_economizado_por_dia)
+    values ($1,$2,'Synthetic retroactive progress', $3, 0)`,
+  [retroHabitId, a.id, new Date(Date.now() - 50 * dayMs).toISOString()]);
+  for (const daysAgo of [20, 35]) {
+    bodyAt(await request(app).post(`/api/v2/vicios/${retroHabitId}/recaida`)
+      .set('Authorization', `Bearer ${a.mobileToken}`).set('Idempotency-Key', randomUUID())
+      .send({ occurred_at: new Date(Date.now() - daysAgo * dayMs).toISOString(), resetarContador: true }),
+    201, `retroactive reset at ${daysAgo} days`);
+  }
+  const retroSnapshot = bodyAt(await request(app).get('/api/v2/bootstrap')
+    .set('Authorization', `Bearer ${a.mobileToken}`), 200, 'retroactive progress');
+  const retroProgress = retroSnapshot.vicios.find(item => item.id === retroHabitId).progresso;
+  assert.equal(retroProgress.sequencia_atual_dias, 20);
+  assert.equal(retroProgress.recorde_dias, 20);
+  const retroRows = await sql.query(`select started_at, ended_at from public.progresso_periodos
+    where vicio_id=$1 order by started_at, id`, [retroHabitId]);
+  assert.equal(retroRows.rowCount, 3);
+  for (let index = 0; index < retroRows.rows.length - 1; index += 1) {
+    assert.equal(new Date(retroRows.rows[index].ended_at).toISOString(),
+      new Date(retroRows.rows[index + 1].started_at).toISOString(), 'retroactive events rebuild stable non-overlapping periods');
+  }
+
   bodyAt(await request(app).get(`/api/vicios/${habitId}`)
     .set('Authorization', `Bearer ${a.legacyToken}`), 200, 'owner reads habit');
   bodyAt(await request(app).get(`/api/vicios/${habitId}`)
@@ -187,7 +253,7 @@ async function verifyApi(app, sql) {
   for (const response of completions) bodyAt(response, 200, 'idempotent goal completion');
   assert.equal(completions[0].body.meta.id, completions[1].body.meta.id);
   const relapseKey = randomUUID();
-  const relapsePayload = { occurred_at: '2026-09-02T00:00:00Z', motivo: 'synthetic' };
+  const relapsePayload = { occurred_at: '2026-09-02T00:00:00Z', motivo: 'synthetic', resetarContador: false };
   const relapse = bodyAt(await request(app).post(`/api/v2/vicios/${habitId}/recaida`)
     .set('Authorization', `Bearer ${a.mobileToken}`)
     .set('Idempotency-Key', relapseKey).send(relapsePayload), 201, 'relapse');
@@ -205,7 +271,12 @@ async function verifyApi(app, sql) {
     (select count(*) from public.historico_recaidas where vicio_id=$2) as relapses,
     (select count(*) from public.metas where usuario_id=$1) as goals,
     (select count(*) from public.app_sessions where usuario_id=$1) as sessions,
-    (select count(*) from public.api_idempotency where usuario_id=$1) as idempotency`, [a.id, habitId]);
+    (select count(*) from public.api_idempotency where usuario_id=$1) as idempotency,
+    (select count(*) from public.progresso_ancoras where vicio_id = any($3::uuid[])) as progress_anchors,
+    (select count(*) from public.progresso_periodos where vicio_id = any($3::uuid[])) as progress_periods,
+    (select count(*) from public.segmentos_economia where vicio_id = any($3::uuid[])) as economy_segments,
+    (select count(*) from public.conquistas_permanentes where usuario_id=$1) as permanent_awards`,
+  [a.id, habitId, [habitId, progressHabitId, retroHabitId]]);
   for (const [table, count] of Object.entries(gone.rows[0])) {
     assert.equal(Number(count), 0, `${table} must be removed`);
   }
@@ -214,10 +285,10 @@ async function verifyApi(app, sql) {
   await sql.query('delete from public.usuarios where id=$1', [c.id]);
 }
 
-async function verifyPublicRoles() {
+async function verifyPublicRoles(proxyUrl) {
   for (const role of ['anon', 'authenticated']) {
     const token = jwt.sign({ role }, jwtSecret, { algorithm: 'HS256', expiresIn: '5m' });
-    const response = await fetch('http://127.0.0.1:55434/rest/v1/usuarios?select=id', {
+    const response = await fetch(`${proxyUrl}/rest/v1/usuarios?select=id`, {
       headers: { Authorization: `Bearer ${token}`, apikey: token },
     });
     assert.ok([401, 403, 404].includes(response.status), `${role} must not read private users`);
@@ -242,15 +313,15 @@ try {
   await Promise.all([first.connect(), second.connect()]);
   await verifyConnections(first, second);
   process.env.NODE_ENV = 'test';
-  process.env.SUPABASE_URL = 'http://127.0.0.1:55434';
+  process.env.SUPABASE_URL = proxy.url;
   process.env.SUPABASE_SERVICE_ROLE_KEY = jwt.sign({ role: 'service_role' }, jwtSecret,
     { algorithm: 'HS256', expiresIn: '5m' });
   process.env.JWT_SECRET = 'revive-ci-only-app-jwt-secret';
   const { app } = require('../../index.js');
   await verifyApi(app, first);
-  await verifyPublicRoles();
+  await verifyPublicRoles(proxy.url);
   console.log('Two SQL connections, API ownership, cascade and role denial passed.');
 } finally {
   await Promise.allSettled([first.end(), second.end()]);
-  await new Promise(resolve => proxy.close(resolve));
+  await new Promise(resolve => proxy.server.close(resolve));
 }

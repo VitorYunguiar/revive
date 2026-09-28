@@ -15,6 +15,7 @@ O REVIVE usa PostgreSQL no Supabase. A API Express acessa as tabelas privadas co
 | 7 | [20260923163030](migrations/20260923163030_restrict_modification_trigger_execute.sql) | Revogação de `EXECUTE` direto para os papéis cliente |
 | 8 | [20260923164304](migrations/20260923164304_verify_baseline_replay.sql) | Replay verificável em dois esquemas isolados, removidos ao final |
 | 9 | [20260923200000](migrations/20260923200000_atomic_mobile_mutations.sql) | Transação única para mutações mobile e recibos idempotentes, com retenção sem expiração |
+| 10 | [20260928151604](migrations/20260928151604_add_progress_period_history.sql) | Períodos de progresso, economia estimada segmentada e concessões permanentes sem inferir recaídas legadas |
 
 Não renumere migrations já aplicadas. Os identificadores das cinco migrations antigas no projeto de desenvolvimento são diferentes dos nomes versionados neste repositório; compare o histórico antes de reparar qualquer versão. O baseline só deve executar em banco vazio.
 
@@ -50,3 +51,5 @@ O teste de upgrade usa o mesmo esquema legado reconstruído e linhas inteirament
 Se a verificação anterior à adoção apontar drift, nenhuma migration nem reparo do histórico deve ser executado. Se uma migration falhar num ambiente de teste, preserve o erro e restaure o snapshot em banco isolado, corrija a migration e repita as duas rotas de validação. Em ambiente com dados, coordene a janela de manutenção e restaure o backup validado se a alteração não puder ser revertida com segurança; não apague linhas para forçar a migração. Consulte o [fluxo oficial da CLI](https://supabase.com/docs/guides/local-development/cli-workflows) e o [comando de reparo do histórico](https://supabase.com/docs/reference/cli/supabase-migration-repair).
 
 O [registro histórico de validação do desenvolvimento](../revive-mobile/docs/supabase-development-validation.md) não substitui a checagem do ambiente atual.
+
+Na migração do histórico, timestamps legados sem fuso são interpretados em UTC, preservando o contrato atual do banco. Uma recaída antiga sem `resetar_contador` fica sem intenção conhecida; a cobertura da sequência ativa fica `unknown` se não houver um marco de reinício autoritativo. Taxas diárias antigas são preservadas como estimativa de cobertura `inferred`. A economia é calculada apenas sobre dias completos de 24 horas, usando o valor diário vigente em cada trecho; ao mudar o valor, o trecho anterior é fechado e não é reescrito. O snapshot v2 informa cobertura confirmada, inferida ou desconhecida e mantém os campos antigos para clientes já publicados.
