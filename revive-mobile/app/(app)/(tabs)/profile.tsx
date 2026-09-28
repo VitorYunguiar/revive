@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/features/auth/session-context';
+import { usePrivacyLock } from '@/features/privacy/privacy-lock-provider';
 import { cancelDailyCheckIn, isDailyCheckInScheduled, scheduleDailyCheckIn } from '@/core/notifications/reminders';
 import { AppButton, Card, PageTitle, Screen, textStyles } from '@/ui/components';
 import { colors, spacing } from '@/ui/theme';
@@ -10,6 +11,7 @@ import { countPendingMutations } from '@/core/storage/database';
 
 export default function ProfileScreen() {
   const { user, signOut, deleteAccount } = useSession();
+  const privacyLock = usePrivacyLock();
   const router = useRouter();
   const [reminders, setReminders] = useState(false);
   const [pending, setPending] = useState(0);
@@ -74,6 +76,13 @@ export default function ProfileScreen() {
     );
   };
 
+  const togglePrivacyLock = async (enabled: boolean) => {
+    const result = await privacyLock.setEnabled(enabled);
+    if (!result.ok) {
+      Alert.alert(enabled ? 'Não foi possível ativar' : 'Bloqueio mantido', result.message);
+    }
+  };
+
   return (
     <Screen>
       <PageTitle title="Perfil" subtitle="Preferências e segurança da sua conta." />
@@ -82,6 +91,24 @@ export default function ProfileScreen() {
       {pending > 0 ? <Card><Text style={textStyles.body}>{pending} alteração(ões) aguardando sincronização.</Text></Card> : null}
       <Card>
         <View style={styles.row}><View style={{ flex: 1 }}><Text style={textStyles.body}>Lembrete diário</Text><Text style={textStyles.muted}>Check-in às 20h, sem conteúdo sensível.</Text></View><Switch value={reminders} onValueChange={(value) => void toggleReminder(value)} trackColor={{ true: colors.primary }} /></View>
+      </Card>
+      <Card>
+        <View style={styles.row}>
+          <View style={{ flex: 1, gap: spacing.xs }}>
+            <Text style={textStyles.body}>Bloqueio do app</Text>
+            <Text style={textStyles.muted}>Exige autenticação do aparelho ao abrir o Revive e ao voltar do segundo plano.</Text>
+          </View>
+          <Switch
+            value={privacyLock.isEnabled}
+            disabled={privacyLock.isLoading}
+            onValueChange={(value) => void togglePrivacyLock(value)}
+            accessibilityLabel="Bloqueio do app"
+            accessibilityHint="Ative para exigir biometria ou o código de desbloqueio do aparelho ao abrir ou retomar o Revive."
+            accessibilityState={{ checked: privacyLock.isEnabled, disabled: privacyLock.isLoading, busy: privacyLock.isLoading }}
+            trackColor={{ true: colors.primary }}
+          />
+        </View>
+        <Text style={textStyles.muted}>Oculta a prévia do app enquanto ele está fora de foco. Não criptografa o SQLite, backups ou arquivos exportados.</Text>
       </Card>
       <Card><Text style={textStyles.body}>Se precisar de ajuda imediata, procure um profissional ou serviço de emergência da sua região. O Revive não substitui tratamento médico ou psicológico.</Text></Card>
       <AppButton title="Sair" variant="secondary" onPress={() => void logout()} />

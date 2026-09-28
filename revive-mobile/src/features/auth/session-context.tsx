@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { authRequest, refreshAccessToken, setSessionExpiredHandler } from '@/core/api/client';
 import { reviveApi } from '@/core/api/repositories';
 import { tokenStore } from '@/core/auth/token-store';
+import { privacyLockPreferences, privacyScreenProtection } from '@/core/privacy/lock-service';
 import { clearUserData, countPendingMutations } from '@/core/storage/database';
 import { queryClient } from '@/core/query/client';
 import type { User } from '@/domain/types';
@@ -22,13 +23,21 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
   const [isRestoring, setIsRestoring] = useState(true);
 
   const clearSession = useCallback(async (expected = tokenStore.getGeneration()) => {
+    const previousUser = user;
     if (!tokenStore.isCurrent(expected)) return false;
     const cleared = await tokenStore.clear(expected);
     if (!cleared || tokenStore.getGeneration() !== expected + 1) return false;
+    setIsRestoring(true);
     setUser(null);
     queryClient.clear();
+    try {
+      if (previousUser?.id) await privacyLockPreferences.clear(previousUser.id).catch(() => undefined);
+      await privacyScreenProtection.disable().catch(() => undefined);
+    } finally {
+      setIsRestoring(false);
+    }
     return true;
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     setSessionExpiredHandler(() => clearSession().then(() => undefined));
@@ -60,20 +69,26 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    const previousUserId = user?.id;
     const generation = tokenStore.beginSessionChange();
     setUser(null);
     queryClient.clear();
+    if (previousUserId) await privacyLockPreferences.clear(previousUserId).catch(() => undefined);
+    await privacyScreenProtection.disable().catch(() => undefined);
     const session = await authRequest('/v2/auth/login', { email, senha: password });
     if (await tokenStore.saveSession(generation, session)) setUser(session.usuario);
-  }, []);
+  }, [user]);
 
   const signUp = useCallback(async (name: string, email: string, password: string) => {
+    const previousUserId = user?.id;
     const generation = tokenStore.beginSessionChange();
     setUser(null);
     queryClient.clear();
+    if (previousUserId) await privacyLockPreferences.clear(previousUserId).catch(() => undefined);
+    await privacyScreenProtection.disable().catch(() => undefined);
     const session = await authRequest('/v2/auth/cadastro', { nome: name, email, senha: password });
     if (await tokenStore.saveSession(generation, session)) setUser(session.usuario);
-  }, []);
+  }, [user]);
 
   const signOut = useCallback(async (discardPending = false) => {
     const currentUser = user;

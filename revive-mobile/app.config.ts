@@ -35,6 +35,10 @@ const config: ExpoConfig = {
     './plugins/with-local-android.cjs',
     'expo-router',
     'expo-localization',
+    [
+      'expo-local-authentication',
+      { faceIDPermission: 'O Revive usa Face ID para proteger o acesso à sua conta.' },
+    ],
     'expo-secure-store',
     'expo-sqlite',
     'expo-sharing',
