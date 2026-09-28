@@ -11,7 +11,7 @@ jest.mock('@/core/storage/database', () => ({
   getPendingMutations: jest.fn(), markMutationSyncing: jest.fn(),
   markMutationFailed: jest.fn(), reconcileMutations: jest.fn(),
 }));
-jest.mock('@/core/auth/token-store', () => ({ tokenStore: { getGeneration: jest.fn(), isCurrent: jest.fn() } }));
+jest.mock('@/core/auth/token-store', () => ({ tokenStore: { getUser: jest.fn(), getGeneration: jest.fn(), isCurrent: jest.fn() } }));
 
 const event = (id: string): QueuedMutation => ({
   id, userId: 'user-a', type: 'record.create', payload: { vicio_id: 'habit' },
@@ -22,6 +22,7 @@ let generation = 1;
 beforeEach(() => {
   jest.resetAllMocks();
   generation = 1;
+  jest.mocked(tokenStore.getUser).mockResolvedValue({ id: 'user-a' } as never);
   jest.mocked(tokenStore.getGeneration).mockImplementation(() => generation);
   jest.mocked(tokenStore.isCurrent).mockImplementation(expected => generation === expected);
   jest.mocked(reviveApi.bootstrap).mockResolvedValue({ usuario: { id: 'user-a' } } as never);
@@ -72,10 +73,14 @@ it('keeps the original key queued when the server accepted a mutation but canoni
 it('keeps a mutation pending when the account changes during its request', async () => {
   jest.mocked(getPendingMutations).mockResolvedValue([event('switch-race')]);
   let resolveReplay!: (value: unknown) => void;
-  jest.mocked(reviveApi.createRecord).mockImplementationOnce(() => new Promise(resolve => { resolveReplay = resolve; }));
+  let replayStarted!: () => void;
+  const started = new Promise<void>(resolve => { replayStarted = resolve; });
+  jest.mocked(reviveApi.createRecord).mockImplementationOnce(() => new Promise(resolve => {
+    resolveReplay = resolve;
+    replayStarted();
+  }));
   const sync = syncPendingMutations('user-a');
-  await Promise.resolve();
-  await Promise.resolve();
+  await started;
   generation = 2;
   resolveReplay({});
   expect(await sync).toBe(0);
@@ -83,4 +88,25 @@ it('keeps a mutation pending when the account changes during its request', async
   expect(markMutationFailed).toHaveBeenCalledWith(
     'switch-race', 1, 'A sessão mudou antes da confirmação da sincronização.', true,
   );
+});
+
+it('does not replay the previous account queue under a new session', async () => {
+  jest.mocked(tokenStore.getUser).mockResolvedValue({ id: 'user-b' } as never);
+  jest.mocked(getPendingMutations).mockResolvedValue([event('old-account')]);
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  expect(getPendingMutations).not.toHaveBeenCalled();
+  expect(reviveApi.createRecord).not.toHaveBeenCalled();
+  expect(markMutationFailed).not.toHaveBeenCalled();
+});
+
+it('does not replay after logout or a session change during account lookup', async () => {
+  jest.mocked(tokenStore.getUser).mockResolvedValueOnce(null);
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  jest.mocked(tokenStore.getUser).mockImplementationOnce(async () => {
+    generation += 1;
+    return { id: 'user-a' } as never;
+  });
+  expect(await syncPendingMutations('user-a')).toBe(0);
+  expect(getPendingMutations).not.toHaveBeenCalled();
+  expect(reviveApi.createRecord).not.toHaveBeenCalled();
 });

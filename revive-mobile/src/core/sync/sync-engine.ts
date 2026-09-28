@@ -32,6 +32,10 @@ export const syncPendingMutations = (userId: string) => {
   const running = activeSync.get(key);
   if (running) return running;
   const promise = (async () => {
+    // A delayed caller can still hold the previous account after login changed.
+    // Generation checks alone cannot detect a sync started with that stale ID.
+    const user = await tokenStore.getUser();
+    if (user?.id !== userId || !tokenStore.isCurrent(generation)) return 0;
     const mutations = await getPendingMutations(userId);
     let synced = 0;
     const committed: QueuedMutation[] = [];
