@@ -228,8 +228,8 @@ begin
 
   return query
   with habit as (
-    select 1 as found from public.vicios
-     where id = p_vicio_id and usuario_id = p_usuario_id
+    select 1 as found from public.vicios as habit_row
+     where habit_row.id = p_vicio_id and habit_row.usuario_id = p_usuario_id
   ), scoped as (
     select event.* from public.eventos_vontade event
     join habit on true
