@@ -36,3 +36,19 @@ A advisory [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8
 - `npm audit --package-lock-only`: 12 moderados, zero altos/críticos; conferir as cadeias descritas acima.
 - `npm run android:setup` e `:app:assembleDebug`: build Android debug concluído (395 tarefas). APK instalado e iniciado no emulador `emulator-5554` como `com.reviveapp.revive.dev`; nenhum build release foi gerado.
 
+
+## Homologação física em 28/09/2026
+
+Build derivado do commit `9a1ef43` (merge da main após os PRs #34–#36): APK `0.1.1-dev`, SHA-256 `D538B761EA3E724B2171746DD27AB6E4CF3D181F9565EA425AF876302D1F9C56`. Instalado em variante de desenvolvimento isolada (`com.reviveapp.revive.dev`) no Moto G52, Android 13/API 33; o aplicativo de produção não foi substituído. API local e PostgreSQL 17 temporários, com migrations do repositório e duas contas sintéticas `.invalid`; nenhum dado ou serviço de produção foi usado.
+
+| Cenário no APK | Resultado observado |
+| --- | --- |
+| Login e sessão | Entrou com a conta sintética A; a tela mostrou apenas o hábito sintético A, embora a fixture B também existisse. |
+| SQLite | Primeiro acesso executou o banco nativo e carregou o snapshot do hábito; teste separado cobriu instalação limpa, reexecução idempotente, fila legada, rollback e reabertura. |
+| Lembretes | Permissão Android 13 concedida somente ao pacote Dev; lembrete diário das 20h apareceu no `AlarmManager`; chave desativada após a verificação. |
+| Links | `revive:///habits` abriu a lista de hábitos. Sanitização de caminhos desconhecidos, malformados e acima do limite permaneceu coberta pela suíte automatizada. |
+| Exportação existente | CSV e JSON abriram o seletor nativo; as duas ações foram canceladas sem escolher destino. O resumo abriu a prévia nativa de impressão em uma página e foi cancelado. |
+
+Validação local no mesmo checkout: `npm run validate` passou (typecheck, lint, 11 suítes/37 testes Jest e verificação SQLite); `npx expo install --check` e Expo Doctor (21/21) passaram; `:app:assembleDebug` concluiu 395 tarefas. `npm audit --json` em 28/09 reportou 12 moderados, nenhum alto ou crítico. São ocorrências duplicadas pela árvore de ferramentas, todas originadas em `uuid@7.0.3` dentro de `xcode@3.0.1`/configuração Expo; a chamada examinada é `uuid.v4()` sem buffer e não usa os métodos vulneráveis v3/v5/v6 com buffer. Sem downgrade, `--force` ou override global. Reavaliar após patch compatível do SDK 57.
+
+**iOS continua explicitamente pendente**: esta homologação é Android; não houve build ou execução nativa iOS nem publicação em loja. A exportação antiga foi exercitada quanto à abertura do seletor, não quanto aos novos critérios de seleção, minimização e ciclo de vida de arquivos da issue #27.
