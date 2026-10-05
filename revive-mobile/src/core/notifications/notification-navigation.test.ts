@@ -6,6 +6,8 @@ describe('isAllowedNotificationPath', () => {
     expect(isAllowedNotificationPath('/(app)/(tabs)')).toBe(true);
     expect(isAllowedNotificationPath('/(app)/(tabs)/habits')).toBe(true);
     expect(isAllowedNotificationPath('/(app)/(tabs)/goals')).toBe(true);
+    expect(isAllowedNotificationPath('/(app)/check-in')).toBe(true);
+    expect(isAllowedNotificationPath('/(app)/check-in?vicio_id=another-account')).toBe(false);
     expect(isAllowedNotificationPath('/admin')).toBe(false);
   });
 

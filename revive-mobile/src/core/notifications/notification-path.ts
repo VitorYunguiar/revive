@@ -1,4 +1,4 @@
-const allowedPaths = new Set(['/(app)/(tabs)', '/(app)/(tabs)/habits', '/(app)/(tabs)/goals']);
+const allowedPaths = new Set(['/(app)/(tabs)', '/(app)/(tabs)/habits', '/(app)/(tabs)/goals', '/(app)/check-in']);
 const MAX_NOTIFICATION_PATH_LENGTH = 128;
 
 export function isAllowedNotificationPath(path: unknown): path is string {

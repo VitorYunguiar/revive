@@ -5,6 +5,7 @@ describe('sanitizeNativeIntentPath', () => {
   it('keeps known app routes and removes query and fragment data', () => {
     expect(sanitizeNativeIntentPath('revive:///habits?filter=%E0%A4%A#today')).toBe('/habits');
     expect(sanitizeNativeIntentPath('/goals/new?next=unknown')).toBe('/goals/new');
+    expect(sanitizeNativeIntentPath('revive:///check-in?vicio_id=another-account#save')).toBe('/check-in');
   });
 
   it('rejects unknown routes, other schemes, hosts, and malformed path escapes', () => {

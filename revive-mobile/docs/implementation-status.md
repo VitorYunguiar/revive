@@ -7,6 +7,7 @@
 - Bootstrap consolidado e dashboard.
 - Cadastro, detalhe e exclusão confirmada de hábitos.
 - Check-in, registro diário e recaída com timestamp/fuso.
+- Check-in rápido na Jornada e entrada navegável, com reflexão opcional, seleção por conta, consulta do dia e recibo durável; [contrato, testes e aceite pendente em aparelho](quick-checkin-validation.md).
 - Criação, conclusão e exclusão de metas.
 - Snapshot SQLite por usuário, fila offline e backoff. A idempotência do servidor ainda precisa de atomicidade antes do beta (ver pendências abaixo).
 - Restauração offline preservando sessão em falhas de rede e refresh concorrente único.
