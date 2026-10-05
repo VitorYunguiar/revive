@@ -72,7 +72,7 @@ it('keeps the switch off when permission is denied, without silently asking agai
   jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(permission(false));
   jest.mocked(Notifications.requestPermissionsAsync).mockResolvedValue(permission(false));
   expect(await updateAccountReminder('a', { hour: 8, minute: 30, enabled: true }, true)).toMatchObject({ status: 'blocked', preference: { enabled: false } });
-  await restoreAccountReminder('a');
+  expect(await restoreAccountReminder('a')).toMatchObject({ status: 'blocked', message: expect.stringContaining('configurações'), preference: { enabled: false, permissionDenied: true } });
   expect(scheduled).toHaveLength(0);
   expect(Notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
 });

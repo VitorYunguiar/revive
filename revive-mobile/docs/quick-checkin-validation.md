@@ -25,7 +25,11 @@ O formulário só usa bootstrap pertencente à sessão atual, filtra hábitos po
 - Testes da mudança de dia perto da meia-noite e retorno ao primeiro plano; allowlists rejeitam dados de outra conta no caminho.
 - Tipos, lint, Jest e verificação SQLite real executados pelo comando `npm run validate`; resultado final registrado no PR.
 
-`adb devices -l` não encontrou aparelhos conectados; não há AVD/imagem Android instalada nesta máquina. Tela pequena, fonte ampliada, foco/teclado, TalkBack, reinício em modo avião e entrega real de notificação **não foram executados**. Os testes automatizados não comprovam esses comportamentos físicos. iOS também não foi homologado.
+Na retomada dos testes, o **Moto G52, Android 13 / API 33**, foi conectado. Foi usado o APK isolado e a API local com contas/hábito sintéticos descritos na [validação de lembretes](local-reminders-validation.md), sem acesso ao backend remoto. O cartão na Jornada e a entrada por notificação foram exercitados com um hábito. A abertura não criou registro; cold start com cancelamento e posterior biometria aguardou o desbloqueio antes de abrir o check-in.
+
+O duplo toque em Salvar, com a conexão do app à API local interrompida, produziu uma operação SQLite pendente e nenhum registro no servidor sintético. A interface anunciou gravação local e falha de sincronização. Ao restabelecer a conexão, a mesma intenção resultou em um registro, fila vazia e cache com um registro. Não foi usado modo avião: somente o encaminhamento ADB do endpoint de teste foi interrompido. O comando para encerrar/reabrir durante essa etapa offline foi rejeitado pela revisão automática; reinício offline permanece pendente.
+
+Com fonte do sistema em 130%, o formulário e Salvar permaneceram acessíveis por rolagem, inclusive com teclado aberto no campo Observações; a fonte foi restaurada para 100%. Isso não substitui TalkBack nem teste em viewport menor. Cinco/zero hábitos, isolamento da seleção A/B, conferência completa dos campos opcionais no histórico/calendário, falha SQLite no aparelho, virada da meia-noite, modo avião/reinício offline, TalkBack e backend remoto **continuam pendentes**. iOS também não foi homologado.
 
 ## Roteiro para aceite em aparelho
 
@@ -38,4 +42,4 @@ O formulário só usa bootstrap pertencente à sessão atual, filtra hábitos po
 7. Em tela pequena e fonte ampliada, verificar rolagem sem corte de nomes/textos e uso com teclado. No TalkBack, conferir hábito/humor selecionados, expansão opcional, salvar desabilitado e anúncio dos estados. Todos os alvos de seleção têm altura mínima de 48.
 8. Abrir `revive:///check-in` e a rota de notificação literal com sessão ativa/inativa e bloqueio local. Confirmar login/bloqueio antes de conteúdo; abrir novamente não cria registro. Parâmetros de conta/hábito de terceiros não devem ser aceitos.
 
-Esses cenários permanecem pendentes até haver evidência de aparelho; a issue #7 acompanha a homologação integrada.
+Os cenários não registrados nas evidências acima permanecem pendentes; a issue #7 acompanha a homologação integrada.

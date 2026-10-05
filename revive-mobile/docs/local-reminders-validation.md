@@ -4,7 +4,7 @@
 
 O Perfil permite editar hora (00–23) e minuto (00–59), salvar e ativar/desativar o lembrete. Uma conta nova começa às 20:00 com o lembrete desligado. Salvar o horário ou restaurar uma sessão nunca pede permissão. A ativação explícita cria primeiro o canal Android e só então solicita a autorização, quando o sistema permite perguntar novamente.
 
-Cada conta guarda no SecureStore `revive.reminder.v1.<usuario>` um objeto versionado com hora, minuto, ativação, fuso IANA e identificador do agendamento. O switch fica ligado somente depois de consultar o SO e confirmar exatamente um pedido nativo com proprietário, destino e horário correspondentes. Permissão recusada/revogada, canal desativado ou falha de armazenamento/agendamento apresentam orientação e deixam o estado sem confirmação; a preferência desejada e o estado nativo são distintos. Web informa que o recurso está disponível no aplicativo Android/iOS.
+Cada conta guarda no SecureStore `revive.reminder.v1.<usuario>` um objeto versionado com hora, minuto, ativação, fuso IANA, identificador do agendamento e um marcador opcional de permissão recusada. O marcador preserva a orientação após o diálogo nativo/retorno ao app, sem ativar o lembrete automaticamente quando a autorização é concedida. O switch fica ligado somente depois de consultar o SO e confirmar exatamente um pedido nativo com proprietário, destino e horário correspondentes. Permissão recusada/revogada, canal desativado ou falha de armazenamento/agendamento apresentam orientação e deixam o estado sem confirmação; a preferência desejada e o estado nativo são distintos. Web informa que o recurso está disponível no aplicativo Android/iOS.
 
 As operações nativas são serializadas. Ao substituir o horário, a intenção é persistida antes de cancelar o anterior; o cancelamento é confirmado antes da nova criação. A criação também é conferida no SO. Falha restaura a preferência e tenta recuperar o agendamento anterior, com mensagem explícita; recuperação malsucedida apresenta erro, sem anunciar sucesso. Interrupção do processo após persistir a intenção é reconciliada na próxima restauração/retorno ao primeiro plano. Resposta tardia de agendamento após troca de sessão é cancelada.
 
@@ -32,13 +32,31 @@ Pedido aceito pelo SO não garante entrega no minuto exato. Economia de bateria,
 - Cold start aguardando restauração/login/desbloqueio, mudança de gate durante leitura, sessão substituída, consumo persistente, evento duplicado, conta incorreta e rejeição de payloads/destinos desconhecidos.
 - Campos de horário acessíveis, limites de entrada, switch sem sucesso falso, edição desligada e cancelamento mesmo com rascunho inválido.
 
-`npm run validate` passou com tipos, lint, 27 suítes / 123 testes e SQLite real (instalação nova, fila legada, rollback/reabertura e versão futura). O verificador de documentação passou com 152 links locais. Esses testes usam mocks de notificações/SecureStore e não comprovam entrega real.
+`npm run validate` passou com tipos, lint, 27 suítes / 123 testes e SQLite real (instalação nova, fila legada, rollback/reabertura e versão futura). O verificador de documentação passou com 153 links locais após registrar as evidências de aparelho. Esses testes usam mocks de notificações/SecureStore e não comprovam entrega real.
 
 ## Homologação em aparelho
 
-O APK local isolado **Revive Teste19**, pacote `com.reviveapp.revive.issue19`, usa assinatura de teste e API local com contas/hábitos sintéticos. Não substitui os aplicativos Revive/Revive Dev existentes nem acessa o backend remoto. O teste valida a integração nativa mobile; a API sintética não representa homologação do backend. Cleartext é permitido exclusivamente nesse APK de teste para o endpoint local; o manifesto original é restaurado após o build.
+O APK local isolado **Revive Teste 19**, pacote `com.reviveapp.revive.issue19`, usa assinatura de teste e API local com contas/hábitos sintéticos. Não substitui os aplicativos Revive/Revive Dev existentes nem acessa o backend remoto. O teste valida a integração nativa mobile; a API sintética não representa homologação do backend. Cleartext é permitido exclusivamente nesse APK de teste para o endpoint local; o manifesto original é restaurado após o build.
 
-O build ARM64 `assembleRelease` passou; pacote isolado e endpoint local no bundle foram conferidos. APK SHA-256: `3BD5D059B0FC4BB3C172A4FFF1A92A2D11F8C940AF742ED183F00CE89D1B933E`. A versão local 0.1.2 / código 3 veio da configuração existente do workspace; este PR não altera a versão do aplicativo. O aparelho apareceu temporariamente, mas os últimos comandos `adb devices -l` não encontraram conexão. Instalação, entrega, mudança real de fuso, cold start e interação com biometria **ainda não foram executados**. iOS também permanece sem homologação.
+O build ARM64 `assembleRelease` passou; pacote isolado e endpoint local no bundle foram conferidos. APK SHA-256: `09012EA7752EE62A71707715C4F86D8F9FB16F6A565F1F4D2C124E52728836C2`. A versão local 0.1.2 / código 3 veio da configuração existente do workspace; este PR não altera a versão do aplicativo. O aparelho reconectado foi um **Moto G52, Android 13 / API 33**, em 05/10/2026. O APK foi instalado separadamente, sem substituir os apps existentes. As contas A/B e o hábito usados eram exclusivamente sintéticos.
+
+Evidências executadas no Android:
+
+| Cenário | Resultado observado |
+| --- | --- |
+| Instalação nova | 20:00 desligado, sem diálogo de permissão antes da ativação. |
+| Permissão recusada | Switch desligado, sem pedido nativo. O teste revelou que a reconciliação apagava a orientação após o diálogo; o marcador persistido corrigiu isso e o reteste manteve a orientação e o acesso às configurações. Autorizar pelo SO não ativou automaticamente a preferência recusada. |
+| Alteração/restauração/desativação | 20:00 → 08:30 com um único pedido nativo; encerramento normal do processo/reabertura preservou 08:30 e um pedido. Desligar removeu o pedido. |
+| Permissão revogada enquanto ativo | Reabertura mostrou orientação e switch desligado, com zero pedidos nativos. Após conceder a permissão e retomar, a preferência desejada recuperou exatamente um pedido. |
+| Fuso e entrega real | Alteração temporária São Paulo → Manaus, um pedido às 17:43 locais e entrega observada às 17:45:09. De volta a São Paulo, pedido às 18:55 e entrega observada às 18:57:21. O atraso real confirma o limite de pontualidade informado no Perfil. |
+| Conteúdo | Nas duas entregas, título/corpo neutros foram conferidos no pedido apresentado pelo SO e na linha do próprio app na bandeja. |
+| Cold start e privacidade | Processo encerrado antes da entrega. O toque aguardou a autenticação nativa; cancelar manteve o gate opaco e a árvore de acessibilidade comprimida sem conteúdo privado. Depois da biometria feita pelo usuário, o toque pendente abriu o check-in. |
+| Consumo e ausência de gravação | A abertura por notificação manteve zero registros e zero operações pendentes. Uma reabertura normal voltou à Jornada sem consumir novamente o primeiro toque. |
+| Logout A → B | Logout removeu todos os pedidos e notificações apresentados do app. B iniciou às 20:00 desligado, sem pedido de A; sua ativação criou um único pedido cujo proprietário era B. |
+| Entrega com app aberto | B agendou 19:08; às 19:09:16 a notificação estava apresentada, com o app em primeiro plano. O toque abriu o check-in no mesmo PID, preservando o único registro previamente criado e a fila vazia. |
+| Exclusão e retorno à conta A | Excluir B pela interface removeu seu pedido e sua chave de preferência do SecureStore, limpou cache/fila e retornou ao login. A nova entrada em A restaurou 18:55 com um único pedido de A, sem proprietário B. A exclusão de backend usou a fixture local, sem comprovar transação no backend remoto. |
+
+Os horários são observações do aparelho, sem promessa de entrega exata. Ao terminar, o lembrete sintético foi desligado e a sessão encerrada; o SO confirmou zero pedidos e zero notificações apresentados do pacote de teste. A configuração original de fuso (`America/Sao_Paulo`, seleção automática ligada) e a fonte 100% foram conferidas após restauração. Os testes de backend remoto, iOS e atualização física a partir da preferência global legada continuam pendentes; cancelamento legado e recuperação de falhas têm cobertura automatizada, sem alegação de execução física. O aceite integral de #18 continua separado.
 
 Roteiro:
 

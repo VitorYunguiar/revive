@@ -10,7 +10,7 @@ const preferenceKey = (userId: string) => `revive.reminder.v1.${userId}`;
 let currentAccount: string | null = null;
 let operations = Promise.resolve();
 
-export type ReminderPreference = { version: 1; hour: number; minute: number; enabled: boolean; timezone?: string; identifier?: string };
+export type ReminderPreference = { version: 1; hour: number; minute: number; enabled: boolean; timezone?: string; identifier?: string; permissionDenied?: boolean };
 export type ReminderState = { preference: ReminderPreference; status: 'off' | 'scheduled' | 'blocked' | 'error'; message?: string };
 export const defaultReminderPreference = (): ReminderPreference => ({ version: 1, hour: 20, minute: 0, enabled: false });
 export const deviceTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -36,6 +36,7 @@ const loadPreference = async (userId: string): Promise<ReminderPreference> => {
   try {
     const parsed = JSON.parse(value);
     if (parsed.version === 1 && validReminderTime(parsed.hour, parsed.minute) && typeof parsed.enabled === 'boolean'
+      && (parsed.permissionDenied === undefined || typeof parsed.permissionDenied === 'boolean')
       && (parsed.timezone === undefined || typeof parsed.timezone === 'string')
       && (parsed.identifier === undefined || (typeof parsed.identifier === 'string' && parsed.identifier.startsWith(REMINDER_PREFIX)))) return parsed;
   } catch { /* Preserve malformed source bytes until an explicit preference change. */ }
@@ -145,7 +146,11 @@ export const restoreAccountReminder = (userId: string) => {
     try { preference = await loadPreference(userId); }
     catch (error) { await clearManaged(); throw error; }
     if (Platform.OS === 'web') return { preference, status: 'blocked', message: 'Lembretes locais estão disponíveis no aplicativo Android/iOS.' };
-    if (!preference.enabled) { await clearManaged(); return { preference, status: 'off' }; }
+    if (!preference.enabled) {
+      await clearManaged();
+      if (preference.permissionDenied && !await hasPermission(false)) return { preference, status: 'blocked', message: blockedMessage };
+      return { preference, status: 'off' };
+    }
     if (!await hasPermission(false)) { await clearManaged(); return { preference, status: 'blocked', message: blockedMessage }; }
     return ensureScheduled(userId, preference, generation);
   });
@@ -163,9 +168,10 @@ export const updateAccountReminder = (userId: string, settings: { hour: number; 
     try {
       if (settings.enabled && !await hasPermission(requestPermission)) {
         await assertAccount(userId, generation);
-        await savePreference(userId, { ...next, enabled: false });
+        const denied = { ...next, enabled: false, permissionDenied: true };
+        await savePreference(userId, denied);
         await clearManaged();
-        return { preference: { ...next, enabled: false }, status: 'blocked', message: blockedMessage };
+        return { preference: denied, status: 'blocked', message: blockedMessage };
       }
       await assertAccount(userId, generation);
       if (!settings.enabled) {
