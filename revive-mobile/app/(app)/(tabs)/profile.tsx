@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '@/features/auth/session-context';
 import { usePrivacyLock } from '@/features/privacy/privacy-lock-provider';
-import { cancelDailyCheckIn, isDailyCheckInScheduled, scheduleDailyCheckIn } from '@/core/notifications/reminders';
+import { ReminderSettings } from '@/features/reminders/reminder-settings';
 import { AppButton, Card, PageTitle, Screen, textStyles } from '@/ui/components';
 import { colors, spacing } from '@/ui/theme';
 import { syncPendingMutations } from '@/core/sync/sync-engine';
@@ -13,23 +13,13 @@ export default function ProfileScreen() {
   const { user, signOut, deleteAccount } = useSession();
   const privacyLock = usePrivacyLock();
   const router = useRouter();
-  const [reminders, setReminders] = useState(false);
   const [pending, setPending] = useState(0);
 
   useEffect(() => {
-    void isDailyCheckInScheduled().then(setReminders);
     if (user) void countPendingMutations(user.id).then(setPending);
   }, [user]);
 
-  const toggleReminder = async (enabled: boolean) => {
-    try {
-      if (enabled) await scheduleDailyCheckIn(20, 0);
-      else await cancelDailyCheckIn();
-      setReminders(enabled);
-    } catch (error) {
-      Alert.alert('Lembretes', error instanceof Error ? error.message : 'Não foi possível alterar o lembrete.');
-    }
-  };
+  const reportLogoutError = (error: unknown) => Alert.alert('Não foi possível sair', error instanceof Error ? error.message : 'Tente novamente.');
 
   const logout = async () => {
     const result = await signOut(false);
@@ -50,7 +40,7 @@ export default function ProfileScreen() {
               Alert.alert('Não foi possível sincronizar', error instanceof Error ? error.message : 'Tente novamente.');
             }
           } },
-          { text: 'Descartar e sair', style: 'destructive', onPress: () => void signOut(true).then(() => router.replace('/(public)/login')) },
+          { text: 'Descartar e sair', style: 'destructive', onPress: () => void signOut(true).then(() => router.replace('/(public)/login')).catch(reportLogoutError) },
         ],
       );
       return;
@@ -89,9 +79,7 @@ export default function ProfileScreen() {
       <AppButton title="Sincronização" variant="secondary" onPress={() => router.push('/(app)/sync')} />
       <Card><Text style={textStyles.heading}>{user?.nome}</Text><Text style={textStyles.muted}>{user?.email}</Text></Card>
       {pending > 0 ? <Card><Text style={textStyles.body}>{pending} alteração(ões) aguardando sincronização.</Text></Card> : null}
-      <Card>
-        <View style={styles.row}><View style={{ flex: 1 }}><Text style={textStyles.body}>Lembrete diário</Text><Text style={textStyles.muted}>Check-in às 20h, sem conteúdo sensível.</Text></View><Switch value={reminders} onValueChange={(value) => void toggleReminder(value)} trackColor={{ true: colors.primary }} /></View>
-      </Card>
+      <ReminderSettings key={user?.id} />
       <Card>
         <View style={styles.row}>
           <View style={{ flex: 1, gap: spacing.xs }}>
@@ -111,7 +99,7 @@ export default function ProfileScreen() {
         <Text style={textStyles.muted}>Oculta a prévia do app enquanto ele está fora de foco. Não criptografa o SQLite, backups ou arquivos exportados.</Text>
       </Card>
       <Card><Text style={textStyles.body}>Se precisar de ajuda imediata, procure um profissional ou serviço de emergência da sua região. O Revive não substitui tratamento médico ou psicológico.</Text></Card>
-      <AppButton title="Sair" variant="secondary" onPress={() => void logout()} />
+      <AppButton title="Sair" variant="secondary" onPress={() => void logout().catch(reportLogoutError)} />
       <AppButton title="Excluir minha conta" variant="danger" onPress={confirmAccountDeletion} />
     </Screen>
   );

@@ -13,7 +13,7 @@
 - Restauração offline preservando sessão em falhas de rede e refresh concorrente único.
 - Calendário, conquistas e tela de recuperação de falhas de sincronização.
 - Indicadores, exportação CSV/JSON e relatório imprimível.
-- Lembrete local, canal Android e deep link validado por allowlist.
+- Lembrete local com horário/preferência por conta, reconciliação nativa, canal Android e entrada allowlisted no check-in após sessão/desbloqueio; [contrato e homologação](local-reminders-validation.md).
 - Exclusão transacional de conta e base de registro de dispositivos para push.
 - Contratos OpenAPI, testes mobile/API, fluxo Maestro inicial e checklist de release.
 
