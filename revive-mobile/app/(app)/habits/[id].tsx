@@ -7,18 +7,12 @@ import { bootstrapKey, useBootstrap } from '@/features/bootstrap/use-bootstrap';
 import { useReviveMutations } from '@/features/mutations/use-revive-mutations';
 import { AppButton, EmptyState, Field, LoadingState, Screen, textStyles } from '@/ui/components';
 import { colors, radius, spacing } from '@/ui/theme';
-import { displayDate } from '@/domain/formats';
 import { coverageLabel, currentStreak, distinctCheckinDays, formatCurrency, milestoneCategoryLabel, sequenceSavings } from '@/domain/metrics';
 import { reviveApi } from '@/core/api/repositories';
 import { queryClient } from '@/core/query/client';
 import { useSession } from '@/features/auth/session-context';
-
-const recordSchema = z.object({
-  humor: z.string().trim().min(1, 'Selecione ou descreva seu humor.'),
-  gatilhos: z.string().max(500).optional(),
-  conquistas: z.string().max(500).optional(),
-  observacoes: z.string().max(1000).optional(),
-});
+import { recordSchema } from '@/features/checkin/record-schema';
+import { RecordDetails } from '@/features/checkin/record-details';
 
 const relapseSchema = z.object({ motivo: z.string().max(1000).optional() });
 
@@ -152,8 +146,7 @@ export default function HabitDetailScreen() {
       <Text style={textStyles.heading}>Registros recentes</Text>
       {!recentRecords.length ? <Text style={textStyles.muted}>Nenhum registro ainda.</Text> : recentRecords.map((record) => (
         <View key={record.id} style={styles.record}>
-          <Text style={textStyles.body}>{record.humor || 'Sem humor informado'}</Text>
-          <Text style={textStyles.muted}>{displayDate(record.data_registro)}{record.pending ? ' · aguardando sincronização' : ''}</Text>
+          <RecordDetails record={record} />
         </View>
       ))}
       <View style={styles.divider} />

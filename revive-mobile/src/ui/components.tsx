@@ -29,11 +29,12 @@ export function Card({ children, style }: React.PropsWithChildren<{ style?: obje
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-export function AppButton({ title, variant = 'primary', loading = false, ...props }: PressableProps & { title: string; variant?: 'primary' | 'secondary' | 'danger'; loading?: boolean }) {
+export function AppButton({ title, variant = 'primary', loading = false, accessibilityState, ...props }: PressableProps & { title: string; variant?: 'primary' | 'secondary' | 'danger'; loading?: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: props.disabled || loading, busy: loading }}
+      accessibilityLabel={props.accessibilityLabel || title}
+      accessibilityState={{ ...accessibilityState, disabled: props.disabled || loading, busy: loading }}
       {...props}
       style={({ pressed }) => [
         styles.button,

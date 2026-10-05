@@ -7,6 +7,7 @@ import { useSession } from '@/features/auth/session-context';
 import { accountAccumulatedSavings, accountRecordHolder, completedGoals, coverageLabel, currentStreak, distinctCheckinDays, formatCurrency } from '@/domain/metrics';
 import { Card, EmptyState, LoadingState, PageTitle, Screen, textStyles } from '@/ui/components';
 import { colors, radius, spacing } from '@/ui/theme';
+import { QuickCheckin } from '@/features/checkin/quick-checkin';
 
 export default function DashboardScreen() {
   const { user } = useSession();
@@ -22,6 +23,7 @@ export default function DashboardScreen() {
         <Pressable accessibilityLabel="Atualizar dados" onPress={() => void refetch()}><RefreshCw color={colors.primary} size={24} /></Pressable>
       </View>
       {error && !data ? <Card><Text style={{ color: colors.danger }}>{error.message}</Text></Card> : null}
+      <QuickCheckin />
       {data?.mensagem ? <Card><Text style={textStyles.body}>“{data.mensagem.mensagem}”</Text></Card> : null}
       {hasPendingProgress ? <Card><Text accessibilityLiveRegion="polite" style={textStyles.body}>Há uma atualização de progresso aguardando sincronização. Recordes e conquistas mostram apenas dados já salvos.</Text></Card> : null}
       <View style={styles.kpis}>

@@ -13,6 +13,7 @@ const allowedPaths = new Set([
   '/calendar',
   '/achievements',
   '/sync',
+  '/check-in',
 ]);
 
 function isAllowedPath(pathname: string) {

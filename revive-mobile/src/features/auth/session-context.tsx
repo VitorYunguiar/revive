@@ -6,6 +6,7 @@ import { privacyLockPreferences, privacyScreenProtection } from '@/core/privacy/
 import { clearUserData, countPendingMutations } from '@/core/storage/database';
 import { queryClient } from '@/core/query/client';
 import type { User } from '@/domain/types';
+import { checkinSelection } from '@/features/checkin/selection-preferences';
 
 type SessionContextValue = {
   user: User | null;
@@ -108,7 +109,10 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
     const generation = tokenStore.getGeneration();
     await reviveApi.deleteAccount();
     if (!tokenStore.isCurrent(generation)) return;
-    if (currentUser) await clearUserData(currentUser.id);
+    if (currentUser) {
+      await clearUserData(currentUser.id);
+      await checkinSelection.clear(currentUser.id).catch(() => undefined);
+    }
     await clearSession(generation);
   }, [clearSession, user]);
 
