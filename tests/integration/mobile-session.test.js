@@ -47,6 +47,15 @@ function fakeSupabase(initial) {
     const client = {
         from: table => new Query(table),
         rpc: async (name, args) => {
+            if (name === 'create_mobile_session') {
+                const usuario = tables.usuarios.find(row => row.id === args.p_usuario_id);
+                if (!usuario || usuario.senha_hash !== args.p_expected_hash) return { data: { status: 'invalid' }, error: null };
+                tables.app_sessions.push({ id: args.p_id, usuario_id: usuario.id,
+                    refresh_token_hash: args.p_refresh_hash, family_id: args.p_family_id,
+                    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    user_agent: args.p_user_agent, revoked_at: null, replaced_by: null });
+                return { data: { status: 'created', credential_version: 0 }, error: null };
+            }
             if (name !== 'rotate_mobile_session') return { data: null, error: new Error(`unknown function ${name}`) };
             const current = tables.app_sessions.find(row => row.refresh_token_hash === args.p_refresh_token_hash);
             if (!current) return { data: { status: 'invalid' }, error: null };

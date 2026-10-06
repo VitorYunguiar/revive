@@ -10,6 +10,9 @@ declare
   economy_count integer;
   award_count integer;
 begin
+  if not exists (select 1 from public.usuarios where id=test_user and credential_version=0) then
+    raise exception 'Legacy credentials must start at version zero without changing the account';
+  end if;
   if not exists (select 1 from public.usuarios where id = test_user)
      or not exists (select 1 from public.vicios where id = test_vicio and usuario_id = test_user)
      or not exists (select 1 from public.registros_diarios

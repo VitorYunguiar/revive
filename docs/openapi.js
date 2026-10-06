@@ -19,6 +19,12 @@
  *         campos:
  *           type: object
  *           additionalProperties: { type: string }
+ *     RecoveryErrorResponse:
+ *       type: object
+ *       required: [codigo, mensagem]
+ *       properties:
+ *         codigo: { type: string }
+ *         mensagem: { type: string }
  *     LoginRequest:
  *       type: object
  *       required: [email, senha]
@@ -788,6 +794,96 @@
  *     responses:
  *       201:
  *         description: Meta criada
+ */
+
+/**
+ * @openapi
+ * /api/v2/auth/password-recovery/request:
+ *   post:
+ *     tags: [Autenticação]
+ *     security: []
+ *     summary: Solicita código de recuperação sem revelar existência da conta
+ *     description: Resposta neutra também para limite de recuperação, envio indisponível ou recuperação desabilitada. Código de oito dígitos, uso único e validade de dez minutos. Reenvio com intervalo mínimo de sessenta segundos.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email, maxLength: 254 }
+ *     responses:
+ *       202:
+ *         description: Solicitação recebida; não garante envio ou existência de conta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [mensagem, request_id, reenviar_apos]
+ *               properties:
+ *                 mensagem: { type: string }
+ *                 request_id: { type: string, format: uuid }
+ *                 reenviar_apos: { type: integer, enum: [60], description: Intervalo mínimo em segundos }
+ *       422:
+ *         description: E-mail em formato inválido
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/RecoveryErrorResponse' }
+ *       429:
+ *         description: Limite geral da API excedido
+ * /api/v2/auth/password-recovery/confirm:
+ *   post:
+ *     tags: [Autenticação]
+ *     security: []
+ *     summary: Consome código e redefine senha com revogação de sessões
+ *     description: No máximo cinco erros por código. Redefinição, consumo e revogação são transacionais. Não retorna sessão nem autentica automaticamente.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, request_id, codigo, senha]
+ *             properties:
+ *               email: { type: string, format: email, maxLength: 254 }
+ *               request_id: { type: string, format: uuid, description: UUID v4 retornado na solicitação }
+ *               codigo: { type: string, pattern: '^[0-9]{8}$' }
+ *               senha:
+ *                 type: string
+ *                 minLength: 6
+ *                 maxLength: 72
+ *                 description: Uma maiúscula e um caractere especial. Limite adicional de 72 bytes UTF-8 do bcrypt.
+ *     responses:
+ *       200:
+ *         description: Senha redefinida; entre novamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [mensagem]
+ *               properties:
+ *                 mensagem: { type: string }
+ *       400:
+ *         description: Código inválido, expirado, usado ou com tentativas esgotadas
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/RecoveryErrorResponse' }
+ *       422:
+ *         description: Dados ou política de senha inválidos
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/RecoveryErrorResponse' }
+ *       429:
+ *         description: Limite por origem ou e-mail excedido (ou limite geral da API)
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/RecoveryErrorResponse' }
+ *       503:
+ *         description: Recuperação desabilitada ou confirmação indisponível; senha não alterada
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/RecoveryErrorResponse' }
  */
 
 /**

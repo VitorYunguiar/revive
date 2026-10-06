@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import pg from 'pg';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import { verifyPasswordRecovery } from './password-recovery.mjs';
 
 const require = createRequire(import.meta.url);
 const jwtSecret = 'revive-ci-only-jwt-secret-at-least-32-characters';
@@ -395,8 +396,13 @@ try {
   process.env.SUPABASE_SERVICE_ROLE_KEY = jwt.sign({ role: 'service_role' }, jwtSecret,
     { algorithm: 'HS256', expiresIn: '5m' });
   process.env.JWT_SECRET = 'revive-ci-only-app-jwt-secret';
+  process.env.SMTP_HOST = '127.0.0.1';
+  process.env.PASSWORD_RECOVERY_ENABLED = 'true';
+  process.env.SMTP_PORT = '55434';
+  process.env.RECOVERY_EMAIL_FROM = 'Revive CI <noreply@example.invalid>';
   const { app } = require('../../index.js');
   await verifyApi(app, first);
+  await verifyPasswordRecovery(app, first, second);
   await verifyPublicRoles(proxy.url);
   console.log('Two SQL connections, API ownership, cascade and role denial passed.');
 } finally {

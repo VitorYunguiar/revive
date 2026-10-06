@@ -64,6 +64,6 @@ expect_error revive_fixture supabase/verification/expect_invalid_constraint.sql 
 expect_error revive_fixture supabase/verification/expect_public_role_denied.sql \
   'permission denied for table usuarios'
 
-docker compose -f "$compose_file" up -d --wait postgrest
+docker compose -f "$compose_file" up -d --wait postgrest mailpit
 node tests/db/real-postgres.mjs
 echo 'PostgreSQL 17.6: fresh, legacy, negative SQL and API tests passed.'
