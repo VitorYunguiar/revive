@@ -25,7 +25,21 @@ O formulário só usa bootstrap pertencente à sessão atual, filtra hábitos po
 - Testes da mudança de dia perto da meia-noite e retorno ao primeiro plano; allowlists rejeitam dados de outra conta no caminho.
 - Tipos, lint, Jest e verificação SQLite real executados pelo comando `npm run validate`; resultado final registrado no PR.
 
-`adb devices -l` não encontrou aparelhos conectados; não há AVD/imagem Android instalada nesta máquina. Tela pequena, fonte ampliada, foco/teclado, TalkBack, reinício em modo avião e entrega real de notificação **não foram executados**. Os testes automatizados não comprovam esses comportamentos físicos. iOS também não foi homologado.
+Na retomada dos testes, o **Moto G52, Android 13 / API 33**, foi conectado. Foi usado o APK isolado com duas contas e hábitos sintéticos no backend de desenvolvimento remoto verificado; nenhum dado pessoal foi usado. O cartão na Jornada e a entrada por notificação foram exercitados. A abertura não criou registro; cold start com cancelamento e posterior biometria aguardou o desbloqueio antes de abrir o check-in.
+
+O duplo toque em Salvar, com a conexão do app à API de desenvolvimento interrompida, produziu uma operação SQLite pendente e nenhum registro no servidor sintético. A interface anunciou gravação local e falha de sincronização. Ao restabelecer a conexão, a mesma intenção resultou em um registro, fila vazia e cache com um registro. No reteste, modo avião e encerramento/reabertura preservaram duas operações; a reconexão e a recuperação 503 enviaram cada chave uma vez.
+
+Com fonte do sistema em 130%, o formulário e Salvar permaneceram acessíveis por rolagem, inclusive com teclado aberto no campo Observações; a fonte foi restaurada para 100%. O aceite físico foi concluído no Moto G52: contas A/B isoladas, quinto hábito, remoção do hábito selecionado com fallback, quatro campos no histórico/calendário, falha SQLite, modo avião com encerramento/reabertura, recuperação HTTP 503, virada da meia-noite, TalkBack e viewport 720×1600/densidade 320 foram exercitados. iOS não foi homologado.
+
+## Reteste final em aparelho — 06/10/2026
+
+- Conta A real de desenvolvimento teve cinco hábitos; o quinto item do seletor foi escolhido e a preferência sobreviveu a logout, troca para B, processo encerrado e retorno. B começou com zero hábitos, usou o cadastro existente e não recebeu seleção, cache ou registro de A.
+- Todos os quatro campos opcionais foram preenchidos, recolhidos/reabertos e conferidos no histórico, detalhe e calendário. Uma falha SQLite sintética manteve campos e nenhum envio; retirar o gatilho sincronizou uma vez. Em modo avião, duas intenções duráveis sobreviveram ao encerramento e reabertura; a recuperação 503 preservou as mesmas chaves e a reconexão deixou a fila vazia.
+- O relógio foi levado a 23:59:45 em `America/Sao_Paulo`; após a virada, a tela passou de 06/10 para 07/10 e um registro offline foi salvo com a nova data/fuso. A operação sincronizou uma vez; hora automática, fuso, densidade, viewport e fonte foram restaurados.
+- Com TalkBack ativado, a leitura confirmou hábito selecionado, humor, expansão/recolhimento, botão Salvar desabilitado e estado salvo/sincronizado. A lista de acessibilidade original do aparelho foi restaurada ao terminar.
+- A atualização física a partir de uma fixture que usava `revive.daily_notification_id` cancelou o pedido legado e removeu a chave global, sem alterar cache ou as duas operações pendentes. As contas descartáveis foram excluídas pela API depois do teste.
+
+Os textos de reflexão, credenciais e identificadores das fixtures não são registrados nesta evidência.
 
 ## Roteiro para aceite em aparelho
 
@@ -38,4 +52,4 @@ O formulário só usa bootstrap pertencente à sessão atual, filtra hábitos po
 7. Em tela pequena e fonte ampliada, verificar rolagem sem corte de nomes/textos e uso com teclado. No TalkBack, conferir hábito/humor selecionados, expansão opcional, salvar desabilitado e anúncio dos estados. Todos os alvos de seleção têm altura mínima de 48.
 8. Abrir `revive:///check-in` e a rota de notificação literal com sessão ativa/inativa e bloqueio local. Confirmar login/bloqueio antes de conteúdo; abrir novamente não cria registro. Parâmetros de conta/hábito de terceiros não devem ser aceitos.
 
-Esses cenários permanecem pendentes até haver evidência de aparelho; a issue #7 acompanha a homologação integrada.
+Os cenários não registrados nas evidências acima permanecem pendentes; a issue #7 acompanha a homologação integrada.

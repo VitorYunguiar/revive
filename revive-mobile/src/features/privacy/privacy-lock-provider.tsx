@@ -13,6 +13,7 @@ import { colors, spacing } from '@/ui/theme';
 
 type LockAction = { ok: true } | { ok: false; message: string };
 type PrivacyLockValue = {
+  canOpenContent: boolean;
   isEnabled: boolean;
   isLoading: boolean;
   setEnabled: (enabled: boolean) => Promise<LockAction>;
@@ -204,7 +205,7 @@ export function PrivacyLockProvider({ children }: React.PropsWithChildren) {
   const isLoading = isRestoring || (Boolean(user) && (state.ownerUserId !== user?.id || (!state.checked && !state.error)));
 
   return (
-    <PrivacyLockContext.Provider value={{ isEnabled: state.ownerUserId === user?.id && state.enabled, isLoading: state.busy || isLoading, setEnabled }}>
+    <PrivacyLockContext.Provider value={{ canOpenContent: contentVisible, isEnabled: state.ownerUserId === user?.id && state.enabled, isLoading: state.busy || isLoading, setEnabled }}>
       <View style={styles.root}>
         {state.checked && state.ownerUserId === user?.id && user ? (
           <View

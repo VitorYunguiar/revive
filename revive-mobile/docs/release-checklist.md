@@ -14,6 +14,7 @@
 - `npm run test:api` na raiz.
 - `npx expo-doctor` sem incompatibilidades bloqueantes.
 - Teste de isolamento com duas contas.
+- Executar o [roteiro de lembretes locais](local-reminders-validation.md): entrega, mudança de fuso, cold start, bloqueio local, autorização revogada e cancelamento/troca de conta em Android real.
 - Modo avião: criar check-in, recaída e meta; reiniciar; reconectar; confirmar uma única gravação.
 - Busca por segredos no bundle/config de build.
 - Cleartext desabilitado em production.

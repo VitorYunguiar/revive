@@ -8,7 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '@/core/query/client';
 import { SessionProvider } from '@/features/auth/session-context';
 import { colors } from '@/ui/theme';
-import { NotificationNavigation } from '@/core/notifications/notification-navigation';
+import { NotificationIntentProvider } from '@/core/notifications/notification-navigation';
+import { ReminderProvider } from '@/features/reminders/reminder-provider';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -24,19 +25,22 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
-          <NotificationNavigation />
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: colors.surface },
-              headerTintColor: colors.text,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          >
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(public)" options={{ headerShown: false }} />
-            <Stack.Screen name="(app)" options={{ headerShown: false }} />
-          </Stack>
+          <ReminderProvider>
+            <NotificationIntentProvider>
+              <StatusBar style="light" />
+              <Stack
+                screenOptions={{
+                  headerStyle: { backgroundColor: colors.surface },
+                  headerTintColor: colors.text,
+                  contentStyle: { backgroundColor: colors.background },
+                }}
+              >
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                <Stack.Screen name="(app)" options={{ headerShown: false }} />
+              </Stack>
+            </NotificationIntentProvider>
+          </ReminderProvider>
         </SessionProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
