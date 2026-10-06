@@ -1,6 +1,6 @@
 # Acompanhamento do roadmap
 
-Estado verificado em **06/10/2026**. #18 e #19 foram integradas pelos PRs #43 e #44 e encerradas após o aceite Android. A recuperação de senha (#20) está implementada na branch `feature/20-password-recovery`, com SMTP local validado; a entrega externa permanece pendente porque ainda não há provedor de e-mail. A issue #7 continua como gate mais amplo. As issues são a fonte dos critérios detalhados; o acompanhamento principal permanece na [issue #10](https://github.com/vitoradriao/revive/issues/10).
+Estado verificado em **06/10/2026**. #18 e #19 foram integradas pelos PRs #43 e #44 e encerradas após o aceite Android. A recuperação de senha (#20) está implementada no [PR #45](https://github.com/vitoradriao/revive/pull/45), em rascunho, com SMTP local validado; a entrega externa permanece pendente porque ainda não há provedor de e-mail. A issue #7 continua como gate mais amplo. As issues são a fonte dos critérios detalhados; o acompanhamento principal permanece na [issue #10](https://github.com/vitoradriao/revive/issues/10).
 
 ## Entregas concluídas
 
@@ -24,7 +24,7 @@ Estado verificado em **06/10/2026**. #18 e #19 foram integradas pelos PRs #43 e 
 
 | Issue | Entrega | Estado atual |
 | --- | --- | --- |
-| [#20](https://github.com/vitoradriao/revive/issues/20) | Recuperação de senha compatível com a autenticação própria | Implementação preparada; SMTP local, consumo concorrente, revogação mobile/web e formulários testados. Aberta por falta de provedor e aceite de entrega externa. [Configuração e evidências](password-recovery.md). |
+| [#20](https://github.com/vitoradriao/revive/issues/20) | Recuperação de senha compatível com a autenticação própria | [PR #45](https://github.com/vitoradriao/revive/pull/45) em rascunho; SMTP local, consumo concorrente, revogação mobile/web e formulário no Moto G52 testados. Aberta por falta de provedor e aceite de entrega externa. [Configuração e evidências](password-recovery.md). |
 | [#21](https://github.com/vitoradriao/revive/issues/21) | Editar e arquivar hábitos preservando histórico e operações pendentes | Aberta; a #27 depende desta entrega. |
 | [#22](https://github.com/vitoradriao/revive/issues/22) | Consultar e corrigir registros completos do diário | Aberta; a #27 depende desta entrega. |
 | [#25](https://github.com/vitoradriao/revive/issues/25) | Registrar vontades no mobile e consultar episódios | Aberta; a dependência #24 foi concluída pelo PR #41. |

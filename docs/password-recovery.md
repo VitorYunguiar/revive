@@ -1,6 +1,6 @@
 # Recuperação de senha da autenticação própria
 
-Implementação da [issue #20](https://github.com/vitoradriao/revive/issues/20), validada em 06/10/2026. O projeto mantém `public.usuarios`, bcrypt e JWT próprio; não usa Supabase Auth para redefinir essas contas.
+Implementação da [issue #20](https://github.com/vitoradriao/revive/issues/20) no [PR #45](https://github.com/vitoradriao/revive/pull/45), validada em 06/10/2026. O projeto mantém `public.usuarios`, bcrypt e JWT próprio; não usa Supabase Auth para redefinir essas contas.
 
 **Entrega externa pendente:** o responsável informou que ainda não tem serviço de e-mail. O transporte SMTP foi exercitado com Mailpit em ambiente descartável. Isso comprova o fluxo local e não comprova entrega em uma caixa externa, reputação do remetente ou configuração de produção. A issue permanece aberta até esse aceite.
 
