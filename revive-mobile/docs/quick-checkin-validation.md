@@ -25,11 +25,21 @@ O formulário só usa bootstrap pertencente à sessão atual, filtra hábitos po
 - Testes da mudança de dia perto da meia-noite e retorno ao primeiro plano; allowlists rejeitam dados de outra conta no caminho.
 - Tipos, lint, Jest e verificação SQLite real executados pelo comando `npm run validate`; resultado final registrado no PR.
 
-Na retomada dos testes, o **Moto G52, Android 13 / API 33**, foi conectado. Foi usado o APK isolado e a API local com contas/hábito sintéticos descritos na [validação de lembretes](local-reminders-validation.md), sem acesso ao backend remoto. O cartão na Jornada e a entrada por notificação foram exercitados com um hábito. A abertura não criou registro; cold start com cancelamento e posterior biometria aguardou o desbloqueio antes de abrir o check-in.
+Na retomada dos testes, o **Moto G52, Android 13 / API 33**, foi conectado. Foi usado o APK isolado com duas contas e hábitos sintéticos no backend de desenvolvimento remoto verificado; nenhum dado pessoal foi usado. O cartão na Jornada e a entrada por notificação foram exercitados. A abertura não criou registro; cold start com cancelamento e posterior biometria aguardou o desbloqueio antes de abrir o check-in.
 
-O duplo toque em Salvar, com a conexão do app à API local interrompida, produziu uma operação SQLite pendente e nenhum registro no servidor sintético. A interface anunciou gravação local e falha de sincronização. Ao restabelecer a conexão, a mesma intenção resultou em um registro, fila vazia e cache com um registro. Não foi usado modo avião: somente o encaminhamento ADB do endpoint de teste foi interrompido. O comando para encerrar/reabrir durante essa etapa offline foi rejeitado pela revisão automática; reinício offline permanece pendente.
+O duplo toque em Salvar, com a conexão do app à API de desenvolvimento interrompida, produziu uma operação SQLite pendente e nenhum registro no servidor sintético. A interface anunciou gravação local e falha de sincronização. Ao restabelecer a conexão, a mesma intenção resultou em um registro, fila vazia e cache com um registro. No reteste, modo avião e encerramento/reabertura preservaram duas operações; a reconexão e a recuperação 503 enviaram cada chave uma vez.
 
-Com fonte do sistema em 130%, o formulário e Salvar permaneceram acessíveis por rolagem, inclusive com teclado aberto no campo Observações; a fonte foi restaurada para 100%. Isso não substitui TalkBack nem teste em viewport menor. Cinco/zero hábitos, isolamento da seleção A/B, conferência completa dos campos opcionais no histórico/calendário, falha SQLite no aparelho, virada da meia-noite, modo avião/reinício offline, TalkBack e backend remoto **continuam pendentes**. iOS também não foi homologado.
+Com fonte do sistema em 130%, o formulário e Salvar permaneceram acessíveis por rolagem, inclusive com teclado aberto no campo Observações; a fonte foi restaurada para 100%. O aceite físico foi concluído no Moto G52: contas A/B isoladas, quinto hábito, remoção do hábito selecionado com fallback, quatro campos no histórico/calendário, falha SQLite, modo avião com encerramento/reabertura, recuperação HTTP 503, virada da meia-noite, TalkBack e viewport 720×1600/densidade 320 foram exercitados. iOS não foi homologado.
+
+## Reteste final em aparelho — 06/10/2026
+
+- Conta A real de desenvolvimento teve cinco hábitos; o quinto item do seletor foi escolhido e a preferência sobreviveu a logout, troca para B, processo encerrado e retorno. B começou com zero hábitos, usou o cadastro existente e não recebeu seleção, cache ou registro de A.
+- Todos os quatro campos opcionais foram preenchidos, recolhidos/reabertos e conferidos no histórico, detalhe e calendário. Uma falha SQLite sintética manteve campos e nenhum envio; retirar o gatilho sincronizou uma vez. Em modo avião, duas intenções duráveis sobreviveram ao encerramento e reabertura; a recuperação 503 preservou as mesmas chaves e a reconexão deixou a fila vazia.
+- O relógio foi levado a 23:59:45 em `America/Sao_Paulo`; após a virada, a tela passou de 06/10 para 07/10 e um registro offline foi salvo com a nova data/fuso. A operação sincronizou uma vez; hora automática, fuso, densidade, viewport e fonte foram restaurados.
+- Com TalkBack ativado, a leitura confirmou hábito selecionado, humor, expansão/recolhimento, botão Salvar desabilitado e estado salvo/sincronizado. A lista de acessibilidade original do aparelho foi restaurada ao terminar.
+- A atualização física a partir de uma fixture que usava `revive.daily_notification_id` cancelou o pedido legado e removeu a chave global, sem alterar cache ou as duas operações pendentes. As contas descartáveis foram excluídas pela API depois do teste.
+
+Os textos de reflexão, credenciais e identificadores das fixtures não são registrados nesta evidência.
 
 ## Roteiro para aceite em aparelho
 

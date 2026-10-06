@@ -9,7 +9,7 @@
   "scripts": {
     "check:docs": "node scripts/check-docs.cjs",
     "start": "node index.js",
-    "dev": "nodemon index.js",
+    "dev": "node --watch index.js",
     "dev:stack": "concurrently -n api,painel \"npm run dev\" \"npm run dev --prefix revive-painel\"",
     "dev:homolog": "concurrently -n api,painel \"npm run dev\" \"npm run dev:homolog --prefix revive-painel\"",
     "test": "npm run test:api && npm run test:web",
@@ -50,7 +50,6 @@
   "devDependencies": {
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.1.2",
-    "nodemon": "^3.1.10",
     "pg": "8.16.3",
     "postcss": "^8.5.6",
     "supertest": "^7.1.4",

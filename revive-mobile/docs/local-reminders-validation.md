@@ -36,7 +36,7 @@ Pedido aceito pelo SO não garante entrega no minuto exato. Economia de bateria,
 
 ## Homologação em aparelho
 
-O APK local isolado **Revive Teste 19**, pacote `com.reviveapp.revive.issue19`, usa assinatura de teste e API local com contas/hábitos sintéticos. Não substitui os aplicativos Revive/Revive Dev existentes nem acessa o backend remoto. O teste valida a integração nativa mobile; a API sintética não representa homologação do backend. Cleartext é permitido exclusivamente nesse APK de teste para o endpoint local; o manifesto original é restaurado após o build.
+O APK isolado **Revive Teste 19**, pacote `com.reviveapp.revive.issue19`, usa assinatura de teste e contas/hábitos sintéticos. Não substitui os aplicativos Revive/Revive Dev existentes. O teste valida a integração nativa mobile; o backend de desenvolvimento verificado foi usado somente para fixtures descartáveis. Cleartext é permitido exclusivamente nesse APK de teste para o endpoint local; o manifesto original é restaurado após o build.
 
 O build ARM64 `assembleRelease` passou; pacote isolado e endpoint local no bundle foram conferidos. APK SHA-256: `09012EA7752EE62A71707715C4F86D8F9FB16F6A565F1F4D2C124E52728836C2`. A versão local 0.1.2 / código 3 veio da configuração existente do workspace; este PR não altera a versão do aplicativo. O aparelho reconectado foi um **Moto G52, Android 13 / API 33**, em 05/10/2026. O APK foi instalado separadamente, sem substituir os apps existentes. As contas A/B e o hábito usados eram exclusivamente sintéticos.
 
@@ -54,9 +54,16 @@ Evidências executadas no Android:
 | Consumo e ausência de gravação | A abertura por notificação manteve zero registros e zero operações pendentes. Uma reabertura normal voltou à Jornada sem consumir novamente o primeiro toque. |
 | Logout A → B | Logout removeu todos os pedidos e notificações apresentados do app. B iniciou às 20:00 desligado, sem pedido de A; sua ativação criou um único pedido cujo proprietário era B. |
 | Entrega com app aberto | B agendou 19:08; às 19:09:16 a notificação estava apresentada, com o app em primeiro plano. O toque abriu o check-in no mesmo PID, preservando o único registro previamente criado e a fila vazia. |
-| Exclusão e retorno à conta A | Excluir B pela interface removeu seu pedido e sua chave de preferência do SecureStore, limpou cache/fila e retornou ao login. A nova entrada em A restaurou 18:55 com um único pedido de A, sem proprietário B. A exclusão de backend usou a fixture local, sem comprovar transação no backend remoto. |
+| Exclusão e retorno à conta A | Excluir B pela interface removeu seu pedido e sua chave de preferência do SecureStore, limpou cache/fila e retornou ao login. A nova entrada em A restaurou 18:55 com um único pedido de A, sem proprietário B. Ao final, A e B também foram excluídas pela API de desenvolvimento verificada. |
 
-Os horários são observações do aparelho, sem promessa de entrega exata. Ao terminar, o lembrete sintético foi desligado e a sessão encerrada; o SO confirmou zero pedidos e zero notificações apresentados do pacote de teste. A configuração original de fuso (`America/Sao_Paulo`, seleção automática ligada) e a fonte 100% foram conferidas após restauração. Os testes de backend remoto, iOS e atualização física a partir da preferência global legada continuam pendentes; cancelamento legado e recuperação de falhas têm cobertura automatizada, sem alegação de execução física. O aceite integral de #18 continua separado.
+Os horários são observações do aparelho, sem promessa de entrega exata. Ao terminar, o lembrete sintético foi desligado e a sessão encerrada; o SO confirmou zero pedidos e zero notificações apresentados do pacote de teste. A configuração original de fuso (`America/Sao_Paulo`, seleção automática ligada), densidade, viewport, TalkBack e fonte 100% foram conferidas após restauração. A atualização física da preferência global legada foi executada com uma fixture nativa que usa exatamente o contrato antigo: o pedido e a chave global foram removidos sem limpar cache ou fila. O backend remoto foi usado somente com contas descartáveis e excluído ao terminar; iOS continua fora desta homologação.
+
+## Reteste final integrado — 06/10/2026
+
+- A fila offline do check-in foi preservada por processo encerrado e pela atualização da fixture legada. Um modo de falha HTTP 503 mostrou recuperação; ao liberar a falha, cada chave foi enviada uma única vez e a fila ficou vazia.
+- A virada de 06/10 para 07/10 em `America/Sao_Paulo` atualizou a data civil no cartão e no payload. O relógio automático, fuso e configurações visuais originais foram restaurados.
+- TalkBack foi ativado apenas durante a sessão acompanhada pelo usuário e restaurado ao conjunto original de serviços de acessibilidade. A leitura anunciou seleção, expansão e estados do check-in.
+- As duas contas e seus hábitos/registros sintéticos foram removidos pela API de desenvolvimento; o aparelho ficou sem sessão, sem reverse ADB e sem alarmes do pacote de teste.
 
 Roteiro:
 
@@ -69,4 +76,4 @@ Roteiro:
 7. Registrar o fuso original, mudar temporariamente o fuso do aparelho, retornar/reabrir e conferir um pedido no novo horário local. Observar entrega nesse fuso e restaurar a configuração original ao terminar.
 8. Conferir exclusão usando somente conta sintética e testar atualização com preferência global legada sem apagar fila pendente. Registrar cada cenário executado ou pendente; iOS exige homologação própria.
 
-A integração final depende também do aceite do [check-in rápido #18](https://github.com/vitoradriao/revive/issues/18). Build bem-sucedido e mocks não encerram os critérios físicos desta issue.
+A integração final foi aceita junto com o [check-in rápido #18](https://github.com/vitoradriao/revive/issues/18). iOS e os demais itens do gate de liberação continuam fora desta homologação.
