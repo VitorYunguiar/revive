@@ -13,6 +13,7 @@ import { queryClient } from '@/core/query/client';
 import { useSession } from '@/features/auth/session-context';
 import { recordSchema } from '@/features/checkin/record-schema';
 import { RecordDetails } from '@/features/checkin/record-details';
+import { HabitManagement } from '@/features/habits/habit-management';
 
 const relapseSchema = z.object({ motivo: z.string().max(1000).optional() });
 
@@ -125,6 +126,8 @@ export default function HabitDetailScreen() {
         </View> : null}
       </View>
 
+      {user ? <HabitManagement key={`${user.id}:${habit.id}`} habit={habit} userId={user.id} /> : null}
+      {habit.ativo !== false ? <>
       <Text style={textStyles.heading}>Check-in de hoje</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {['Bem', 'Confiante', 'Ansioso', 'Desanimado'].map((mood) => <Pressable key={mood} accessibilityRole="button" accessibilityState={{ selected: humor === mood }} onPress={() => setHumor(mood)} style={[styles.mood, humor === mood && { borderColor: colors.primary, backgroundColor: colors.surfaceRaised }]}><Text style={textStyles.body}>{mood}</Text></Pressable>)}
@@ -141,6 +144,7 @@ export default function HabitDetailScreen() {
       <Field maxLength={1000} label="O que aconteceu? (opcional)" value={motivo} onChangeText={setMotivo} multiline />
       <AppButton title="Registrar e reiniciar contador" variant="danger" onPress={() => submitRelapse(true)} loading={saving} />
       <AppButton title="Registrar sem reiniciar" variant="secondary" onPress={() => submitRelapse(false)} disabled={saving} />
+      </> : <Text style={textStyles.body}>Hábito arquivado. O histórico permanece disponível; reative para novos registros.</Text>}
 
       <View style={styles.divider} />
       <Text style={textStyles.heading}>Registros recentes</Text>

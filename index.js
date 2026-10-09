@@ -52,6 +52,7 @@ const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const { createMobileApi } = require('./mobile-api');
+const { buildProgressSnapshot } = require('./progress-metrics');
 
 /** Instância principal do Express */
 const app = express();
@@ -348,6 +349,7 @@ function logInternalError(context, error) {
  * // Em produção:        { erro: "Erro ao cadastrar" }
  */
 function sendInternalError(res, userMessage, error) {
+    if (error?.message === 'HABITO_ARQUIVADO') return res.status(409).json({ erro: 'Reative o hábito antes de registrar novos eventos.', codigo: 'HABITO_ARQUIVADO' });
     logInternalError(userMessage, error);
 
     const payload = { erro: userMessage };
@@ -676,6 +678,21 @@ app.patch('/api/me', authMiddleware, async (req, res) => {
  * @returns {string} vicios[].tempo_formatado - Duração legível (ex: "1 ano, 3 meses, 5 dias")
  * @throws {500} Erro interno ao buscar vícios
  */
+async function historicalSavings(vicios) {
+    if (!vicios.length) return new Map();
+    const ids = vicios.map(vicio => vicio.id);
+    const [periods, segments] = await Promise.all([
+        supabase.from('progresso_periodos').select('*').in('vicio_id', ids),
+        supabase.from('segmentos_economia').select('*').in('vicio_id', ids),
+    ]);
+    if (periods.error || segments.error) throw periods.error || segments.error;
+    const now = new Date();
+    return new Map(vicios.map(vicio => [vicio.id, buildProgressSnapshot({
+        periods: (periods.data || []).filter(row => row.vicio_id === vicio.id),
+        economySegments: (segments.data || []).filter(row => row.vicio_id === vicio.id), now,
+    }).economia_sequencia.valor_estimado]));
+}
+
 app.get('/api/vicios', authMiddleware, async (req, res) => {
     try {
         // Busca apenas vícios ativos (ativo = true), ordenados do mais recente ao mais antigo
@@ -690,13 +707,14 @@ app.get('/api/vicios', authMiddleware, async (req, res) => {
 
         // Transformação de dados: enriquece cada vício com estatísticas calculadas
         // Complexidade: O(n) - percorre cada vício uma vez
+        const economy = await historicalSavings(data);
         const viciosComEstatisticas = data.map(vicio => {
             const stats = calculateAddictionStats(vicio);
 
             return {
                 ...vicio,
                 dias_abstinencia: stats.abstinenceDays,
-                valor_economizado: stats.savedAmount.toFixed(2),
+                valor_economizado: economy.get(vicio.id)?.toFixed(2) ?? null,
                 tempo_formatado: stats.formattedDuration
             };
         });
@@ -779,12 +797,13 @@ app.get('/api/vicios/:id', authMiddleware, async (req, res) => {
         }
 
         const stats = calculateAddictionStats(vicio);
+        const economy = await historicalSavings([vicio]);
 
         res.json({
             vicio: {
                 ...vicio,
                 dias_abstinencia: stats.abstinenceDays,
-                valor_economizado: stats.savedAmount.toFixed(2),
+                valor_economizado: economy.get(vicio.id)?.toFixed(2) ?? null,
                 tempo_formatado: stats.formattedDuration
             }
         });
@@ -1187,11 +1206,12 @@ app.post('/api/metas', authMiddleware, async (req, res) => {
             }
 
             const stats = calculateAddictionStats(vicio);
+            const economy = await historicalSavings([vicio]);
             baseline = {
                 iniciar_hoje: true,
                 data_inicio_meta: sanitize(req.body.data_inicio_meta) || new Date().toISOString().split('T')[0],
                 dias_abstinencia_inicio: stats.abstinenceDays,
-                valor_economizado_inicio: Number(stats.savedAmount.toFixed(2))
+                valor_economizado_inicio: economy.get(vicio.id) ?? 0
             };
         }
 

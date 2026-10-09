@@ -27,6 +27,7 @@ function createApp() {
         },
         async rpc(name, args) {
             calls.push({ name, args });
+            if (name === 'edit_revive_habit') return { data: { status: 200, vicio: { id: args.p_vicio_id, revision: args.p_revision + 1, ...args.p_patch } }, error: null };
             if (name === 'execute_mobile_urge_mutation') {
                 return { data: [{ status_code: 201, response_body: { vontade: {
                     id: 'server-urge-1', usuario_id: 'user-1', vicio_id: 'habit-a',
@@ -51,6 +52,26 @@ function createApp() {
     const token = jwt.sign({ id: 'user-1', sid: session.id, token_type: 'access' }, secret, { expiresIn: '5m' });
     return { app, token, calls };
 }
+
+it('forwards a validated online edit and its owner/revision to the transactional RPC', async () => {
+    const { app, token, calls } = createApp();
+    const response = await request(app).patch('/api/v2/vicios/10000000-0000-4000-8000-000000000001')
+        .set('Authorization', `Bearer ${token}`).send({ revision: 3, nome_vicio: ' Café ', ativo: false });
+    expect(response.status).toBe(200);
+    expect(response.body.vicio.revision).toBe(4);
+    expect(calls[0]).toEqual({ name: 'edit_revive_habit', args: {
+        p_usuario_id: 'user-1', p_vicio_id: '10000000-0000-4000-8000-000000000001', p_revision: 3,
+        p_patch: { nome_vicio: 'Café', ativo: false },
+    } });
+});
+
+it('rejects unauthorized fields before invoking the edit RPC', async () => {
+    const { app, token, calls } = createApp();
+    const response = await request(app).patch('/api/v2/vicios/10000000-0000-4000-8000-000000000001')
+        .set('Authorization', `Bearer ${token}`).send({ revision: 3, usuario_id: 'other' });
+    expect(response.status).toBe(422);
+    expect(calls).toHaveLength(0);
+});
 
 it('uses the transactional RPC and stable payload hash for retries with reordered fields', async () => {
     const { app, token, calls } = createApp();

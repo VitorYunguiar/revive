@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import type {
   Addiction,
+  UpdateAddictionInput,
   BootstrapData,
   CreateAddictionInput,
   CreateGoalInput,
@@ -19,6 +20,7 @@ export const reviveApi = {
   createAddiction: (input: CreateAddictionInput) =>
     apiFetch<{ vicio: Addiction }>('/vicios', { method: 'POST', body: JSON.stringify(input) }),
   getAddiction: (id: string) => apiFetch<{ vicio: Addiction }>(`/vicios/${id}`),
+  updateAddiction: (id: string, input: UpdateAddictionInput) => apiFetch<{ vicio: Addiction }>(`/v2/vicios/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
   deleteAddiction: (id: string) => apiFetch<{ mensagem: string }>(`/vicios/${id}`, { method: 'DELETE' }),
   createRecord: (input: CreateRecordInput, idempotencyKey?: string) =>
     apiFetch('/v2/registros', { method: 'POST', body: JSON.stringify(input), idempotencyKey }),
