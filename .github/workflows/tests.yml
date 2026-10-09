@@ -79,4 +79,8 @@ jobs:
       - name: Instalar dependências da API
         run: npm ci
       - name: Validar instalação, upgrade, transações e API
+        env:
+          # Same upstream versions; mirrors avoid shared-runner Docker Hub limits.
+          REVIVE_CI_POSTGRES_IMAGE: public.ecr.aws/docker/library/postgres:17.6-alpine
+          REVIVE_CI_POSTGREST_IMAGE: mirror.gcr.io/postgrest/postgrest:v12.2.12
         run: sh supabase/verification/run_ci.sh

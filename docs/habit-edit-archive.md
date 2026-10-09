@@ -37,4 +37,6 @@ Instalação nova e atualização legada são verificadas pelo CI PostgreSQL. A 
 - Mobile: formulário pt-BR, rascunho em conflito, desabilitação offline, fila pendente/falha, troca de sessão e preservação da persistência antes do envio.
 - Regressão: recorde histórico de arquivado preservado e excluído somente do líder atual; exportação mantém histórico e identifica arquivados; suites API/painel/mobile, build web e SQLite.
 
+O CI inicialmente bloqueou a integração pela [vulnerabilidade transitiva de shell-quote](https://github.com/advisories/GHSA-pqg4-j6r4-53mv) e pelo limite anônimo de pulls do Docker Hub. A dependência de desenvolvimento foi fixada em 1.12.0 por override, com auditoria sem vulnerabilidades. O job de banco usa espelhos das mesmas imagens PostgreSQL 17.6/PostgREST 12.2.12; Compose mantém os defaults locais, com variáveis opcionais de imagem. Nenhuma validação foi retirada.
+
 Validação local em 09/10/2026: tipos/lint, 30 suítes e 134 testes mobile, SQLite real, API/painel e build web; instalação nova/legada e fluxos HTTP em PostgreSQL 17.6 com PostgREST do CI. Os bancos e contêineres de teste foram descartados. Não houve aplicação de SQL remoto. Homologação física integrada, upgrade de APK, TalkBack e iOS continuam no [gate #7](https://github.com/vitoradriao/revive/issues/7); testes automatizados não substituem essa evidência.
