@@ -6,6 +6,7 @@
 - Login e cadastro v2, access token curto em memória, refresh token no SecureStore, rotação, revogação e detecção de reutilização.
 - Bootstrap consolidado e dashboard.
 - Cadastro, detalhe e exclusão confirmada de hábitos.
+- Edição online com revisão/conflito, economia prospectiva e arquivamento reversível; [contrato e validação](../../docs/habit-edit-archive.md).
 - Check-in, registro diário e recaída com timestamp/fuso.
 - Check-in rápido na Jornada e entrada navegável, com reflexão opcional, seleção por conta, consulta do dia e recibo durável; [contrato, testes e aceite pendente em aparelho](quick-checkin-validation.md).
 - Criação, conclusão e exclusão de metas.

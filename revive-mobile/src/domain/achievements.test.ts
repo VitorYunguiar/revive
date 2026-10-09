@@ -25,6 +25,14 @@ const snapshot = (vicios: Addiction[], overrides: Partial<BootstrapData> = {}): 
 });
 
 describe('permanent achievement progress', () => {
+  it('excludes archived habits from the current leader but keeps their historical records and savings', () => {
+    const active = habit('a', 'Active', 2, 3);
+    const archived = { ...habit('b', 'Archived', 50, 60), ativo: false };
+    expect(accountCurrentStreak([active, archived])?.id).toBe('a');
+    expect(accountCurrentStreak([archived])).toBeNull();
+    expect(accountRecordHolder([active, archived])?.id).toBe('b');
+    expect(accountAccumulatedSavings([active, archived]).value).toBe(400);
+  });
   it('keeps a 30-day permanent award after reset and reports active and record streaks separately', () => {
     const first = habit('a', 'Hábito A', 2, 30);
     const second = habit('b', 'Hábito B', 4, 20);

@@ -77,7 +77,7 @@ export const createPrintSummaryHtml = (data: BootstrapData, generatedAt = new Da
     const awardsHtml = awards.length
       ? `<p>Marcos: ${awards.map((award) => `${escapeHtml(String(award.valor_alvo))} ${escapeHtml(milestoneCategoryLabel(award.categoria))} · ${escapeHtml(formatDate(award.awarded_at))} · ${escapeHtml(milestoneOriginLabel(award.origem))}`).join('; ')}</p>`
       : '<p>Marcos permanentes: nenhum registrado neste snapshot.</p>';
-    return `<section class="card"><h2>${escapeHtml(habit.nome_vicio)}</h2>
+    return `<section class="card"><h2>${escapeHtml(habit.nome_vicio)}</h2><p>${habit.ativo === false ? 'Arquivado · histórico preservado' : 'Ativo'}</p>
       <p><strong>Sequência atual:</strong> ${escapeHtml(currentText)}</p>
       <p><strong>Recorde histórico:</strong> ${escapeHtml(recordText)}</p>
       <p><strong>Dias distintos com check-in:</strong> ${escapeHtml(checkinsText)}</p>

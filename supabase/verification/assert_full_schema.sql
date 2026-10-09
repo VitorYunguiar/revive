@@ -16,6 +16,7 @@ begin
       ('password_recovery_requests','code_hash','text',true),
       ('password_recovery_requests','attempts','smallint',true),
       ('password_recovery_requests','expires_at','timestamp with time zone',true),
+      ('vicios','revision','integer',true),
       ('metas','iniciar_hoje','boolean',true),
       ('metas','data_inicio_meta','date',false),
       ('metas','dias_abstinencia_inicio','integer',true),
@@ -231,6 +232,12 @@ begin
   for expected in
     select * from (values
       ('public.rebuild_vicio_progress_periods(uuid)'),
+      ('public.habit_start_editable(public.vicios)'),
+      ('public.guard_vicio_edit()'),
+      ('public.require_active_habit()'),
+      ('public.lock_habit_history()'),
+      ('public.edit_revive_habit(uuid,uuid,integer,jsonb)'),
+      ('public.current_habit_savings(uuid)'),
       ('public.capture_vicio_progress_period()'),
       ('public.initialize_vicio_progress_history()'),
       ('public.record_prospective_economy_change()'),

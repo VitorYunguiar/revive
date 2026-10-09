@@ -23,9 +23,10 @@ type Form = z.infer<typeof schema>;
 export default function NewGoalScreen() {
   const router = useRouter();
   const { data } = useBootstrap();
+  const habits = (data?.vicios || []).filter(habit => habit.ativo !== false);
   const { createGoal } = useReviveMutations();
   const [chosenHabit, setHabitId] = useState('');
-  const habitId = chosenHabit || data?.vicios[0]?.id || '';
+  const habitId = habits.find(habit => habit.id === chosenHabit)?.id || habits[0]?.id || '';
   const [error, setError] = useState('');
   const { control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: { description: '', days: '', value: '', startToday: true } });
   const startToday = useWatch({ control, name: 'startToday' });
@@ -42,8 +43,8 @@ export default function NewGoalScreen() {
       <PageTitle title="Nova meta" subtitle="Escolha a jornada e um objetivo em dias ou valor." />
       <Card>
         <Text style={textStyles.body}>Hábito</Text>
-        {data?.vicios.map((habit) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: habitId === habit.id }} key={habit.id} onPress={() => setHabitId(habit.id)} style={[styles.choice, habitId === habit.id && styles.choiceActive]}><Text style={textStyles.body}>{habit.nome_vicio}</Text></Pressable>)}
-        {data && !data.vicios.length ? <><Text style={textStyles.muted}>Crie um hábito antes de definir sua primeira meta.</Text><AppButton title="Criar hábito" variant="secondary" onPress={() => router.push('/habits/new')} /></> : null}
+        {habits.map((habit) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: habitId === habit.id }} key={habit.id} onPress={() => setHabitId(habit.id)} style={[styles.choice, habitId === habit.id && styles.choiceActive]}><Text style={textStyles.body}>{habit.nome_vicio}</Text></Pressable>)}
+        {data && !habits.length ? <><Text style={textStyles.muted}>Crie ou reative um hábito antes de definir uma meta.</Text><AppButton title="Criar hábito" variant="secondary" onPress={() => router.push('/habits/new')} /></> : null}
         <Controller control={control} name="description" render={({ field }) => <Field ref={field.ref} onBlur={field.onBlur} maxLength={240} placeholder="Ex.: completar meu primeiro mês" label="Descrição" value={field.value} onChangeText={field.onChange} error={errors.description?.message} />} />
         <Controller control={control} name="days" render={({ field }) => <Field ref={field.ref} onBlur={field.onBlur} error={errors.days?.message} maxLength={5} placeholder="Ex.: 30" label="Objetivo em dias (opcional)" keyboardType="number-pad" value={field.value} onChangeText={field.onChange} />} />
         <Controller control={control} name="value" render={({ field }) => <Field ref={field.ref} onBlur={() => { field.onChange(formatMoneyInput(field.value)); field.onBlur(); }} error={errors.value?.message} maxLength={16} placeholder="0,00" label="Objetivo em dinheiro (R$, opcional)" keyboardType="decimal-pad" value={field.value} onChangeText={field.onChange} />} />

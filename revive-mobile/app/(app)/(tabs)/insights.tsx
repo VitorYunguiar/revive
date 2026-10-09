@@ -19,6 +19,7 @@ export default function InsightsScreen() {
   return (
     <Screen>
       <PageTitle title="Insights" subtitle="Indicadores calculados a partir da sua jornada." />
+      <Text style={textStyles.muted}>Sequência atual: somente hábitos ativos. Recorde, economia acumulada, registros e conquistas incluem hábitos arquivados.</Text>
       {hasPendingProgress ? <Card><Text accessibilityLiveRegion="polite" style={textStyles.body}>Há uma atualização de progresso aguardando sincronização. Marcos permanentes só aparecem depois da confirmação do servidor.</Text></Card> : null}
       <AppButton title="Calendário" variant="secondary" onPress={() => router.push('/(app)/calendar')} />
       <AppButton title="Conquistas" variant="secondary" onPress={() => router.push('/(app)/achievements')} />

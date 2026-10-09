@@ -6,11 +6,12 @@ import pg from 'pg';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import { verifyPasswordRecovery } from './password-recovery.mjs';
+import { verifyHabitEdits } from './habit-edit.mjs';
 
 const require = createRequire(import.meta.url);
 const jwtSecret = 'revive-ci-only-jwt-secret-at-least-32-characters';
-const databaseUrl = 'postgres://postgres:revive_ci_only@127.0.0.1:55432/revive_fixture';
-const postgrestUrl = new URL('http://127.0.0.1:55433');
+const databaseUrl = process.env.REVIVE_TEST_DATABASE_URL || 'postgres://postgres:revive_ci_only@127.0.0.1:55432/revive_fixture';
+const postgrestUrl = new URL(process.env.REVIVE_TEST_POSTGREST_URL || 'http://127.0.0.1:55433');
 
 function bodyAt(response, status, label) {
   if (response.status !== status) {
@@ -67,6 +68,7 @@ async function verifyConnections(a, b) {
 }
 
 async function verifyApi(app, sql) {
+  await verifyHabitEdits(app, sql, process.env.JWT_SECRET);
   const suffix = randomUUID();
   const password = 'Senha!12345';
   const users = [];

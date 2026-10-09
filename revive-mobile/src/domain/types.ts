@@ -22,6 +22,8 @@ export type Addiction = {
   valor_economizado?: number | string | null;
   tempo_formatado?: string;
   ativo?: boolean;
+  revision?: number;
+  inicio_editavel?: boolean;
   progresso?: ProgressSnapshot;
 };
 
@@ -140,6 +142,8 @@ export type CreateAddictionInput = {
   data_inicio: string;
   valor_economizado_por_dia: number;
 };
+
+export type UpdateAddictionInput = { revision: number; nome_vicio?: string; data_inicio?: string; valor_economizado_por_dia?: number; ativo?: boolean };
 
 export type CreateRecordInput = {
   vicio_id: string;

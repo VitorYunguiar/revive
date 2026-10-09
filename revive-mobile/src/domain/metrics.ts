@@ -35,6 +35,7 @@ export const sequenceSavings = (habit: Addiction): ProgressValue => ({
 });
 
 export const accountCurrentStreak = (habits: Addiction[]) => {
+  habits = habits.filter(habit => habit.ativo !== false);
   if (!habits.length) return null;
   const values = habits.map(currentStreak);
   if (values.some((item) => item.value == null || item.legacy || item.coverage === 'unknown')) return null;

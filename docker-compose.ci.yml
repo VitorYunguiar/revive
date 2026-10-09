@@ -6,7 +6,7 @@ services:
       - "127.0.0.1:55435:8025"
 
   postgres:
-    image: postgres:17.6-alpine
+    image: ${REVIVE_CI_POSTGRES_IMAGE:-postgres:17.6-alpine}
     environment:
       POSTGRES_DB: revive_fixture
       POSTGRES_USER: postgres
@@ -20,7 +20,7 @@ services:
       retries: 30
 
   postgrest:
-    image: postgrest/postgrest:v12.2.12
+    image: ${REVIVE_CI_POSTGREST_IMAGE:-postgrest/postgrest:v12.2.12}
     environment:
       PGRST_DB_URI: postgres://authenticator:revive_ci_only@postgres:5432/revive_fixture
       PGRST_DB_SCHEMAS: public
