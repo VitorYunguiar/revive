@@ -13,6 +13,10 @@ export default function CalendarScreen() {
   const [selected, setSelected] = useState(() => dateKey(new Date()));
   const records = data?.registros || [];
   const relapses = data?.recaidas || [];
+  const habitLabel = (id: string) => {
+    const habit = data?.vicios.find(item => item.id === id);
+    return `${habit?.nome_vicio || 'Hábito'}${habit?.ativo === false ? ' · arquivado' : ''}`;
+  };
   const activity = new Set(records.map((record) => record.data_registro));
   relapses.forEach((relapse) => activity.add(dateKey(new Date(relapse.data_recaida))));
   const selectedRecords = records.filter((record) => record.data_registro === selected);
@@ -24,8 +28,8 @@ export default function CalendarScreen() {
     <Card>
       <Text style={textStyles.heading}>{displayDate(selected)}</Text>
       {!selectedRecords.length && !selectedRelapses.length ? <Text style={textStyles.muted}>Nenhuma atividade registrada neste dia.</Text> : null}
-      {selectedRecords.map((record) => <RecordDetails key={record.id} record={record} />)}
-      {selectedRelapses.map((relapse) => <View key={relapse.id}><Text style={textStyles.body}>Recaída registrada</Text><Text style={textStyles.muted}>{relapse.motivo}{relapse.pending ? ' · Pendente' : ''}</Text></View>)}
+      {selectedRecords.map((record) => <View key={record.id}><Text style={textStyles.muted}>{habitLabel(record.vicio_id)}</Text><RecordDetails record={record} /></View>)}
+      {selectedRelapses.map((relapse) => <View key={relapse.id}><Text style={textStyles.body}>Recaída registrada · {habitLabel(relapse.vicio_id)}</Text><Text style={textStyles.muted}>{relapse.motivo}{relapse.pending ? ' · Pendente' : ''}</Text></View>)}
     </Card>
   </Screen>;
 }

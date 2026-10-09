@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { buildProgressSnapshot, observedAccountAwards, observedAwards } = require('./progress-metrics');
+const { validateHabitPatch, listEditableHabits, habitEditMessages } = require('./habit-edit');
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -264,18 +265,36 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
             p_payload: payload,
             p_request_id: res.locals.requestId,
         });
+        if (error?.message === 'HABITO_ARQUIVADO') return apiError(res, 409, 'HABITO_ARQUIVADO', habitEditMessages.HABITO_ARQUIVADO);
         if (error) throw error;
         const result = Array.isArray(data) ? data[0] : data;
         if (!result || !Number.isInteger(result.status_code) || !result.response_body) throw new Error('Invalid idempotent mutation response');
         return res.status(result.status_code).json(result.response_body);
     };
 
+    router.patch('/vicios/:id', authenticate, async (req, res) => {
+        if (!UUID_PATTERN.test(req.params.id)) return apiError(res, 404, 'VICIO_NAO_ENCONTRADO', habitEditMessages.VICIO_NAO_ENCONTRADO);
+        const { revision, patch, fields } = validateHabitPatch(req.body);
+        if (Object.keys(fields).length) return apiError(res, 422, 'DADOS_INVALIDOS', habitEditMessages.DADOS_INVALIDOS, fields);
+        try {
+            const { data, error } = await supabase.rpc('edit_revive_habit', {
+                p_usuario_id: req.usuarioId, p_vicio_id: req.params.id, p_revision: revision, p_patch: patch,
+            });
+            if (error) throw error;
+            if (data?.status === 200 && data.vicio) return res.json({ vicio: data.vicio });
+            if ([404, 409, 422].includes(data?.status) && habitEditMessages[data.codigo]) return apiError(res, data.status, data.codigo, habitEditMessages[data.codigo]);
+            throw new Error('Invalid habit edit response');
+        } catch {
+            return apiError(res, 503, 'EDICAO_INDISPONIVEL', 'Não foi possível confirmar a edição. Recarregue o hábito antes de tentar novamente.');
+        }
+    });
+
     router.get('/bootstrap', authenticate, async (req, res) => {
         try {
             const [userResult, addictionsResult, recordsResult, relapsesResult, goalsResult, messagesResult,
                 periodsResult, economyResult, awardsResult] = await Promise.all([
                 supabase.from('usuarios').select('id, nome, email').eq('id', req.usuarioId).single(),
-                supabase.from('vicios').select('*').eq('usuario_id', req.usuarioId).order('data_criacao', { ascending: false }),
+                listEditableHabits(supabase, req.usuarioId),
                 supabase.from('registros_diarios').select('*, vicios!inner(usuario_id)').eq('vicios.usuario_id', req.usuarioId).order('data_registro', { ascending: false }),
                 supabase.from('historico_recaidas').select('*, vicios!inner(usuario_id)').eq('vicios.usuario_id', req.usuarioId).order('data_recaida', { ascending: false }),
                 supabase.from('metas').select('*, vicios(nome_vicio)').eq('usuario_id', req.usuarioId).order('data_criacao', { ascending: false }),
@@ -321,16 +340,19 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
                 newlyObservedAwards = persisted.data || [];
             }
             const awards = [...(awardsResult.data || []), ...newlyObservedAwards];
-            const enrichedAddictions = addictions.map(addiction => ({
-                ...calculateStats(addiction),
-                progresso: buildProgressSnapshot({
+            const enrichedAddictions = addictions.map(addiction => {
+                const progresso = buildProgressSnapshot({
                     periods: periods.filter(period => period.vicio_id === addiction.id),
                     economySegments: economySegments.filter(segment => segment.vicio_id === addiction.id),
                     records: recordRows.filter(record => record.vicio_id === addiction.id),
                     awards: awards.filter(award => award.vicio_id === addiction.id),
                     now,
-                }),
-            }));
+                });
+                return { ...calculateStats(addiction), progresso,
+                    inicio_editavel: Boolean(addiction.inicio_editavel) && !awards.some(award => award.vicio_id === addiction.id),
+                    valor_economizado: progresso.economia_sequencia.valor_estimado == null ? null : progresso.economia_sequencia.valor_estimado.toFixed(2),
+                };
+            });
             return res.json({
                 server_time: now.toISOString(),
                 usuario: userResult.data,

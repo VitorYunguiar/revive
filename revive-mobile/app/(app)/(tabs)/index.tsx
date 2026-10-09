@@ -12,6 +12,7 @@ import { QuickCheckin } from '@/features/checkin/quick-checkin';
 export default function DashboardScreen() {
   const { user } = useSession();
   const { data, isLoading, error, refetch, isFetching } = useBootstrap();
+  const activeHabits = (data?.vicios || []).filter(habit => habit.ativo !== false);
   const recordHolder = accountRecordHolder(data?.vicios || []);
   const savings = accountAccumulatedSavings(data?.vicios || []);
   const hasPendingProgress = Boolean(data?.vicios.some((habit) => habit.progresso?.pendente));
@@ -24,6 +25,7 @@ export default function DashboardScreen() {
       </View>
       {error && !data ? <Card><Text style={{ color: colors.danger }}>{error.message}</Text></Card> : null}
       <QuickCheckin />
+      <Text style={textStyles.muted}>Recorde e economia acumulada incluem o histórico dos hábitos arquivados.</Text>
       {data?.mensagem ? <Card><Text style={textStyles.body}>“{data.mensagem.mensagem}”</Text></Card> : null}
       {hasPendingProgress ? <Card><Text accessibilityLiveRegion="polite" style={textStyles.body}>Há uma atualização de progresso aguardando sincronização. Recordes e conquistas mostram apenas dados já salvos.</Text></Card> : null}
       <View style={styles.kpis}>
@@ -41,7 +43,7 @@ export default function DashboardScreen() {
         <Card style={styles.kpi}><Text style={textStyles.value}>{distinctCheckinDays(data?.registros || [])}</Text><Text style={textStyles.muted}>dias distintos com check-in</Text></Card>
       </View>
       <View style={styles.sectionHeader}><Text style={textStyles.heading}>Seus hábitos</Text><Link href="/(app)/habits/new" style={styles.link}>Adicionar</Link></View>
-      {!data?.vicios.length ? <EmptyState title="Nenhum hábito cadastrado" body="Adicione o primeiro para acompanhar sua evolução." /> : data.vicios.slice(0, 3).map((habit) => (
+      {!activeHabits.length ? <EmptyState title="Nenhum hábito ativo" body="Adicione ou reative um hábito para acompanhar sua evolução." /> : activeHabits.slice(0, 3).map((habit) => (
         <Link key={habit.id} href={{ pathname: '/(app)/habits/[id]', params: { id: habit.id } }} asChild>
           <Pressable style={styles.habit}>
             <View style={{ flex: 1, gap: spacing.xs }}>

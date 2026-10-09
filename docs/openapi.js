@@ -1,5 +1,47 @@
 /**
  * @openapi
+ * /api/v2/vicios/{id}:
+ *   patch:
+ *     summary: Editar, arquivar ou reativar hábito com revisão
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [revision]
+ *             minProperties: 2
+ *             properties:
+ *               revision: { type: integer, minimum: 1 }
+ *               nome_vicio: { type: string, minLength: 2, maxLength: 120 }
+ *               data_inicio: { type: string, format: date, description: Início UTC; correção apenas sem histórico dependente }
+ *               valor_economizado_por_dia: { type: number, minimum: 0, maximum: 99999999.99, multipleOf: 0.01 }
+ *               ativo: { type: boolean, description: false arquiva e true reativa sem apagar histórico }
+ *     responses:
+ *       '200':
+ *         description: Alteração confirmada; vicio contém revision incrementada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 vicio: { $ref: '#/components/schemas/Vicio' }
+ *       '401': { description: Sessão ausente, inválida ou revogada }
+ *       '404': { description: Hábito inexistente ou de outra conta }
+ *       '409': { description: REVISAO_CONFLITO ou INICIO_COM_HISTORICO; recarregar e revisar sem perder rascunho }
+ *       '422': { description: Campos inválidos ou data futura }
+ *       '503': { description: Gravação não confirmada; recarregar antes de repetir }
+ */
+
+/**
+ * @openapi
  * components:
  *   schemas:
  *     ErrorResponse:
@@ -42,6 +84,9 @@
  *     Vicio:
  *       type: object
  *       properties:
+ *         ativo: { type: boolean }
+ *         revision: { type: integer, minimum: 1 }
+ *         inicio_editavel: { type: boolean, description: Disponível no bootstrap; banco revalida no PATCH }
  *         id:
  *           type: string
  *         nome_vicio:

@@ -31,7 +31,7 @@ export default function GoalsScreen() {
       <View style={styles.header}><PageTitle title="Metas" subtitle="Transforme progresso em objetivos alcançáveis." /><Link href="/(app)/goals/new" asChild><Pressable style={styles.add}><Plus color={colors.background} /></Pressable></Link></View>
       {!data?.metas.length ? <EmptyState title="Nenhuma meta" body="Crie uma meta ligada a um dos seus hábitos." /> : data.metas.map((goal) => (
         <View key={goal.id} style={[styles.item, goal.concluida && styles.done]}>
-          <View style={{ flex: 1, gap: spacing.xs }}><Text style={textStyles.heading}>{goal.descricao_meta}</Text><Text style={textStyles.muted}>{goal.vicios?.nome_vicio || 'Meta pessoal'}</Text></View>
+          <View style={{ flex: 1, gap: spacing.xs }}><Text style={textStyles.heading}>{goal.descricao_meta}</Text><Text style={textStyles.muted}>{goal.vicios?.nome_vicio || 'Meta pessoal'}{data.vicios.find(habit => habit.id === goal.vicio_id)?.ativo === false ? ' · hábito arquivado' : ''}</Text></View>
           {!goal.concluida && !goal.pending ? <Pressable accessibilityLabel="Concluir meta" onPress={() => void completeGoal(goal.id).catch((error) => Alert.alert('Não foi possível concluir', error instanceof Error ? error.message : 'Tente novamente.'))} style={styles.check}><Check color={colors.background} /></Pressable> : goal.concluida ? <Check color={colors.success} /> : <Text style={textStyles.muted}>Pendente</Text>}
           {!goal.pending ? <Pressable accessibilityLabel="Excluir meta" onPress={() => removeGoal(goal.id)}><Trash2 color={colors.danger} /></Pressable> : null}
         </View>

@@ -9,6 +9,7 @@ import { bootstrapKey } from '@/features/bootstrap/use-bootstrap';
 import type { CreateGoalInput, CreateRecordInput, CreateRelapseInput } from '@/domain/types';
 import { localDateKey } from '@/domain/formats';
 import { tokenStore } from '@/core/auth/token-store';
+import { withHabitOperationLock } from '@/core/sync/habit-operation-lock';
 
 const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
@@ -33,29 +34,34 @@ export function useReviveMutations() {
     payload: Record<string, unknown>,
   ): Promise<MutationReceipt> => {
     if (!user) throw new Error('Sessão ausente.');
-    const generation = tokenStore.getGeneration();
-    const sessionUser = await tokenStore.getUser();
-    if (sessionUser?.id !== user.id || !tokenStore.isCurrent(generation)) throw new Error('A sessão mudou. Abra o formulário novamente.');
-    const idempotencyKey = Crypto.randomUUID();
-    const occurredAt = type === 'relapse.create' && typeof payload.occurred_at === 'string'
-      ? payload.occurred_at
-      : new Date().toISOString();
-    // The durable local intent always exists before either the direct request
-    // or any network-dependent synchronization work begins.
-    await enqueueMutation(user.id, type, payload, occurredAt, idempotencyKey);
-    // Once SQLite commits, later failures must never invite a second creation.
-    try {
-      await applyPendingMutation(generation);
-      const state = await NetInfo.fetch();
-      if (!state.isConnected || !tokenStore.isCurrent(generation)) return { id: idempotencyKey, status: 'queued' };
-      await syncPendingMutations(user.id);
-      if (!tokenStore.isCurrent(generation)) return { id: idempotencyKey, status: 'queued' };
-      await invalidate();
-      const pending = (await getPendingMutations(user.id)).find(item => item.id === idempotencyKey);
-      return { id: idempotencyKey, status: pending?.status === 'failed' ? 'failed' : pending ? 'queued' : 'synced' };
-    } catch {
-      return { id: idempotencyKey, status: 'queued' };
-    }
+    return withHabitOperationLock(user.id, async () => {
+      const generation = tokenStore.getGeneration();
+      const sessionUser = await tokenStore.getUser();
+      if (sessionUser?.id !== user.id || !tokenStore.isCurrent(generation)) throw new Error('A sessão mudou. Abra o formulário novamente.');
+      const snapshot = queryClient.getQueryData<import('@/domain/types').BootstrapData>(bootstrapKey(user.id));
+      const habitId = payload.vicio_id || payload.addictionId;
+      if (type !== 'goal.complete' && snapshot?.vicios.find(habit => habit.id === habitId)?.ativo === false) throw new Error('Reative o hábito antes de registrar novos eventos.');
+      const idempotencyKey = Crypto.randomUUID();
+      const occurredAt = type === 'relapse.create' && typeof payload.occurred_at === 'string'
+        ? payload.occurred_at
+        : new Date().toISOString();
+      // The durable local intent always exists before either the direct request
+      // or any network-dependent synchronization work begins.
+      await enqueueMutation(user.id, type, payload, occurredAt, idempotencyKey);
+      // Once SQLite commits, later failures must never invite a second creation.
+      try {
+        await applyPendingMutation(generation);
+        const state = await NetInfo.fetch();
+        if (!state.isConnected || !tokenStore.isCurrent(generation)) return { id: idempotencyKey, status: 'queued' };
+        await syncPendingMutations(user.id);
+        if (!tokenStore.isCurrent(generation)) return { id: idempotencyKey, status: 'queued' };
+        await invalidate();
+        const pending = (await getPendingMutations(user.id)).find(item => item.id === idempotencyKey);
+        return { id: idempotencyKey, status: pending?.status === 'failed' ? 'failed' : pending ? 'queued' : 'synced' };
+      } catch {
+        return { id: idempotencyKey, status: 'queued' };
+      }
+    });
   };
 
   const createRecordWithReceipt = (input: CreateRecordInput) => executeOrQueue('record.create', {
