@@ -1,12 +1,16 @@
 # Recuperação de senha da autenticação própria
 
-Implementação da [issue #20](https://github.com/vitoradriao/revive/issues/20) no [PR #45](https://github.com/vitoradriao/revive/pull/45), validada em 06/10/2026. O projeto mantém `public.usuarios`, bcrypt e JWT próprio; não usa Supabase Auth para redefinir essas contas.
+Implementação da [issue #20](https://github.com/vitoradriao/revive/issues/20) no [PR #45](https://github.com/vitoradriao/revive/pull/45), com aceite externo e Android em 09/10/2026. O projeto mantém `public.usuarios`, bcrypt e JWT próprio; não usa Supabase Auth para redefinir essas contas.
 
-**Entrega externa pendente:** o responsável informou que ainda não tem serviço de e-mail. O transporte SMTP foi exercitado com Mailpit em ambiente descartável. Isso comprova o fluxo local e não comprova entrega em uma caixa externa, reputação do remetente ou configuração de produção. A issue permanece aberta até esse aceite.
+**Entrega externa validada com Westmail:** a solicitação no Moto G52 chegou a uma caixa Gmail externa, o código foi usado no aplicativo e a nova senha abriu a Jornada. O teste usou API/banco descartáveis. A implantação de produção ainda exige o rollout abaixo; nenhum SQL remoto foi aplicado e a recuperação permanece desabilitada por padrão.
 
 ## Provedor e configuração
 
-A escolha de implementação é SMTP com [Nodemailer](https://nodemailer.com/smtp), sem dependência de um fornecedor específico. Mailpit 1.31.4 é apenas a caixa SMTP dos testes locais/CI; não encaminha mensagens para destinatários externos. Nenhum serviço foi contratado e nenhuma credencial externa foi configurada.
+A implementação usa SMTP com [Nodemailer](https://nodemailer.com/smtp), sem dependência de um fornecedor específico. O provedor de homologação é o [Westmail](https://github.com/vitoradriao/westmail): Stalwart com relay Gmail autorizado e SMTP TLS público via Tailscale Funnel. Mailpit 1.31.4 continua sendo somente a caixa SMTP dos testes locais/CI.
+
+Para Westmail, use `SMTP_HOST=westmail.tail9d73df.ts.net`, `SMTP_PORT=8443` e `SMTP_SECURE=true`. Cada aplicativo recebe uma identidade interna com apenas autenticação/envio; `SMTP_USER`/`SMTP_PASSWORD` são credenciais Westmail exclusivas do Revive. `RECOVERY_EMAIL_FROM` deve corresponder ao endereço Gmail autorizado do relay. A senha Google e as credenciais do proprietário não são compartilhadas com o backend. A configuração local foi salva no `.env` ignorado pelo Git, com acesso restrito e `PASSWORD_RECOVERY_ENABLED=false` até o rollout.
+
+Westmail atende sob demanda: PC, Docker, serviço, Tailscale e internet precisam estar disponíveis. SMTP aceito e fila vazia não comprovam recebimento; confira a caixa externa. O envio verificado chegou ao Inbox com assinatura Gmail válida, sem garantia de classificação para outros envios/destinatários. W09–W12 do Westmail continuam como etapas próprias de gestão de credenciais, limites, backup e homologação integrada.
 
 Configure no backend, nunca no bundle mobile:
 
@@ -18,7 +22,7 @@ Configure no backend, nunca no bundle mobile:
 | `SMTP_USER`, `SMTP_PASSWORD` | Credenciais do backend. Obrigatórias em produção. |
 | `RECOVERY_EMAIL_FROM` | Remetente verificado no provedor. |
 
-O adaptador exige TLS para hosts externos e não aceita localhost como provedor de produção. Conexão, saudação e socket têm timeout de dois segundos; o envio inteiro tem limite de 2,5 segundos. Rejeição ou timeout inutiliza a solicitação emitida. O log SMTP está desativado.
+O adaptador exige TLS para hosts externos e não aceita localhost como provedor de produção. Conexão, saudação e socket têm timeout de dois segundos; o envio inteiro tem limite de 2,5 segundos. A conexão usa o resolvedor do sistema, compatível com DNS da tailnet, com validação de certificado/hostname e SNI no TLS implícito. O adaptador controla e destrói o socket ao finalizar ou cancelar, inclusive se a resolução DNS ainda estiver pendente. Rejeição ou timeout inutiliza a solicitação emitida. O log SMTP está desativado.
 
 Solicitações válidas recebem sempre o mesmo HTTP 202, mensagem neutra, identificador aleatório e intervalo de 60 segundos, inclusive para conta inexistente, limite atingido ou indisponibilidade. O piso de resposta é três segundos; não é uma garantia de tempo constante quando o banco demora mais. Os eventos operacionais contêm somente o nome do evento: `recovery_disabled`, `email_not_configured`, `email_delivery_failed`, `email_failure_cleanup_failed`, `recovery_request_unavailable` ou `recovery_confirmation_unavailable`. Não incluem endereço, código, senha ou erro do provedor. Alertas devem acompanhar esses eventos, sem enriquecer os logs com conteúdo sensível.
 
@@ -55,7 +59,7 @@ Se houver falha do transporte ou da implantação, desabilite a recuperação em
 
 Manutenção pode remover solicitações consumidas/expiradas com mais de sete dias e buckets de limites com `window_at` anterior a sete dias, em lotes pequenos. Preserve solicitações ainda válidas e buckets recentes; não limpe os limites ao reiniciar a API. O teste descarta somente suas bases/contas sintéticas.
 
-## Evidências e aceite restante
+## Evidências locais de 06/10/2026
 
 - `npm run validate --prefix revive-mobile`: tipos, lint, 28 suítes / 126 testes e SQLite real aprovados.
 - `npm run validate`: 41 testes da API, 15 do painel, links locais e build web aprovados. Auditorias da API/painel sem vulnerabilidades na execução registrada.
@@ -63,6 +67,17 @@ Manutenção pode remover solicitações consumidas/expiradas com mais de sete d
 - Testes HTTP usam transporte fake para ausência/falha de provedor e mantêm a resposta neutra; o adaptador cobre rejeição e timeout.
 - Moto G52 / Android 13 / API 33: APK isolado `com.reviveapp.revive.issue20`, assinatura debug e API descartável PostgreSQL/PostgREST com SMTP Mailpit local. O link abriu o formulário; e-mail inválido mostrou erro, a solicitação real chegou à caixa local, código incorreto preservou campos, código correto redefiniu e apagou os campos sem login automático. A API confirmou senha antiga, JWTs mobile/web e refresh anteriores recusados e senha nova aceita. A volta ao login e entrada com a nova senha abriram a Jornada no celular. A árvore nativa expôs rótulos dos três campos e os dois campos de senha protegidos; a inspeção visual confirmou campos e botões sem cortes na resolução padrão de 1080×2400. Não houve nova confirmação humana de áudio TalkBack para estas telas; iOS não foi testado.
 - Limpeza: APK `.issue20` desinstalado, redirecionamento ADB removido, API local encerrada, containers/volumes descartáveis removidos e arquivos temporários com código/token apagados. Os aplicativos principais e configurações do telefone não foram alterados.
-- Pendente: provedor externo, remetente autorizado e recebimento real em uma caixa de teste. Depois desse aceite, atualizar evidências e revisar o PR antes de fechar #20.
+- Naquela data, provedor externo, remetente autorizado e recebimento real ainda estavam pendentes; o aceite abaixo resolve essa pendência.
+
+## Aceite Westmail e Android — 09/10/2026
+
+- Westmail iniciado com as imagens W08 existentes; núcleo, web, worker e proxy ficaram saudáveis. Criada identidade exclusiva `app-revive-recovery`, com apenas autenticação/envio. SMTP público validou cadeia/hostname TLS e autenticação.
+- O primeiro envio chegou à caixa, mas o prazo de 2,5 segundos venceu durante o caminho de resolução/conexão da biblioteca. O código foi invalidado corretamente. A correção usa o resolvedor do sistema e socket cancelável: o reenvio real foi aceito em **169 ms**, sem ampliar timeouts nem reduzir TLS. Testes com socket real parado e DNS atrasado comprovam fechamento/cancelamento e ausência de conexão posterior ao timeout.
+- Moto G52 / Android 13 / API 33, APK isolado `com.reviveapp.revive.issue20` (debug, SHA-256 `076e33f068cbdbd78e79b12aa809671d8d44b927853df1297935db052d1939a2`). O formulário solicitou e reenviou o código; Gmail externo confirmou Inbox e assinatura válida. O responsável forneceu o código da conta descartável, usado sem incluí-lo nas evidências. A confirmação apagou os campos, voltou ao login sem autenticação automática e a nova senha abriu a Jornada.
+- A API verificou senha antiga, JWT web, access token mobile e refresh anteriores recusados; nova senha aceita, versão de credenciais incrementada e nenhuma solicitação ativa restante. Histórico, concorrência, código inválido/expirado/usado e tentativas continuam cobertos pela suíte PostgreSQL real.
+- Combinação da PR com a main validada: 31 suítes / 137 testes mobile, tipos/lint e SQLite real; 57 testes API, 15 do painel/build e links locais. Banco PostgreSQL 17.6 novo/legado, SMTP Mailpit e regressões de edição/arquivamento e recuperação integram a mesma matriz.
+- O primeiro CI da integração parou ao baixar Mailpit por timeout na autenticação do Docker Hub. O CI usa o [espelho oficial GHCR](https://mailpit.axllent.org/docs/install/docker/) da mesma versão 1.31.4; as imagens local e espelhada foram comparadas. Nenhum teste foi removido.
+- APK, API, banco/volumes, redirecionamento ADB e arquivos com códigos/tokens descartáveis foram removidos. Westmail permanece saudável; sua credencial exclusiva e configuração local do backend foram preservadas com acesso restrito. Nenhum código, senha, token ou contato integra este documento.
+- SQL remoto, habilitação em produção, áudio TalkBack destas telas e iOS não foram realizados. O gate #7 e o rollout operacional acima continuam aplicáveis.
 
 Os requisitos de proteção seguem o [guia de recuperação de senha da OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html). A caixa de CI usa a [API do Mailpit](https://mailpit.axllent.org/docs/api-v1/) para ler a mensagem somente em memória, sem imprimir seu conteúdo.

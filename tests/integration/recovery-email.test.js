@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const net = require('node:net');
+const dns = require('node:dns');
 const { createRecoveryEmail } = require('../../recovery-email');
 
 const message = { email: 'synthetic@example.invalid', code: '12345678', requestId: 'synthetic-request' };
@@ -35,4 +37,44 @@ it('bounds a stalled SMTP send and closes the connection', async () => {
     await vi.advanceTimersByTimeAsync(2500);
     await result;
     expect(transport.close).toHaveBeenCalledOnce();
+});
+
+it('closes a real stalled SMTP connection before a late greeting can send mail', async () => {
+    let peer;
+    let received = '';
+    let closed;
+    const disconnected = new Promise(resolve => { closed = resolve; });
+    const server = net.createServer(socket => {
+        peer = socket;
+        socket.on('data', bytes => { received += bytes.toString(); });
+        socket.once('close', closed);
+    });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    try {
+        const started = Date.now();
+        await expect(createRecoveryEmail({ NODE_ENV: 'test', SMTP_HOST: '127.0.0.1', SMTP_PORT: String(server.address().port), RECOVERY_EMAIL_FROM: 'synthetic@example.invalid' }).send(message)).rejects.toThrow();
+        await disconnected;
+        expect(Date.now() - started).toBeLessThan(2800);
+        expect(received).toBe('');
+        expect(peer.destroyed).toBe(true);
+    } finally { peer?.destroy(); await new Promise(resolve => server.close(resolve)); }
+});
+
+it('aborts slow DNS so resolving after the deadline never opens an SMTP connection', async () => {
+    let connected = 0;
+    const server = net.createServer(socket => { connected++; socket.destroy(); });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    let completeLookup;
+    vi.spyOn(dns, 'lookup').mockImplementation((_host, options, callback) => {
+        completeLookup = () => callback(null, options.all ? [{ address: '127.0.0.1', family: 4 }] : '127.0.0.1', 4);
+    });
+    try {
+        const started = Date.now();
+        await expect(createRecoveryEmail({ NODE_ENV: 'test', SMTP_HOST: 'smtp-late.example.invalid', SMTP_PORT: String(server.address().port), RECOVERY_EMAIL_FROM: 'synthetic@example.invalid' }).send(message)).rejects.toThrow();
+        expect(Date.now() - started).toBeLessThan(2800);
+        expect(completeLookup).toBeTypeOf('function');
+        completeLookup();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(connected).toBe(0);
+    } finally { await new Promise(resolve => server.close(resolve)); }
 });
