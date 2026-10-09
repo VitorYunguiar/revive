@@ -83,4 +83,5 @@ jobs:
           # Same upstream versions; mirrors avoid shared-runner Docker Hub limits.
           REVIVE_CI_POSTGRES_IMAGE: public.ecr.aws/docker/library/postgres:17.6-alpine
           REVIVE_CI_POSTGREST_IMAGE: mirror.gcr.io/postgrest/postgrest:v12.2.12
+          REVIVE_CI_MAILPIT_IMAGE: ghcr.io/axllent/mailpit:v1.31.4
         run: sh supabase/verification/run_ci.sh
