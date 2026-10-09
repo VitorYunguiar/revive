@@ -7,7 +7,7 @@ function fakeSupabase(initial) {
     const tables = structuredClone(initial);
     class Query {
         constructor(table) { this.table = table; this.filters = []; this.mode = 'select'; this.payload = null; }
-        select() { return this; }
+        select(columns) { this.columns = columns; return this; }
         eq(field, value) { this.filters.push(row => row[field] === value); return this; }
         is(field, value) { this.filters.push(row => row[field] === value); return this; }
         gt(field, value) { this.filters.push(row => row[field] > value); return this; }
@@ -37,17 +37,23 @@ function fakeSupabase(initial) {
             return { data: matched, error: null };
         }
         async maybeSingle() {
+            if (this.table === 'usuarios' && this.columns === 'credential_version') {
+                if (state.credentialLookupError) return { data: null, error: { code: state.credentialLookupError } };
+                if (state.missingCredentialColumn) return { data: null, error: { code: '42703' } };
+            }
             if (this.table === 'app_sessions' && state.failSessionLookup) return { data: null, error: new Error('database unavailable') };
             const result = this.execute(); return { ...result, data: result.data?.[0] || null };
         }
         async single() { const result = this.execute(); return { ...result, data: result.data?.[0] || null }; }
         then(resolve, reject) { return Promise.resolve(this.execute()).then(resolve, reject); }
     }
-    const state = { failSessionLookup: false };
+    const state = { failSessionLookup: false, createError: null, missingCredentialColumn: false, credentialLookupError: null };
     const client = {
         from: table => new Query(table),
         rpc: async (name, args) => {
             if (name === 'create_mobile_session') {
+                if (state.changeHashOnCreate) tables.usuarios[0].senha_hash = 'changed-hash';
+                if (state.createError) return { data: null, error: { code: state.createError } };
                 const usuario = tables.usuarios.find(row => row.id === args.p_usuario_id);
                 if (!usuario || usuario.senha_hash !== args.p_expected_hash) return { data: { status: 'invalid' }, error: null };
                 tables.app_sessions.push({ id: args.p_id, usuario_id: usuario.id,
@@ -88,6 +94,26 @@ function fakeSupabase(initial) {
 }
 
 describe('mobile refresh-token lifecycle', () => {
+    it.each([
+        { missing: true, enabled: false, rpcError: 'PGRST202', status: 200 },
+        { missing: false, enabled: false, rpcError: 'PGRST202', status: 500 },
+        { missing: true, enabled: true, rpcError: 'PGRST202', status: 500 },
+        { missing: true, enabled: false, rpcError: '42501', status: 500 },
+        { missing: true, enabled: false, rpcError: 'PGRST202', lookupError: 'PGRST204', status: 500 },
+        { missing: true, enabled: false, rpcError: 'PGRST202', changeHash: true, status: 401 },
+    ])('creates legacy sessions only before migration with recovery disabled: %j', async scenario => {
+        const database = fakeSupabase({ usuarios: [{ id: 'user-1', nome: 'Synthetic', email: 'test@example.invalid', senha_hash: 'hash', credential_version: 0 }], app_sessions: [] });
+        Object.assign(database.state, { createError: scenario.rpcError, missingCredentialColumn: scenario.missing, credentialLookupError: scenario.lookupError, changeHashOnCreate: scenario.changeHash });
+        const app = express(); app.use(express.json());
+        app.use('/api/v2', createMobileApi({ supabase: database.client, bcrypt: { compare: async () => true }, jwtSecret: 'synthetic-secret', recoveryEnabled: scenario.enabled }));
+        const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const response = await request(app).post('/api/v2/auth/login').send({ email: 'test@example.invalid', senha: 'Synthetic!1' });
+            expect(response.status).toBe(scenario.status);
+            expect(database.tables.app_sessions).toHaveLength(scenario.status === 200 ? 1 : 0);
+            if (scenario.status === 200) expect(jwt.verify(response.body.access_token, 'synthetic-secret').cv).toBe(0);
+        } finally { log.mockRestore(); }
+    });
     it('rotates refresh tokens and revokes the family when an old token is reused', async () => {
         const secret = 'test-secret-with-enough-entropy-for-tests';
         const database = fakeSupabase({

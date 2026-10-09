@@ -487,7 +487,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: data.id, email: data.email, cv: Number(data.credential_version) },
+            { id: data.id, email: data.email, cv: Number(data.credential_version ?? 0) },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -557,7 +557,7 @@ app.post('/api/auth/login', async (req, res) => {
         // Gera o JWT com payload contendo id e email do usuário
         // Expiração: 7 dias (formato aceito pela lib jsonwebtoken)
         const token = jwt.sign(
-            { id: usuario.id, email: usuario.email, cv: Number(usuario.credential_version) },
+            { id: usuario.id, email: usuario.email, cv: Number(usuario.credential_version ?? 0) },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
