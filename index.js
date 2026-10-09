@@ -52,6 +52,8 @@ const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const { createMobileApi } = require('./mobile-api');
+const { createPasswordRecovery } = require('./password-recovery');
+const { createCredentialAuth } = require('./credential-auth');
 const { buildProgressSnapshot } = require('./progress-metrics');
 
 /** Instância principal do Express */
@@ -247,6 +249,7 @@ app.use('/api/v2', createMobileApi({
     bcrypt,
     jwtSecret: process.env.JWT_SECRET
 }));
+app.use('/api/v2/auth/password-recovery', createPasswordRecovery({ supabase, bcrypt, jwtSecret: process.env.JWT_SECRET }));
 
 /* =========================================================================
  * MIDDLEWARE DE AUTENTICAÇÃO JWT
@@ -269,24 +272,7 @@ app.use('/api/v2', createMobileApi({
  * @param {import('express').NextFunction} next - Função para passar ao próximo middleware
  * @returns {void | import('express').Response} Resposta 401 se token ausente/inválido
  */
-const authMiddleware = (req, res, next) => {
-    // Extrai o token do header "Authorization: Bearer <token>"
-    // O optional chaining (?.) previne erro caso o header não exista
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ erro: 'Token nao fornecido' });
-    }
-
-    try {
-        // jwt.verify() valida assinatura, expiração e integridade do token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // Anexa o ID do usuário ao objeto req para uso nos handlers subsequentes
-        req.usuarioId = decoded.id;
-        next();
-    } catch (error) {
-        return res.status(401).json({ erro: 'Token invalido' });
-    }
-};
+const authMiddleware = createCredentialAuth({ supabase, jwtSecret: process.env.JWT_SECRET });
 
 /* =========================================================================
  * FUNÇÕES UTILITÁRIAS
@@ -501,7 +487,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: data.id, email: data.email },
+            { id: data.id, email: data.email, cv: Number(data.credential_version ?? 0) },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -571,7 +557,7 @@ app.post('/api/auth/login', async (req, res) => {
         // Gera o JWT com payload contendo id e email do usuário
         // Expiração: 7 dias (formato aceito pela lib jsonwebtoken)
         const token = jwt.sign(
-            { id: usuario.id, email: usuario.email },
+            { id: usuario.id, email: usuario.email, cv: Number(usuario.credential_version ?? 0) },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );

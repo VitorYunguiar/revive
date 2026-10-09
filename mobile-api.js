@@ -3,9 +3,9 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { buildProgressSnapshot, observedAccountAwards, observedAwards } = require('./progress-metrics');
 const { validateHabitPatch, listEditableHabits, habitEditMessages } = require('./habit-edit');
+const { readCredentialVersion } = require('./credential-auth');
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
-const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MS_PER_DAY = 86_400_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -88,7 +88,7 @@ function calculateStats(addiction) {
     };
 }
 
-function createMobileApi({ supabase, bcrypt, jwtSecret }) {
+function createMobileApi({ supabase, bcrypt, jwtSecret, recoveryEnabled = process.env.PASSWORD_RECOVERY_ENABLED === 'true' }) {
     if (!jwtSecret) throw new Error('JWT_SECRET e obrigatorio para a API mobile');
     const router = express.Router();
 
@@ -125,25 +125,41 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
     };
 
     const issueAccessToken = (usuario, sessionId) => jwt.sign(
-        { id: usuario.id, email: usuario.email, sid: sessionId, token_type: 'access' },
+        { id: usuario.id, email: usuario.email, sid: sessionId, token_type: 'access', cv: Number(usuario.credential_version || 0) },
         jwtSecret,
         { expiresIn: ACCESS_TOKEN_TTL_SECONDS }
     );
 
-    const createSession = async (usuario, req, familyId = crypto.randomUUID(), id = crypto.randomUUID()) => {
+    const createSession = async (usuario, req, expectedHash, familyId = crypto.randomUUID(), id = crypto.randomUUID()) => {
         const refreshToken = crypto.randomBytes(48).toString('base64url');
-        const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS).toISOString();
-        const { error } = await supabase.from('app_sessions').insert([{
-            id,
-            usuario_id: usuario.id,
-            refresh_token_hash: tokenHash(refreshToken),
-            family_id: familyId,
-            expires_at: expiresAt,
-            user_agent: clean(req.get('User-Agent'))?.slice(0, 500) || null
-        }]);
+        let { data, error } = await supabase.rpc('create_mobile_session', {
+            p_id: id, p_usuario_id: usuario.id, p_expected_hash: expectedHash,
+            p_refresh_hash: tokenHash(refreshToken), p_family_id: familyId,
+            p_user_agent: clean(req.get('User-Agent'))?.slice(0, 500) || null,
+        });
+        if (error?.code === 'PGRST202' && !recoveryEnabled) {
+            const version = await readCredentialVersion({ supabase, userId: usuario.id, recoveryEnabled });
+            if (version.error) throw version.error;
+            // A missing RPC alone is not enough: once the column exists, the
+            // account lock in the new function is mandatory even at version zero.
+            if (version.data?.legacySchema) {
+                const current = await supabase.from('usuarios').select('senha_hash')
+                    .eq('id', usuario.id).maybeSingle();
+                if (current.error) throw current.error;
+                if (current.data?.senha_hash !== expectedHash) return null;
+                const inserted = await supabase.from('app_sessions').insert([{
+                    id, usuario_id: usuario.id, refresh_token_hash: tokenHash(refreshToken), family_id: familyId,
+                    expires_at: new Date(Date.now() + 30 * MS_PER_DAY).toISOString(),
+                    user_agent: clean(req.get('User-Agent'))?.slice(0, 500) || null,
+                }]);
+                error = inserted.error;
+                data = { status: 'created', credential_version: 0 };
+            }
+        }
         if (error) throw error;
+        if (data?.status !== 'created') return null;
         return {
-            access_token: issueAccessToken(usuario, id),
+            access_token: issueAccessToken({ ...usuario, credential_version: data.credential_version }, id),
             refresh_token: refreshToken,
             expires_in: ACCESS_TOKEN_TTL_SECONDS,
             usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email },
@@ -184,7 +200,9 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
                 .from('usuarios').insert([{ nome, email, senha_hash: senhaHash }])
                 .select('id, nome, email').single();
             if (error) throw error;
-            return respondSession(res, await createSession(usuario, req), 201);
+            const session = await createSession(usuario, req, senhaHash);
+            if (!session) return apiError(res, 401, 'CREDENCIAIS_INVALIDAS', 'Entre novamente com a senha atual.');
+            return respondSession(res, session, 201);
         } catch (error) {
             console.error('mobile cadastro failed', { code: error?.code, message: error?.message });
             return apiError(res, 500, 'ERRO_INTERNO', 'Nao foi possivel criar a conta.');
@@ -200,7 +218,9 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
             if (error || !usuario || !(await bcrypt.compare(senha, usuario.senha_hash))) {
                 return apiError(res, 401, 'CREDENCIAIS_INVALIDAS', 'Email ou senha invalidos.');
             }
-            return respondSession(res, await createSession(usuario, req));
+            const session = await createSession(usuario, req, usuario.senha_hash);
+            if (!session) return apiError(res, 401, 'CREDENCIAIS_INVALIDAS', 'Email ou senha invalidos.');
+            return respondSession(res, session);
         } catch (error) {
             console.error('mobile login failed', { code: error?.code, message: error?.message });
             return apiError(res, 500, 'ERRO_INTERNO', 'Nao foi possivel entrar.');
@@ -225,7 +245,7 @@ function createMobileApi({ supabase, bcrypt, jwtSecret }) {
                 const codes = { reused: 'REFRESH_REUTILIZADO', expired: 'REFRESH_EXPIRADO', invalid: 'REFRESH_INVALIDO' };
                 return apiError(res, 401, codes[rotated?.status] || 'REFRESH_INVALIDO', 'Sessao invalida ou encerrada.');
             }
-            const usuario = { id: rotated.usuario_id, nome: rotated.nome, email: rotated.email };
+            const usuario = { id: rotated.usuario_id, nome: rotated.nome, email: rotated.email, credential_version: rotated.credential_version };
             return respondSession(res, {
                 access_token: issueAccessToken(usuario, replacementId),
                 refresh_token: replacementToken,

@@ -42,8 +42,17 @@ docker compose -f "$compose_file" exec -T "$postgres_service" \
 psql_file revive_legacy_fixture supabase/verification/ci_schema_grants.sql
 
 for file in supabase/migrations/*.sql; do
+  case "$file" in
+    *20261006130000_password_recovery.sql)
+      docker compose -f "$compose_file" up -d --wait postgrest
+      node tests/db/pre-recovery.mjs
+      ;;
+  esac
   psql_file revive_fixture "$file"
 done
+# PostgREST started before recovery; refresh its schema after the migrations.
+docker compose -f "$compose_file" exec -T "$postgres_service" \
+  psql -X -q -v ON_ERROR_STOP=1 -U postgres -d revive_fixture -c "notify pgrst, 'reload schema';"
 psql_file revive_fixture supabase/verification/assert_base_schema.sql
 psql_file revive_fixture supabase/verification/assert_full_schema.sql
 
@@ -64,6 +73,6 @@ expect_error revive_fixture supabase/verification/expect_invalid_constraint.sql 
 expect_error revive_fixture supabase/verification/expect_public_role_denied.sql \
   'permission denied for table usuarios'
 
-docker compose -f "$compose_file" up -d --wait postgrest
+docker compose -f "$compose_file" up -d --wait postgrest mailpit
 node tests/db/real-postgres.mjs
 echo 'PostgreSQL 17.6: fresh, legacy, negative SQL and API tests passed.'

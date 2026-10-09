@@ -11,6 +11,11 @@ declare
 begin
   for expected in
     select * from (values
+      ('usuarios','credential_version','bigint',true),
+      ('password_recovery_requests','usuario_id','uuid',true),
+      ('password_recovery_requests','code_hash','text',true),
+      ('password_recovery_requests','attempts','smallint',true),
+      ('password_recovery_requests','expires_at','timestamp with time zone',true),
       ('vicios','revision','integer',true),
       ('metas','iniciar_hoje','boolean',true),
       ('metas','data_inicio_meta','date',false),
@@ -81,7 +86,7 @@ begin
 
   for expected in
     select * from (values
-      ('usuarios'), ('vicios'), ('registros_diarios'),
+      ('usuarios'), ('password_recovery_requests'), ('password_recovery_limits'), ('vicios'), ('registros_diarios'),
       ('historico_recaidas'), ('metas'), ('mensagens_motivacionais'),
       ('marcos'), ('app_sessions'), ('api_idempotency'),
       ('device_push_tokens'), ('progresso_ancoras'), ('progresso_periodos'),
@@ -110,6 +115,7 @@ begin
 
   for expected in
     select * from (values
+      ('password_recovery_requests','usuario_id','usuarios','c'),
       ('app_sessions','usuario_id','usuarios','c'),
       ('app_sessions','replaced_by','app_sessions','n'),
       ('api_idempotency','usuario_id','usuarios','c'),
@@ -236,7 +242,12 @@ begin
       ('public.initialize_vicio_progress_history()'),
       ('public.record_prospective_economy_change()'),
       ('public.execute_mobile_urge_mutation(uuid,uuid,text,text,text,jsonb,text)'),
-      ('public.list_urge_events(uuid,uuid,date,date,text,integer,timestamp with time zone,uuid)')
+      ('public.list_urge_events(uuid,uuid,date,date,text,integer,timestamp with time zone,uuid)'),
+      ('public.request_password_recovery(text,text,text,uuid,text)'),
+      ('public.confirm_password_recovery(text,text,uuid,text,text)'),
+      ('public.create_mobile_session(uuid,text,uuid,text,uuid,text)'),
+      ('public.advance_credential_version()'),
+      ('public.take_recovery_limit(text,text,integer,integer,integer)')
     ) as functions(signature)
   loop
     if to_regprocedure(expected.signature) is null

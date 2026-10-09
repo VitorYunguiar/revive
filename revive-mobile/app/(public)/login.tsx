@@ -39,6 +39,7 @@ export default function LoginScreen() {
         {error ? <Text style={{ color: colors.danger }}>{error}</Text> : null}
         <AppButton title={isSubmitting ? 'Entrando...' : 'Entrar'} disabled={isSubmitting} onPress={submit} />
       </Card>
+      <Link href="/(public)/recuperar-senha" accessibilityRole="link" style={{ color: colors.primary, minHeight: 48, paddingVertical: 12 }}>Esqueci minha senha</Link>
       <Text style={textStyles.muted}>Ainda não tem conta? <Link href="/(public)/cadastro" style={{ color: colors.primary }}>Criar conta</Link></Text>
       <Text style={textStyles.muted}>O Revive é uma ferramenta de autocuidado e não substitui acompanhamento profissional.</Text>
     </Screen>
